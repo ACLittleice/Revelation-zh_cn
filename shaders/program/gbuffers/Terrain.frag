@@ -51,32 +51,22 @@ uniform sampler2D tex;
     uniform sampler2D specular;
 #endif
 
-#if defined PARALLAX || defined AUTO_GENERATED_NORMAL
-	uniform mat4 gbufferModelView;
-	uniform mat4 gbufferProjection;
-
-	uniform vec3 worldLightVector;
-	uniform int frameCounter;
-#endif
+#include "/lib/universal/Uniform.glsl"
 
 //======// Function //============================================================================//
 
-float bayer2 (vec2 a) { a = 0.5 * floor(a); return fract(1.5 * fract(a.y) + a.x); }
-#define bayer4(a) (bayer2(0.5 * (a)) * 0.25 + bayer2(a))
+// Interleaved Gradient Noise
+// https://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare/
+// https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/
+float InterleavedGradientNoiseTemporal(in vec2 coord) {
+	#ifdef TAA_ENABLED
+        coord += 5.588238 * float(frameCounter % 64);
+	#endif
+    return fract(52.9829189 * fract(0.06711056 * coord.x + 0.00583715 * coord.y));
+}
 
 #ifdef PARALLAX
-	float InterleavedGradientNoiseTemporal(in vec2 coord) {
-		return fract(52.9829189 * fract(0.06711056 * coord.x + 0.00583715 * coord.y + 0.00623715 * (frameCounter & 63)));
-	}
-
-	float ScreenToViewDepth(in float depth) {
-		return gbufferProjection[3].z / (gbufferProjection[2].z + (depth * 2.0 - 1.0));
-	}
-
-	float ViewToScreenDepth(in float depth) {
-		return (gbufferProjection[3].z - gbufferProjection[2].z * depth) / depth * 0.5 + 0.5;
-	}
-
+	#include "/lib/universal/Transform.glsl"
 	#include "/lib/surface/Parallax.glsl"
 #endif
 
@@ -113,6 +103,8 @@ float bayer2 (vec2 a) { a = 0.5 * floor(a); return fract(1.5 * fract(a.y) + a.x)
 
 //======// Main //================================================================================//
 void main() {
+	float dither = InterleavedGradientNoiseTemporal(gl_FragCoord.xy);
+
 	#ifdef PARALLAX
 		#define ReadTexture(tex) textureGrad(tex, parallaxCoord, texGrad[0], texGrad[1])
 
@@ -128,7 +120,6 @@ void main() {
 
 		if (normalTex.w < 0.999) {
 			vec2 texSize = vec2(atlasSize);
-			float dither = InterleavedGradientNoiseTemporal(gl_FragCoord.xy);
 			float parallaxFade = exp2(-0.1 * max0(length(tangentViewPos) - 2.0));
 
 			vec3 offsetCoord = CalculateParallax(normalize(tangentViewPos), texSize, dither);
@@ -140,7 +131,7 @@ void main() {
 
 			if (offsetCoord.z < 0.999 && parallaxFade > 1e-5) {
 				#ifdef PARALLAX_DEPTH_WRITE
-					gl_FragDepth = ViewToScreenDepth(ScreenToViewDepth(gl_FragDepth) + oms(offsetCoord.z) * PARALLAX_DEPTH);
+					gl_FragDepth = ViewToScreenDepth(ScreenToViewDepth(gl_FragDepth) - oms(offsetCoord.z) * PARALLAX_DEPTH);
 				#elif defined PARALLAX_SHADOW
 					if (dot(tbnMatrix[2], worldLightVector) > 1e-3) {
 						gbufferOut1.z = CalculateParallaxShadow(worldLightVector * tbnMatrix, offsetCoord, texSize, dither) * parallaxFade;
@@ -191,7 +182,7 @@ void main() {
 		albedoOut = vec3(1.0);
 	#endif
 
-	gbufferOut0.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
+	gbufferOut0.x = PackupDithered2x8U(lightmap, dither);
 	gbufferOut0.y = materialID;
 
 	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(flatNormal));
