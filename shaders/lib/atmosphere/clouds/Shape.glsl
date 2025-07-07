@@ -13,9 +13,14 @@
 		[Schneider, 2023] Andrew Schneider. "Nubis Cubed: Methods (and madness) to model and render immersive real-time voxel-based clouds". SIGGRAPH 2023.
 			https://advances.realtimerendering.com/s2023/Nubis%20Cubed%20(Advances%202023).pdf
 		[Hillaire, 2016] Sebastien Hillaire. “Physically based Sky, Atmosphere and Cloud Rendering”. SIGGRAPH 2016.
+			https://blog.selfshadow.com/publications/s2016-shading-course/
 			https://www.ea.com/frostbite/news/physically-based-sky-atmosphere-and-cloud-rendering
+        [Högfeldt, 2016] Rurik Högfeldt. "Convincing Cloud Rendering: An Implementation of Real-Time Dynamic Volumetric Clouds in Frostbite". Department of Computer Science and Engineering, Gothenburg, Sweden, 2016.
+            https://publications.lib.chalmers.se/records/fulltext/241770/241770.pdf
 		[Bauer, 2019] Fabian Bauer. "Creating the Atmospheric World of Red Dead Redemption 2: A Complete and Integrated Solution". SIGGRAPH 2019.
 			https://www.advances.realtimerendering.com/s2019/slides_public_release.pptx
+        [Wrenninge et al., 2013] Magnus Wrenninge, Chris Kulla, Viktor Lundqvist. “Oz: The Great and Volumetric”. SIGGRAPH 2013 Talks.
+            https://dl.acm.org/doi/10.1145/2504459.2504518
 
 --------------------------------------------------------------------------------
 */
@@ -99,8 +104,8 @@ float CloudHighDensity(in vec2 rayPos) {
 	/* Cirrocumulus clouds */ if (localCoverage > 0.4) {
 		vec2 position = rayPos * 1e-4 - (shift + curl) * 0.75;
 
-		float baseCoverage = texture(noisetex, position * 0.125).z;
-		baseCoverage *= saturate(1.0 - texture(noisetex, position * 0.0075).y);
+		float baseCoverage = texture(noisetex, position * 0.1).z;
+		baseCoverage *= saturate(1.0 - texture(noisetex, position * 0.005).y);
 
 		// The base shape of the cirrocumulus clouds using perlin-worley noise
 		float cirrocumulus = 0.5 * texture(noisetex, position * vec2(0.5, 0.2)).z;
@@ -134,7 +139,7 @@ float CloudHighDensity(in vec2 rayPos) {
 			cirrus += oms(texture(noisetex, position).x) * weight;
 			weight *= 0.55;
 		}
-		cirrus -= saturate(localCoverage * 2.0 - 0.75);
+		cirrus -= saturate(localCoverage * 2.0 - 1.0);
 		cirrus = saturate(cirrus * (1.0 + CLOUD_CI_COVERAGE) - 1.75);
 
 		density += exp2(-curl.x * 8.0) * pow4(cirrus);

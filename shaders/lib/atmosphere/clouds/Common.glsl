@@ -16,9 +16,14 @@
 		[Schneider, 2023] Andrew Schneider. "Nubis Cubed: Methods (and madness) to model and render immersive real-time voxel-based clouds". SIGGRAPH 2023.
 			https://advances.realtimerendering.com/s2023/Nubis%20Cubed%20(Advances%202023).pdf
 		[Hillaire, 2016] Sebastien Hillaire. “Physically based Sky, Atmosphere and Cloud Rendering”. SIGGRAPH 2016.
+			https://blog.selfshadow.com/publications/s2016-shading-course/
 			https://www.ea.com/frostbite/news/physically-based-sky-atmosphere-and-cloud-rendering
+        [Högfeldt, 2016] Rurik Högfeldt. "Convincing Cloud Rendering: An Implementation of Real-Time Dynamic Volumetric Clouds in Frostbite". Department of Computer Science and Engineering, Gothenburg, Sweden, 2016.
+            https://publications.lib.chalmers.se/records/fulltext/241770/241770.pdf
 		[Bauer, 2019] Fabian Bauer. "Creating the Atmospheric World of Red Dead Redemption 2: A Complete and Integrated Solution". SIGGRAPH 2019.
 			https://www.advances.realtimerendering.com/s2019/slides_public_release.pptx
+        [Wrenninge et al., 2013] Magnus Wrenninge, Chris Kulla, Viktor Lundqvist. “Oz: The Great and Volumetric”. SIGGRAPH 2013 Talks.
+            https://dl.acm.org/doi/10.1145/2504459.2504518
 
 --------------------------------------------------------------------------------
 */
@@ -30,7 +35,11 @@
     #define CLOUD_AERIAL_PERSPECTIVE            // Enables aerial perspective for clouds
 
     #define CLOUD_WIND_SPEED 			0.005   // Wind speed of clouds. [0.0 0.0001 0.0005 0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0 25.0 30.0 35.0 40.0 45.0 50.0]
+
     #define CLOUD_MS_COUNT              4       // Times of multi-scattering for clouds. [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 25 30 35 40 45 50]
+    #define CLOUD_MS_FALLOFF_S          0.5     // Scattering falloff for multi-scattering. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
+    #define CLOUD_MS_FALLOFF_E          0.5     // Extinction falloff for multi-scattering. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
+    #define CLOUD_MS_FALLOFF_P          0.5     // Asymmetry falloff for multi-scattering. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
 
 /* Low-level clouds */
     #define CLOUD_CUMULUS 	                    // Enables cumulus clouds
@@ -42,7 +51,7 @@
     #define CLOUD_CU_SAMPLES 		   	32      // Sample count for cumulus clouds ray marching. [4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 36 40 44 48 50 52 56 60 70 80 90 100 110 120 130 140 150 160 170 180 190 200 210 220 230 240 250 260 270 280 290 300 310 320 330 340 350 360 370 380 390 400 410 420 430 440 450 460 470 480 490 500]
 
     #define CLOUD_CU_SUNLIGHT_SAMPLES 	5       // Sample count for sunlight optical depth calculation. [2 3 4 5 6 7 8 9 10 12 15 17 20]
-    #define CLOUD_CU_SKYLIGHT_SAMPLES 	1       // Sample count for skylight optical depth calculation. [2 3 4 5 6 7 8 9 10 12 15 17 20]
+    #define CLOUD_CU_SKYLIGHT_SAMPLES 	0       // Sample count for skylight optical depth calculation. [2 3 4 5 6 7 8 9 10 12 15 17 20]
 
     #define CLOUD_CU_ALTITUDE 		   	800.0   // Altitude of cumulus clouds. [400.0 500.0 600.0 700.0 800.0 900.0 1000.0 1100.0 1200.0 1300.0 1400.0 1500.0 1600.0 1700.0 1800.0 1900.0 2000.0 2500.0 3000.0 3500.0 4000.0 4500.0 5000.0 5500.0 6000.0 6500.0 7000.0 75000.0 8000.0 8500.0 9000.0 9500.0 10000.0]
     #define CLOUD_CU_THICKNESS 		    1500.0  // Thickness of cumulus clouds. [500.0 600.0 700.0 800.0 900.0 1000.0 1100.0 1200.0 1300.0 1400.0 1450.0 1500.0 1550.0 1600.0 1650.0 1700.0 1750.0 1800.0 1850.0 1900.0 1950.0 2000.0 2050.0 2100.0 2150.0 2200.0 2250.0 2300.0 2350.0 2400.0 2450.0 2500.0 2550.0 2600.0 2650.0 2700.0 2750.0 2800.0 2850.0 2900.0 2950.0 3000.0 3500.0 4000.0 4500.0 5000.0 5500.0 6000.0 6500.0 7000.0 7500.0 8000.0 8500.0 9000.0 9500.0 10000.0]
@@ -57,7 +66,7 @@
     #define CLOUD_AS_COVERAGE           0.6     // Coverage of altostratus clouds. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
 
 /* High-level clouds */
-    #define CLOUD_HIGH_ALTITUDE 		7500.0  // Altitude of high clouds. [500.0 600.0 700.0 800.0 900.0 1000.0 1100.0 1200.0 1300.0 1400.0 1500.0 1600.0 1700.0 1800.0 1900.0 2000.0 2500.0 3000.0 3500.0 4000.0 4500.0 5000.0 5500.0 6000.0 6500.0 7000.0 7500.0 8000.0 8500.0 9000.0 9500.0 10000.0 10500.0 11000.0 11500.0 12000.0]
+    #define CLOUD_HIGH_ALTITUDE 		7000.0  // Altitude of high clouds. [500.0 600.0 700.0 800.0 900.0 1000.0 1100.0 1200.0 1300.0 1400.0 1500.0 1600.0 1700.0 1800.0 1900.0 2000.0 2500.0 3000.0 3500.0 4000.0 4500.0 5000.0 5500.0 6000.0 6500.0 7000.0 7500.0 8000.0 8500.0 9000.0 9500.0 10000.0 10500.0 11000.0 11500.0 12000.0]
     #define CLOUD_HIGH_THICKNESS 		2000.0  // Thickness of high clouds. [500.0 600.0 700.0 800.0 900.0 1000.0 1100.0 1200.0 1300.0 1400.0 1450.0 1500.0 1550.0 1600.0 1650.0 1700.0 1750.0 1800.0 1850.0 1900.0 1950.0 2000.0 2050.0 2100.0 2150.0 2200.0 2250.0 2300.0 2350.0 2400.0 2450.0 2500.0 2550.0 2600.0 2650.0 2700.0 2750.0 2800.0 2850.0 2900.0 2950.0 3000.0 3500.0 4000.0 4500.0 5000.0 5500.0 6000.0 6500.0 7000.0 7500.0 8000.0 8500.0 9000.0 9500.0 10000.0]
     #define CLOUD_HIGH_SUNLIGHT_SAMPLES 3       // Sample count for sunlight optical depth calculation. [2 3 4 5 6 7 8 9 10 12 15 17 20]
 
@@ -85,18 +94,20 @@
 //================================================================================================//
 
 const uint  cloudMsCount 			= CLOUD_MS_COUNT;
-const float cloudMsFalloffS 	    = 0.55;
-const float cloudMsFalloffE 	    = 0.40;
-const float cloudMsFalloffP 	    = 0.75;
+
+// Must be a <= b to keep energy conservation
+const float cloudMsFalloffA 	    = CLOUD_MS_FALLOFF_S;
+const float cloudMsFalloffB 	    = CLOUD_MS_FALLOFF_E;
+const float cloudMsFalloffC 	    = CLOUD_MS_FALLOFF_P;
 
 const float cloudMapCovDist 		= 256e3; // m
 
 // TODO: Provide adjustable options for these parameters
 const float cloudForwardG 		    = 0.7;
-const float cloudBackwardG 		    = -0.4;
-const float cloudLobeMixer          = 0.4;
-const float cloudSilverG 		    = 0.9;
-const float cloudSilverI 	        = 0.3;
+const float cloudBackwardG 		    = -0.3;
+const float cloudLobeMixer          = 0.35;
+const float cloudSilverG 		    = 0.95;
+const float cloudSilverI 	        = 0.25;
 
 const float cumulusTopAltitude 		= CLOUD_CU_ALTITUDE + CLOUD_CU_THICKNESS;
 const float cumulusTopOffset        = 500.0;
@@ -107,9 +118,21 @@ const float cumulusTopRadius        = planetRadius + cumulusTopAltitude;
 const float cloudMidRadius          = planetRadius + CLOUD_MID_ALTITUDE;
 const float cloudHighRadius         = planetRadius + CLOUD_HIGH_ALTITUDE;
 
-const float cumulusExtinction 		= 0.09;
-const float stratusExtinction 		= 0.07;
-const float cirrusExtinction 		= 0.05;
+const float cumulusScattering 		= 0.08;
+const float stratusScattering 		= 0.05;
+const float cirrusScattering 		= 0.02;
+
+const float cumulusAbsorption 		= 0.0;
+const float stratusAbsorption 		= 0.0;
+const float cirrusAbsorption 		= 0.0;
+
+const float cumulusExtinction 		= cumulusScattering + cumulusAbsorption;
+const float stratusExtinction 		= stratusScattering + stratusAbsorption;
+const float cirrusExtinction 		= cirrusScattering + cirrusAbsorption;
+
+const float cumulusAlbedo 		    = cumulusScattering / cumulusExtinction;
+const float stratusAlbedo 		    = stratusScattering / stratusExtinction;
+const float cirrusAlbedo 		    = cirrusScattering / cirrusExtinction;
 
 const float minCloudTransmittance   = 0.05;
 
