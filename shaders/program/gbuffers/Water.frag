@@ -68,7 +68,7 @@ flat in vec3 directIlluminance;
 
 #include "/lib/surface/ScreenSpaceRaytracer.glsl"
 
-vec4 CalculateSpecularReflections(in vec3 normal, in float skylight, in vec3 worldDir) {
+vec4 CalculateSpecularReflections(in vec3 normal, in vec3 worldDir, in float dither, in float skylight) {
 	skylight = remap(0.3, 0.7, cube(skylight));
 
 	float NdotV = abs(dot(normal, worldDir));
@@ -88,7 +88,6 @@ vec4 CalculateSpecularReflections(in vec3 normal, in float skylight, in vec3 wor
 		reflection = skyRadiance * skylight;
 	}
 
-	float dither = InterleavedGradientNoiseTemporal(gl_FragCoord.xy);
 	vec3 screenPos = vec3(gl_FragCoord.xy * viewPixelSize, gl_FragCoord.z);
 
 	float brdf;
@@ -117,27 +116,37 @@ vec4 CalculateSpecularReflections(in vec3 normal, in float skylight, in vec3 wor
 void main() {
 	vec3 worldNormal;
 	vec3 worldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
+	float dither = InterleavedGradientNoiseTemporal(gl_FragCoord.xy);
 
 	if (materialID == 3u) { // water
 		#ifdef PHYSICS_OCEAN
 			WavePixelData wave = physics_wavePixel(physics_localPosition.xz, physics_localWaviness, physics_iterationsNormal, physics_gameTime);
 
 			worldNormal = wave.normal;
-			gbufferOut1 = worldNormal.xy * 0.5 + 0.5;
+			#ifndef RAYTRACED_REFRACTION
+				gbufferOut1 = worldNormal.xy * 0.5 + 0.5;
+			#endif
 		#else
 			vec3 minecraftPos = worldPos + cameraPosition;
+			vec2 tangentPos = ((minecraftPos * vec3(1.0, 0.15, 1.0)) * tbnMatrix).xy;
 			#ifdef WATER_PARALLAX
-				worldNormal = CalculateWaterNormal(minecraftPos.xz - minecraftPos.y, worldDir * tbnMatrix);
+				worldNormal = CalculateWaterNormal(tangentPos, worldDir * tbnMatrix, dither);
 			#else
-				worldNormal = CalculateWaterNormal(minecraftPos.xz - minecraftPos.y);
+				worldNormal = CalculateWaterNormal(tangentPos);
 			#endif
 
-			gbufferOut1 = worldNormal.xy * 0.5 + 0.5;
+			#ifndef RAYTRACED_REFRACTION
+				gbufferOut1 = worldNormal.xy * 0.5 + 0.5;
+			#endif
 			worldNormal = tbnMatrix * worldNormal;
 		#endif
 
+		#ifdef RAYTRACED_REFRACTION
+			gbufferOut0.z = Packup2x8U(OctEncodeUnorm(worldNormal));
+		#endif
+
 		// Water normal clamp
-		worldNormal = normalize(worldNormal + tbnMatrix[2] * inversesqrt(maxEps(dot(tbnMatrix[2], -worldDir))));
+		worldNormal = normalize(worldNormal + tbnMatrix[2] * inversesqrt(4.0 * abs(dot(tbnMatrix[2], worldDir)) + 1e-2));
 	} else {
 		vec4 albedo = texture(tex, texCoord) * vertColor;
 
@@ -160,7 +169,7 @@ void main() {
 	//==// Translucent lighting //================================================================//
 
 	// Indirect specular lighting
-	lightingOut = CalculateSpecularReflections(worldNormal, lightmap.y, worldDir);
+	lightingOut = CalculateSpecularReflections(worldNormal, worldDir, dither, lightmap.y);
 
 	// Cloud shadows
 	#ifdef CLOUD_SHADOWS
@@ -184,8 +193,6 @@ void main() {
 		vec3 shadowScreenPos = WorldToShadowScreenSpace(worldPos + normalOffset, distortionFactor);	
 
 		if (saturate(shadowScreenPos) == shadowScreenPos) {
-			float dither = BlueNoiseTemporal(ivec2(gl_FragCoord.xy));
-
 			float blockerSearch = BlockerSearch(shadowScreenPos, dither, 0.25 * distortionFactor);
 			shadowScreenPos.z -= (worldDistSquared * 1e-9 + 3e-6) * (1.0 + dither) / distortionFactor * shadowDistance;
 

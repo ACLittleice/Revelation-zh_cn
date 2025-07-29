@@ -141,6 +141,9 @@ float CornetteShanksPhase(in float mu, in float g) {
   	return uniformPhase * pa * pb;
 }
 
+// [0] https://research.nvidia.com/labs/rtr/approximate-mie/publications/approximate-mie.pdf
+// [1] https://research.nvidia.com/labs/rtr/approximate-mie/publications/approximate-mie-supplemental.pdf
+
 // Draine’s phase function
 float DrainePhase(in float mu, in float g, in float a) {
 	float gg = g * g;
@@ -149,15 +152,38 @@ float DrainePhase(in float mu, in float g, in float a) {
 	return uniformPhase * pa * pb;
 }
 
-// Mix between HG and Draine’s phase function (Paper: An Approximate Mie Scattering Function for Fog and Cloud Rendering)
+// Mix between HG and Draine’s phase function
 // d is the water droplet diameters in µm
 float HgDrainePhase(in float mu, in float d) {
-	float gHG = fastExp(-0.0990567 / (d - 1.67154));
-	float gD  = fastExp(-2.20679 / (d + 3.91029) - 0.428934);
-	float a   = fastExp(3.62489 - 8.29288 / (d + 5.52825));
-	float w   = fastExp(-0.599085 / (d - 0.641583) - 0.665888);
+	// Parametric fit, see section 3 of [1]
+    float gHG, gD, a, wD;
+	if (d <= 0.1) { // Small particles, Diameter 𝑑 <= 0.1 µm
+		gHG = 13.8 * d * d;
+		gD 	= 1.1456 * d * sin(9.29044 * d);
+		a 	= 250.0;
+		wD 	= 0.252977 - 312.983 * pow(d, 4.3);
+	} else if (d < 1.5) { // Mid-range particles, Diameter 0.1 µm < 𝑑 < 1.5 µm
+		float ld = log(d);
 
-	return mix(HenyeyGreensteinPhase(mu, gHG), DrainePhase(mu, gD, a), w);
+		gHG = 0.862 - 0.143 * ld * ld;
+		gD 	= 0.379685 * cos(1.19692 * cos((ld - 0.238604) * (ld + 1.00667) / (0.507522 - 0.15677 * ld)) + 1.37932 * ld + 0.0625835) + 0.344213;
+		a 	= 250.0;
+		wD 	= 0.146209 * cos(3.38707 * ld + 2.11193) + 0.316072 + 0.0778917 * ld;
+	} else if (d < 5.0) { // Mid-range particles, Diameter 1.5 µm <= 𝑑 < 5 µm
+		float ld = log(d);
+
+		gHG = 0.0604931 * log(ld) + 0.940256;
+		gD 	= 0.500411 - 0.081287 / (-2.0 * ld + tan(ld) + 1.27551);
+		a 	= 7.30354 * ld + 6.31675;
+		wD 	= 0.026914 * (ld - cos(5.68947 * (log(ld) - 0.0292149))) + 0.376475;
+	} else if (d <= 50.0) { //  Large particles, Diameter 5 µm ≤ 𝑑 ≤ 50 µm
+		gHG = exp(-0.0990567 / (d - 1.67154));
+		gD 	= exp(-2.20679 / (d + 3.91029) - 0.428934);
+		a 	= exp(3.62489 - 8.29288 / (d + 5.52825));
+		wD 	= exp(-0.599085 / (d - 0.641583) - 0.665888);
+	}
+
+	return mix(HenyeyGreensteinPhase(mu, gHG), DrainePhase(mu, gD, a), wD);
 }
 
 // Klein-Nishina phase function
@@ -238,15 +264,15 @@ vec2 RaySphericalShellIntersection(in float r, in float mu, in float bottomRad, 
 
 //================================================================================================//
 
-const float scale = oms(4.0 / skyViewRes.x);
-const float offset = 2.0 / float(skyViewRes.x);
+#define UnitToSubUv(uv, res) (uv + 0.5 / res) * (res / (res + 1.0))
+#define SubToUnitUv(uv, res) (uv - 0.5 / res) * (res / (res - 1.0))
 
 // Reference: https://sebh.github.io/publications/egsr2020.pdf
 vec3 ToSkyViewLutParams(in vec2 coord) {
 	coord.y *= 2.0;
 
-	// From unit range
-	coord.x = fract((coord.x - offset) * rcp(scale));
+	// To unit UV
+	coord = SubToUnitUv(coord, vec2(skyViewRes));
 
 	// Non-linear mapping of the altitude angle
 	coord.y = coord.y < 0.5 ? -sqr(1.0 - 2.0 * coord.y) : sqr(2.0 * coord.y - 1.0);
@@ -274,10 +300,10 @@ vec2 FromSkyViewLutParams(in vec3 direction) {
 	coord.x = (azimuthAngle + PI) * rTAU;
 
 	// Non-linear mapping of the altitude angle
-	coord.y = 0.5 + 0.5 * fastSign(altitudeAngle) * sqrt(2.0 * rPI * abs(altitudeAngle));
+	coord.y = fastSign(altitudeAngle) * sqrt(2.0 * rPI * abs(altitudeAngle)) * 0.5 + 0.5;
 
-	// To unit range
-	coord.x = coord.x * scale + offset;
+	// To sub UV
+	coord = UnitToSubUv(coord, vec2(skyViewRes));
 
 	return saturate(coord * vec2(1.0, 0.5));
 }

@@ -83,7 +83,7 @@ void main() {
 	vec3 viewPos = ScreenToViewSpace(screenPos);
 
 	#if defined DISTANT_HORIZONS
-		bool dhTerrainMask = screenPos.z > 0.999999;
+		bool dhTerrainMask = screenPos.z > 1.0 - EPS;
 		if (dhTerrainMask) {
 			screenPos.z = loadDepth0DH(screenTexel);
 			viewPos = ScreenToViewSpaceDH(screenPos);
@@ -99,11 +99,11 @@ void main() {
 	vec3 albedoRaw = loadAlbedo(screenTexel);
 	vec3 albedo = sRGBtoLinear(albedoRaw);
 
-	float dither = BlueNoiseTemporal(screenTexel);
+	float dither = InterleavedGradientNoiseTemporal(gl_FragCoord.xy);
 
 	sceneOut = vec3(0.0);
 
-	if (screenPos.z > 0.999999 + float(materialID)) {
+	if (screenPos.z > 1.0 - EPS + float(materialID)) {
 		vec2 skyViewCoord = FromSkyViewLutParams(worldDir);
 		sceneOut = textureBicubic(colortex5, skyViewCoord).rgb;
 
@@ -170,7 +170,7 @@ void main() {
 			// Hard-coded sss amount for certain materials
 			switch (materialID) {
 				case 9u: case 10u: case 11u: case 12u: case 27u: case 28u: // Plants
-					sssAmount = 0.5;
+					sssAmount = 0.6;
 					break;
 				case 13u: // Leaves
 					sssAmount = 0.85;
@@ -197,25 +197,16 @@ void main() {
 		#if AO_ENABLED > 0 && !defined SSPT_ENABLED
 			vec3 ao = vec3(1.0);
 			if (screenPos.z > 0.56) {
-			#if defined DISTANT_HORIZONS
-				if (dhTerrainMask) {
-				#if AO_ENABLED == 1
-					ao.x = CalculateSSAODH(screenCoord, viewPos, viewNormal, dither);
-				#else
-					ao.x = CalculateGTAODH(screenCoord, viewPos, viewNormal, dither);
-				#endif
-				} else
-			#endif
-				{
 				#if AO_ENABLED == 1
 					ao.x = CalculateSSAO(screenCoord, viewPos, viewNormal, dither);
 				#else
 					ao.x = CalculateGTAO(screenCoord, viewPos, viewNormal, dither);
 				#endif
-				}
 
 				#ifdef AO_MULTI_BOUNCE
 					ao = ApproxMultiBounce(ao.x, albedo);
+				#else
+					ao = vec3(ao.x);
 				#endif
 			}
 		#else
@@ -290,12 +281,7 @@ void main() {
 						#define viewFlatNormal viewNormal
 					#endif
 
-				#if defined DISTANT_HORIZONS
-					if (dhTerrainMask)
-						shadow *= materialID == 39u ? 1.0 : ScreenSpaceShadowDH(viewPos, screenPos, viewFlatNormal, dither, sssAmount);
-					else
-				#endif
-						shadow *= materialID == 39u ? 1.0 : ScreenSpaceShadow(viewPos, screenPos, viewFlatNormal, dither, sssAmount);
+					shadow *= materialID == 39u ? 1.0 : ScreenSpaceShadow(viewPos, viewFlatNormal, dither, sssAmount);
 				#endif
 
 				// Apply parallax shadows

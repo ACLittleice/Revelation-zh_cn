@@ -92,14 +92,14 @@ vec3 fastRefract(in vec3 dir, in vec3 normal, in float eta) {
 #include "/lib/water/WaterWave.glsl"
 
 #ifdef WATER_CAUSTICS_DISPERSION
-vec3 CalculateWaterCaustics(in vec3 worldPos, in vec3[3] lightVector, in float dither) {
+vec3 CalculateWaterCaustics(in vec3 worldPos, in vec3[3] lightVector, in float dist, in vec2 dither) {
 	vec3 caustics = vec3(0.0);
 	worldPos.xz -= worldPos.y;
 
 	vec2[3] waveCoord;
-	waveCoord[0] = worldPos.xz - lightVector[0].xz / lightVector[0].y;
-	waveCoord[1] = worldPos.xz - lightVector[1].xz / lightVector[1].y;
-	waveCoord[2] = worldPos.xz - lightVector[2].xz / lightVector[2].y;
+	waveCoord[0] = worldPos.xz + lightVector[0].xz / lightVector[0].y;
+	waveCoord[1] = worldPos.xz + lightVector[1].xz / lightVector[1].y;
+	waveCoord[2] = worldPos.xz + lightVector[2].xz / lightVector[2].y;
 
 	for (uint i = 0u; i < 9u; ++i) {
 		vec2 offset = (offset3x3[i] + dither) * 0.1;
@@ -108,16 +108,16 @@ vec3 CalculateWaterCaustics(in vec3 worldPos, in vec3[3] lightVector, in float d
 			vec2 waveCoord = waveCoord[j] + offset;
 			vec2 waveNormal = CalculateWaterNormal(waveCoord).xy;
 
-			caustics[j] += exp2(-sdot(offset - waveNormal) * 512.0);
+			caustics[j] += exp2(-sdot(offset - waveNormal * dist) * 512.0);
 		}
 	}
 
 	return sqr(caustics);
 }
 #else
-float CalculateWaterCaustics(in vec3 worldPos, in vec3 lightVector, in float dither) {
+float CalculateWaterCaustics(in vec3 worldPos, in vec3 lightVector, in float dist, in vec2 dither) {
 	float caustics = 0.0;
-	worldPos.xz -= worldPos.y + lightVector.xz / lightVector.y;
+	worldPos.xz += lightVector.xz / lightVector.y - worldPos.y;
 
 	for (uint i = 0u; i < 9u; ++i) {
 		vec2 offset = (offset3x3[i] + dither) * 0.1;
@@ -125,7 +125,7 @@ float CalculateWaterCaustics(in vec3 worldPos, in vec3 lightVector, in float dit
 		vec2 waveCoord = worldPos.xz + offset;
 		vec2 waveNormal = CalculateWaterNormal(waveCoord).xy;
 
-		caustics += exp2(-sdot(offset - waveNormal) * 512.0);
+		caustics += exp2(-sdot(offset - waveNormal * dist) * 512.0);
 	}
 
 	return sqr(caustics);
@@ -165,7 +165,7 @@ vec3 PercentageCloserFilter(in vec3 shadowScreenPos, in vec3 worldPos, in float 
 	result *= rSteps;
 
 	#ifdef WATER_CAUSTICS
-		if (causticWeight > 1e-6) {
+		if (causticWeight > EPS) {
 			causticWeight *= rSteps;
 			// float causticAltitude = abs(causticWeight.y * 512.0 - 128.0 - worldPos.y - eyeAltitude);
 			worldPos += cameraPosition;
@@ -175,10 +175,10 @@ vec3 PercentageCloserFilter(in vec3 shadowScreenPos, in vec3 worldPos, in float 
 				lightVector[0] = fastRefract(worldLightVector, vec3(0.0, 1.0, 0.0), 1.0 / (WATER_REFRACT_IOR - 0.025));
 				lightVector[1] = fastRefract(worldLightVector, vec3(0.0, 1.0, 0.0), 1.0 / WATER_REFRACT_IOR);
 				lightVector[2] = fastRefract(worldLightVector, vec3(0.0, 1.0, 0.0), 1.0 / (WATER_REFRACT_IOR + 0.025));
-				vec3 caustics = CalculateWaterCaustics(worldPos, lightVector, dither - 0.5);
+				vec3 caustics = CalculateWaterCaustics(worldPos, lightVector, penumbraScale * 8.0, R2(dither) - 0.5);
 			#else
 				vec3 lightVector = fastRefract(worldLightVector, vec3(0.0, 1.0, 0.0), 1.0 / WATER_REFRACT_IOR);
-				float caustics = CalculateWaterCaustics(worldPos, lightVector, dither - 0.5);
+				float caustics = CalculateWaterCaustics(worldPos, lightVector, penumbraScale * 8.0, R2(dither) - 0.5);
 			#endif
 			result += causticWeight * (caustics - result);
 		}
@@ -189,84 +189,43 @@ vec3 PercentageCloserFilter(in vec3 shadowScreenPos, in vec3 worldPos, in float 
 
 //================================================================================================//
 
-float ScreenSpaceShadow(in vec3 viewPos, in vec3 rayPos, in vec3 viewNormal, in float dither, in float sssAmount) {
-	const float stepSize = 48.0 / float(SCREEN_SPACE_SHADOWS_SAMPLES);
-
+float ScreenSpaceShadow(in vec3 viewPos, in vec3 viewNormal, in float dither, in float sssAmount) {
 	float viewDist = length(viewPos);
 	float NdotL = dot(viewLightVector, viewNormal);
-	viewPos += viewDist * 3e-4 / maxEps(sqr(NdotL)) * viewNormal;
+	viewPos += viewDist * maxOf(viewPixelSize) / max(sqr(NdotL), 0.05) * 0.25 * viewNormal;
 
-    float absorption = approxExp(-approxSqrt(viewDist)) * sssAmount;
+    float absorption = exp2(-0.25 * approxSqrt(viewDist) / sssAmount);
 
-	float shadow = 1.0;
+	vec3 rayDir = viewLightVector * -viewPos.z * (0.1 / float(SCREEN_SPACE_SHADOWS_SAMPLES)) * oms(sssAmount * 0.75);
+	rayDir = vec3(diagonal2(gbufferProjection) * rayDir.xy * 0.5, -rayDir.z);
 
-	vec3 endPos = ViewToScreenSpace(viewLightVector * -viewPos.z + viewPos);
-	vec3 rayStep = normalize(endPos - rayPos);
-	rayStep *= minOf((step(0.0, rayStep) - rayPos) / rayStep);
+	vec3 rayPos = vec3((diagonal2(gbufferProjection) * viewPos.xy + gbufferProjection[3].xy) * 0.5, -viewPos.z);
+	rayPos += dither * rayDir;
 
-	rayPos.xy *= viewSize;
-	rayStep.xy *= viewSize;
-	rayStep *= stepSize / maxOf(abs(rayStep.xy));
+	float diffTolerance = 2e-2 + 1e-2 * viewDist;
+	float result = 1.0;
 
-	rayPos += rayStep * (dither + 1.0 - sssAmount);
+	for (uint i = 0u; i < SCREEN_SPACE_SHADOWS_SAMPLES; ++i, rayPos += rayDir) {
+		vec2 sampleCoord = rayPos.xy / rayPos.z + taaOffset * 0.5;
+		if (any(greaterThan(abs(sampleCoord), vec2(0.5))) || result < 1e-2) break;
 
-	float diffTolerance = 0.03 * (sssAmount - viewPos.z);
+		ivec2 sampleTexel = uvToTexel(sampleCoord + 0.5);
+		float sampleDepth = loadDepth0(sampleTexel);
 
-	for (uint i = 0u; i < SCREEN_SPACE_SHADOWS_SAMPLES; ++i, rayPos += rayStep) {
-		if (rayPos.z < 0.0 || rayPos.z >= 1.0) break;
-		if (clamp(rayPos.xy, vec2(0.0), viewSize) != rayPos.xy) break;
+		#if defined DISTANT_HORIZONS
+			float difference;
+			if (sampleDepth > 1.0 - EPS) {
+				sampleDepth = loadDepth0DH(sampleTexel);
+				difference = ScreenToViewDepthDH(sampleDepth) + rayPos.z;
+			} else {
+				difference = ScreenToViewDepth(sampleDepth) + rayPos.z;
+			}
+		#else
+			float difference = ScreenToViewDepth(sampleDepth) + rayPos.z;
+		#endif
 
-		float sampleDepth = loadDepth0(ivec2(rayPos.xy));
-
-		float difference = ScreenToViewDepth(sampleDepth);
-		difference -= ScreenToViewDepth(rayPos.z);
-
-		if (clamp(difference, 0.0, diffTolerance) == difference) shadow *= absorption;
- 
-		if (shadow < 1e-3) break;
+		if (clamp(difference, 0.0, diffTolerance) == difference) result *= absorption;
 	}
 
-	return shadow;
+	return result;
 }
-
-#if defined DISTANT_HORIZONS
-float ScreenSpaceShadowDH(in vec3 viewPos, in vec3 rayPos, in vec3 viewNormal, in float dither, in float sssAmount) {
-	const float stepSize = 48.0 / float(SCREEN_SPACE_SHADOWS_SAMPLES);
-
-	float viewDist = length(viewPos);
-	float NdotL = dot(viewLightVector, viewNormal);
-	viewPos += viewDist * 3e-4 / maxEps(sqr(NdotL)) * viewNormal;
-
-    float absorption = approxExp(-approxSqrt(viewDist)) * sssAmount;
-
-	float shadow = 1.0;
-
-	vec3 endPos = ViewToScreenSpaceDH(viewLightVector * -viewPos.z + viewPos);
-	vec3 rayStep = normalize(endPos - rayPos);
-	rayStep *= minOf((step(0.0, rayStep) - rayPos) / rayStep);
-
-	rayPos.xy *= viewSize;
-	rayStep.xy *= viewSize;
-	rayStep *= stepSize / maxOf(abs(rayStep.xy));
-
-	rayPos += rayStep * (dither + 1.0 - sssAmount);
-
-	float diffTolerance = 0.03 * (sssAmount - viewPos.z);
-
-	for (uint i = 0u; i < SCREEN_SPACE_SHADOWS_SAMPLES; ++i, rayPos += rayStep) {
-		if (rayPos.z < 0.0 || rayPos.z >= 1.0) break;
-		if (clamp(rayPos.xy, vec2(0.0), viewSize) != rayPos.xy) break;
-
-		float sampleDepth = loadDepth0DH(ivec2(rayPos.xy));
-
-		float difference = ScreenToViewDepthDH(sampleDepth);
-		difference -= ScreenToViewDepthDH(rayPos.z);
-
-		if (clamp(difference, 0.0, diffTolerance) == difference) shadow *= absorption;
-
-		if (shadow < 1e-3) break;
-	}
-
-	return shadow;
-}
-#endif
