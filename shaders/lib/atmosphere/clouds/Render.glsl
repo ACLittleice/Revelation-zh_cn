@@ -303,7 +303,7 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 						float scatteringSky = exp2(max(opticalDepthSky, opticalDepthSky * 0.25 - 0.5));
 					#else
 						// Nubis Ambient Scattering Approximation
-						float scatteringSky = approxSqrt(1.0 - dimensionalProfile) * saturate(heightFraction * 2.0);
+						float scatteringSky = approxSqrt(1.0 - dimensionalProfile);
 					#endif
 
 					// Estimate the light optical depth of the ground from the cloud volume
