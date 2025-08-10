@@ -206,7 +206,7 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 	vec2 cloudMap = texture(cloudMapTex, rayPos.xz * rcp(cloudMapCovDist)).xy;
 
 	// Coveage profile
-	float coverage = cloudMap.x * (2.0 * CLOUD_CU_COVERAGE);
+	float coverage = cloudMap.x * (4.0 * CLOUD_CU_COVERAGE);
 	coverage = saturate(coverage + wetness * 0.5);
 	// coverage = pow(coverage, remap(heightFraction, 0.7, 0.8, 1.0, 1.0 - 0.5 * anvilBias));
 	if (coverage < 1e-2) return 0.0;
@@ -249,7 +249,7 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 
 	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
 
-	float densityProfile = saturate(heightFraction * 2.0 + 0.125);
+	float densityProfile = saturate(heightFraction * 2.0);
 	return pow(cloudDensity, 0.75 - heightFraction * 0.25) * densityProfile;
 }
 
@@ -271,7 +271,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	vec2 cloudMap = texture(cloudMapTex, rayPos.xz * rcp(cloudMapCovDist)).xy;
 
 	// Coveage profile
-	float coverage = cloudMap.x * (2.0 * CLOUD_CU_COVERAGE);
+	float coverage = cloudMap.x * (4.0 * CLOUD_CU_COVERAGE);
 	coverage = saturate(coverage + wetness * 0.5);
 	// coverage = pow(coverage, remap(heightFraction, 0.7, 0.8, 1.0, 1.0 - 0.5 * anvilBias));
 	if (coverage < 1e-2) return 0.0;
@@ -312,7 +312,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 
 	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
 
-	float densityProfile = saturate(heightFraction * 2.0 + 0.125);
+	float densityProfile = saturate(heightFraction * 2.0);
 	return pow(cloudDensity, 0.75 - heightFraction * 0.25) * densityProfile;
 }
 
