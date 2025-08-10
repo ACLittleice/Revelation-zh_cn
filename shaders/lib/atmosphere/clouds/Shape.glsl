@@ -167,25 +167,21 @@ float CloudHighDensity(in vec2 rayPos) {
 
 //================================================================================================//
 
-#if 1
-float GetVerticalProfile(in float heightFraction, in float cloudType) {
-	return texture(verticalLut, vec2(cloudType, heightFraction)).x;
-}
+#if 0
+	float GetVerticalProfile(in float heightFraction, in float cloudType) {
+		return texture(verticalLut, vec2(cloudType, heightFraction)).x;
+	}
 #else
+	// Adapted from https://github.com/iamlivehaha/Project-VolumetricCloudRendering
+	float GetVerticalProfile(in float relativeHeight, in float cloudType) {
+		float stratus = saturate(relativeHeight * 10.0) * remap(0.25, 0.1, relativeHeight);
+		float cumulus = saturate(relativeHeight * 6.0) * remap(0.85, 0.25, relativeHeight);
+		float altocumulus = saturate(relativeHeight * 8.0) * remap(2.0, 0.75, relativeHeight);
 
-// Adapted from https://github.com/iamlivehaha/Project-VolumetricCloudRendering
-// Get the blended density gradient for 3 different cloud types
-// relativeHeight is normalized distance from inner to outer atmosphere shell
-// cloudType is read from cloud placement blue channel
-float GetVerticalProfile(in float relativeHeight, in float cloudType) {
-    float altocumulus = remap(0.01, 0.3, relativeHeight) * remap(0.95, 0.6, relativeHeight);
-    float cumulus = saturate(relativeHeight * 4.0) * remap(0.65, 0.3, relativeHeight);
-    float stratus = saturate(relativeHeight * 10.0) * remap(0.3, 0.2, relativeHeight);
-
-    float stratocumulus = mix(stratus, cumulus, saturate(cloudType * 2.0));
-    float cumulonimbus = mix(cumulus, altocumulus, saturate(cloudType * 2.0 - 1.0));
-    return mix(stratocumulus, cumulonimbus, cloudType);
-}
+		float verticalProfile = mix(stratus, cumulus, saturate(cloudType * 2.0));
+		verticalProfile = mix(verticalProfile, altocumulus, saturate(cloudType * 2.0 - 1.0));
+		return verticalProfile;
+	}
 #endif
 
 float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
@@ -223,10 +219,6 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 
 	// Perlin-worley + fBm worley noise for base shape
 	float baseNoise = texture(baseNoiseTex, position).x;
-
-	// coverage += 0.3 - remap(0.25, 1.0, heightFraction / cloudType) * 0.25;
-	// float cloudDensity = 2.0 * saturate(baseNoise + coverage - 1.0);
-	// cloudDensity *= saturate(heightFraction * 6.0);
 
 	// Detail shape
 	float detailNoise = 0.5;
@@ -288,10 +280,6 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 
 	// Perlin-worley + fBm worley noise for base shape
 	float baseNoise = texture(baseNoiseTex, position).x;
-
-	// coverage += 0.3 - remap(0.25, 1.0, heightFraction / cloudType) * 0.25;
-	// float cloudDensity = 2.0 * saturate(baseNoise + coverage - 1.0);
-	// cloudDensity *= saturate(heightFraction * 6.0);
 
 	// Detail shape
 	float detailNoise = 0.5;
