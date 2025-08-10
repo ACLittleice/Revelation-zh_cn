@@ -101,8 +101,7 @@ void main() {
 
 	uint materialID = gbufferData0.y;
 
-	vec3 albedoRaw = loadAlbedo(screenTexel);
-	vec3 albedo = sRGBtoLinear(albedoRaw);
+	vec3 albedo = sRGBtoLinear(loadAlbedo(screenTexel));
 
 	float dither = InterleavedGradientNoiseTemporal(gl_FragCoord.xy);
 
@@ -361,18 +360,18 @@ void main() {
 		#endif
 		#if EMISSIVE_MODE < 2
 			// Hard-coded emissive
-			vec4 emissive = HardCodeEmissive(materialID, albedo, albedoRaw, worldPos, blocklightColor);
+			vec4 emissive = HardCodeEmissive(materialID, albedo, worldPos, blocklightColor);
 			#ifndef SSPT_ENABLED
 				if (emissive.a * lightmap.x > 1e-5) {
 					lightmap.x = CalculateBlocklightFalloff(lightmap.x);
-					sceneOut += lightmap.x * (ao * oms(lightmap.x) + lightmap.x) * blocklightColor * emissive.a;
+					sceneOut += lightmap.x * emissive.a * 2.0 * (ao * oms(lightmap.x) + lightmap.x) * blocklightColor;
 				}
 			#endif
 
 			sceneOut += emissive.rgb * EMISSIVE_BRIGHTNESS;
 		#elif !defined SSPT_ENABLED
 			lightmap.x = CalculateBlocklightFalloff(lightmap.x);
-			sceneOut += lightmap.x * (ao * oms(lightmap.x) + lightmap.x) * blocklightColor;
+			sceneOut += lightmap.x * 2.0 * (ao * oms(lightmap.x) + lightmap.x) * blocklightColor;
 		#endif
 
 		// Handheld light
