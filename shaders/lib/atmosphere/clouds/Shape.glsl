@@ -242,7 +242,7 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
 
 	float densityProfile = saturate(heightFraction * 2.0);
-	return pow(cloudDensity, 0.75 - heightFraction * 0.25) * densityProfile;
+	return approxSqrt(cloudDensity) * densityProfile;
 }
 
 float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dimensionalProfile) {
@@ -301,7 +301,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
 
 	float densityProfile = saturate(heightFraction * 2.0);
-	return pow(cloudDensity, 0.75 - heightFraction * 0.25) * densityProfile;
+	return approxSqrt(cloudDensity) * densityProfile;
 }
 
 #endif
