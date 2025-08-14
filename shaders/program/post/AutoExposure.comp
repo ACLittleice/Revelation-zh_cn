@@ -33,10 +33,14 @@ const ivec3 workGroups = ivec3(1, 1, 1);
 
 //======// Shared Memory //=======================================================================//
 
-#if defined MC_GL_VENDOR_NVIDIA
-    shared uint sharedBinIndex[gl_NumSubgroups];
+#ifdef SUBGROUP_OPS
+    #if defined MC_GL_VENDOR_NVIDIA
+        shared uint sharedBinIndex[gl_NumSubgroups];
+    #else
+        shared uint sharedBinIndex[16];
+    #endif
 #else
-    shared uint sharedBinIndex[64];
+    shared uint sharedBinIndex[HISTOGRAM_BIN_COUNT];
 #endif
 
 //======// Function //============================================================================//
@@ -52,19 +56,36 @@ float histogramBinToLum(in float bin) {
 void main() {
 	uint index = gl_LocalInvocationIndex;
 
-	// Sum histogram bin index
     uint count = global.exposure.histogram[index];
-    uint subgroupSum = subgroupAdd(count * index);
 
-	SCALARIZED_LOAD(sharedBinIndex[gl_SubgroupID], subgroupSum)
-    barrier();
+    // Sum histogram bin index
+    #ifdef SUBGROUP_OPS
+        uint subgroupSum = subgroupAdd(count * index);
 
-    if (index < gl_NumSubgroups) {
-        subgroupSum = subgroupAdd(sharedBinIndex[index]);
-    }
+        SCALARIZED_LOAD(sharedBinIndex[gl_SubgroupID], subgroupSum);
+        barrier();
+
+        if (index < gl_NumSubgroups) {
+            subgroupSum = subgroupAdd(sharedBinIndex[index]);
+        }
+
+        uint sum = subgroupSum;
+    #else
+        sharedBinIndex[index] = count * index;
+        barrier();
+
+        for (uint stride = HISTOGRAM_BIN_COUNT >> 1u; stride > 0u; stride >>= 1u) {
+            if (index < stride) {
+                sharedBinIndex[index] += sharedBinIndex[index + stride];
+            }
+            barrier();
+        }
+
+        uint sum = sharedBinIndex[0];
+    #endif
 
     if (index == 0u) {
-        float weightedLogAverage = float(subgroupSum) / max(viewWidth * viewHeight * 0.25 - float(count), 1.0);
+        float weightedLogAverage = float(sum) / max(viewWidth * viewHeight * 0.25 - float(count), 1.0);
 		float avgLuminance = histogramBinToLum(weightedLogAverage);
 
         const float K = 18.0; // Calibration constant
