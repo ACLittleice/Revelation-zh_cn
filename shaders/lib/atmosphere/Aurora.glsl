@@ -64,7 +64,7 @@ vec4 aurora(in vec3 ro, in vec3 rd) {
     vec4 col = vec4(0.0);
     vec4 avgCol = vec4(0.0);
 
-    float hash = 0.006 * hash21(gl_FragCoord.xy);
+    float hash = 0.006 * hash21(vec2(gl_GlobalInvocationID.xy));
     float rf = 1.0 / (rd.y * 2.0 + 0.4);
 
     for (float i = 0.0; i < 36.0; ++i) {
