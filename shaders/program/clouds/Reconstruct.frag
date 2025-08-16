@@ -219,20 +219,15 @@ void main() {
 		if (disocclusion) {
 			cloudOut = texture(cloudOriginTex, currCoord);
 		} else {
-			vec4 prevData = textureCatmullRomFast(cloudReconstructTex, prevCoord, 0.5);
-			// vec4 prevData = textureSmoothFilter(cloudReconstructTex, prevCoord);
+			vec4 prevData = textureCatmullRomFast(cloudReconstructTex, prevCoord, 0.6);
 			prevData = satU16f(prevData); // Fix black border artifacts
-			frameOut += frameIndex;
+			frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
 
 			ivec2 currTexel = clamp(screenTexel / CLOUD_CBR_SCALE, ivec2(0), ivec2(viewSize) / CLOUD_CBR_SCALE - 1);
 			vec4 currData = texelFetch(cloudOriginTex, currTexel, 0);
 
-			// Variance clip
-			#ifdef CLOUD_VARIANCE_CLIP
-			float velocityWeight = sqr(cameraVelocity * rcp(frameTime));
-			velocityWeight /= 1.0 + velocityWeight;
-
-			if (velocityWeight > 0.125) {
+			// Ellipsoid intersection clipping
+			#ifdef CLOUD_EI_CLIP
 				vec4 sample1 = currentLoad(ivec2(-1,  1));
 				vec4 sample2 = currentLoad(ivec2( 0,  1));
 				vec4 sample3 = currentLoad(ivec2( 1,  1));
@@ -245,32 +240,22 @@ void main() {
 				vec4 clipAvg = mean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
 				vec4 clipAvg2 = sqrMean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
 
-				vec4 variance = sqrt(abs(clipAvg2 - clipAvg * clipAvg)) * 2.0;
-				vec4 clipMin = clipAvg - variance;
-				vec4 clipMax = clipAvg + variance;
+				vec4 clipStdDev = sqrt(max(clipAvg2 - clipAvg * clipAvg, 1e-3)) * 4.0;
+				vec4 clipDelta = prevData - clipAvg;
+				clipDelta *= saturate(inversesqrt(sdot(clipDelta / clipStdDev)));
 
-				prevData = mix(prevData, clamp(prevData, clipMin, clipMax), velocityWeight);
-			}
+				prevData = clipDelta + clipAvg;
 			#endif
 
 			// Checkerboard upscaling
 			ivec2 offset = cloudCbrOffset[frameCounter % cloudRenderArea];
 			if (screenTexel % CLOUD_CBR_SCALE == offset) {
 				// Accumulate enough frame for checkerboard pattern
-				float blendWeight = 1.0 - rcp(max(float(min(frameOut, CLOUD_MAX_ACCUM_FRAMES)) - cloudRenderArea, 1.0));
-
-				// Offcenter rejection
-				vec2 pixelCenterDist = 1.0 - abs(fract(prevCoord * viewSize) * 2.0 - 1.0);
-				blendWeight *= sqrt(pixelCenterDist.x * pixelCenterDist.y) * 0.5 + 0.5;
-
-				#ifndef CLOUD_VARIANCE_CLIP
-					// Camera movement rejection
-					blendWeight *= exp2(-cameraVelocity * (0.125 / frameTime)) * 0.75 + 0.25;
-				#endif
-
-				// Blend with current frame
-				cloudOut = mix(currData, prevData, saturate(blendWeight));
-			} else cloudOut = prevData;
+				float alpha = 1.0 - rcp(float(max(frameOut - cloudRenderArea, 1)));
+				cloudOut = mix(currData, prevData, alpha);
+			} else {
+				cloudOut = prevData;
+			}
 		}
 	}
 }
