@@ -66,22 +66,21 @@ vec3 ScreenToViewVectorRaw(in vec2 screenCoord) {
 }
 
 #ifdef SUBGROUP_OPS
-float clusteredMax(float value, uint clusterSize) {
-	return subgroupClusteredMax(value, clusterSize);
-}
+	#define clusteredMax subgroupClusteredMax
 #else
-shared float sharedClusteredMax[256];
-float clusteredMax(float value, uint clusterSize) {
-	sharedClusteredMax[gl_LocalInvocationIndex] = value;
-	barrier();
-	for (uint stride = 1; stride < clusterSize; stride <<= 1) {
-		if (gl_LocalInvocationIndex < 256 / stride) {
-			sharedClusteredMax[gl_LocalInvocationIndex] = max(sharedClusteredMax[gl_LocalInvocationIndex], sharedClusteredMax[gl_LocalInvocationIndex + stride]);
-		}
+	shared float sharedClusteredMax[256];
+
+	float clusteredMax(in float value, in uint clusterSize) {
+		sharedClusteredMax[gl_LocalInvocationIndex] = value;
 		barrier();
+		for (uint stride = 1; stride < clusterSize; stride <<= 1) {
+			if (gl_LocalInvocationIndex < 256 / stride) {
+				sharedClusteredMax[gl_LocalInvocationIndex] = max(sharedClusteredMax[gl_LocalInvocationIndex], sharedClusteredMax[gl_LocalInvocationIndex + stride]);
+			}
+			barrier();
+		}
+		return sharedClusteredMax[gl_LocalInvocationIndex & ~(clusterSize - 1)];
 	}
-	return sharedClusteredMax[gl_LocalInvocationIndex & ~(clusterSize - 1)];
-}
 #endif
 
 //======// Main //================================================================================//

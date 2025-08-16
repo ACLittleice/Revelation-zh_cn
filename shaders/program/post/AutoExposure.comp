@@ -69,7 +69,7 @@ void main() {
             subgroupSum = subgroupAdd(sharedBinIndex[index]);
         }
 
-        uint sum = subgroupSum;
+        #define sum subgroupSum
     #else
         sharedBinIndex[index] = count * index;
         barrier();
@@ -81,7 +81,7 @@ void main() {
             barrier();
         }
 
-        uint sum = sharedBinIndex[0];
+        #define sum sharedBinIndex[0]
     #endif
 
     if (index == 0u) {
