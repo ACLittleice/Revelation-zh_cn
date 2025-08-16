@@ -98,7 +98,7 @@ const float cloudMsFalloffA 	    = CLOUD_MS_FALLOFF_S;
 const float cloudMsFalloffB 	    = CLOUD_MS_FALLOFF_E;
 const float cloudMsFalloffC 	    = CLOUD_MS_FALLOFF_P;
 
-const float cloudMapCovDist 		= 256e3; // m
+const float cloudMapCovDist 		= 192e3; // m
 
 // TODO: Provide adjustable options for these parameters
 const float cloudForwardG 		    = 0.7;
