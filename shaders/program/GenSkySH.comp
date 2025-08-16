@@ -32,10 +32,14 @@ const ivec3 workGroups = ivec3(1, 1, 1);
 
 //======// Shared Memory //=======================================================================//
 
-#if defined MC_GL_VENDOR_NVIDIA
-	shared vec3[4] sharedSkySH[gl_NumSubgroups];
+#ifdef SUBGROUP_OPS
+	#if defined MC_GL_VENDOR_NVIDIA
+		shared vec3[4] sharedSkySH[gl_NumSubgroups];
+	#else
+		shared vec3[4] sharedSkySH[8];
+	#endif
 #else
-	shared vec3[4] sharedSkySH[64];
+	shared vec3[4] sharedSkySH[128];
 #endif
 
 //======// Function //============================================================================//
@@ -78,18 +82,30 @@ void main() {
 
 	vec3[4] shCoeff = ToSphericalHarmonics(skyRadiance, direction);
 
-	// Reduce SH coefficients in subgroup
-	for (uint band = 0u; band < 4u; ++band) {
-		shCoeff[band] = subgroupAdd(shCoeff[band]);
-		SCALARIZED_LOAD(sharedSkySH[gl_SubgroupID][band], shCoeff[band])
-	}
-    barrier();
-
-    if (index < gl_NumSubgroups) {
+	#ifdef SUBGROUP_OPS
+		// Reduce SH coefficients in subgroup
 		for (uint band = 0u; band < 4u; ++band) {
-			shCoeff[band] = subgroupAdd(sharedSkySH[index][band]);
+			shCoeff[band] = subgroupAdd(shCoeff[band]);
+			SCALARIZED_LOAD(sharedSkySH[gl_SubgroupID][band], shCoeff[band]);
 		}
-    }
+		barrier();
+
+		if (index < gl_NumSubgroups) {
+			for (uint band = 0u; band < 4u; ++band) {
+				shCoeff[band] = subgroupAdd(sharedSkySH[index][band]);
+			}
+		}
+		barrier();
+	#else
+		// Reduce SH coefficients in shared memory
+		for (uint band = 0u; band < 4u; ++band) {
+			sharedSkySH[index][band] = shCoeff[band];
+		}
+		barrier();
+
+		ParallelReduceSum(index, samples);
+		shCoeff = sharedSkySH[0];
+	#endif
 
 	// Store SH coefficients in thread 0
 	if (index == 0u) {

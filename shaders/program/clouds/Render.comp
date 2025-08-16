@@ -65,6 +65,25 @@ vec3 ScreenToViewVectorRaw(in vec2 screenCoord) {
 	return normalize(vec3(diagonal2(gbufferProjectionInverse) * NDCCoord, gbufferProjectionInverse[3].z));
 }
 
+#ifdef SUBGROUP_OPS
+float clusteredMax(float value, uint clusterSize) {
+	return subgroupClusteredMax(value, clusterSize);
+}
+#else
+shared float sharedClusteredMax[256];
+float clusteredMax(float value, uint clusterSize) {
+	sharedClusteredMax[gl_LocalInvocationIndex] = value;
+	barrier();
+	for (uint stride = 1; stride < clusterSize; stride <<= 1) {
+		if (gl_LocalInvocationIndex < 256 / stride) {
+			sharedClusteredMax[gl_LocalInvocationIndex] = max(sharedClusteredMax[gl_LocalInvocationIndex], sharedClusteredMax[gl_LocalInvocationIndex + stride]);
+		}
+		barrier();
+	}
+	return sharedClusteredMax[gl_LocalInvocationIndex & ~(clusterSize - 1)];
+}
+#endif
+
 //======// Main //================================================================================//
 void main() {
     ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
@@ -85,7 +104,7 @@ void main() {
 	#endif
 
 	#ifdef CLOUD_CBR_ENABLED
-		depthMax = subgroupClusteredMax(depthMax, cloudRenderArea);
+		depthMax = clusteredMax(depthMax, cloudRenderArea);
 	#endif
 
 	if (depthMax > 1.0 - EPS) {
