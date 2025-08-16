@@ -16,6 +16,7 @@ uniform sampler2D colortex14;
 
 uniform sampler2D depthtex0;
 uniform sampler2D depthtex1;
+uniform sampler2D depthtex2;
 
 uniform int frameCounter;
 uniform int isEyeInWater;

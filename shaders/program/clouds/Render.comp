@@ -79,7 +79,7 @@ void main() {
 	vec4 cloudOut = vec4(0.0, 0.0, 0.0, 1.0);
 	float cloudDepth = 128e3;
 
-	float depthMax = loadDepth0(cloudTexel);
+	float depthMax = loadDepth2(cloudTexel);
 	#if defined DISTANT_HORIZONS
 		if (depthMax > 0.999999) depthMax = loadDepth0DH(cloudTexel);
 	#endif
@@ -88,7 +88,7 @@ void main() {
 		depthMax = subgroupClusteredMax(depthMax, cloudRenderArea);
 	#endif
 
-	if (depthMax > 1.0 - EPS || depthMax < 0.56) {
+	if (depthMax > 1.0 - EPS) {
 		float dither = BlueNoiseTemporal(cloudTexel);
 
 		vec3 viewDir  = ScreenToViewVectorRaw(cloudUv);

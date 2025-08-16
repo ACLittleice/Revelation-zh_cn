@@ -1,6 +1,7 @@
 
 #define loadDepth0(texel) 			texelFetch(depthtex0, texel, 0).x
 #define loadDepth1(texel) 			texelFetch(depthtex1, texel, 0).x
+#define loadDepth2(texel) 			texelFetch(depthtex2, texel, 0).x
 
 #define loadSceneColor(texel) 		texelFetch(colortex0, texel, 0).rgb
 

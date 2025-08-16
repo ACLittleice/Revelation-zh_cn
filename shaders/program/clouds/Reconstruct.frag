@@ -190,12 +190,12 @@ void main() {
 	frameOut = 0u;
 
     ivec2 screenTexel = ivec2(gl_FragCoord.xy);
-	float depth = loadDepth0(screenTexel);
+	float depth = loadDepth2(screenTexel);
 	#if defined DISTANT_HORIZONS
 		if (depth > 0.999999) depth = loadDepth0DH(screenTexel);
 	#endif
 
-	if (depth > 1.0 - EPS || depth < 0.56) {
+	if (depth > 1.0 - EPS) {
 		frameOut = 1u;
 
 		vec2 screenCoord = gl_FragCoord.xy * viewPixelSize;
