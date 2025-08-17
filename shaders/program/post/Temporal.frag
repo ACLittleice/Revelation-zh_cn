@@ -53,22 +53,6 @@ vec3 GetClosestFragment(in ivec2 texel, in float depth) {
     return closestFragment;
 }
 
-vec3 clipAABB(in vec3 boxMin, in vec3 boxMax, in vec3 prevSample) {
-    vec3 p_clip = 0.5 * (boxMax + boxMin);
-    vec3 e_clip = 0.5 * (boxMax - boxMin);
-
-    vec3 v_clip = prevSample - p_clip;
-    vec3 v_unit = v_clip / e_clip;
-    vec3 a_unit = abs(v_unit);
-    float ma_unit = maxOf(a_unit);
-
-    if (ma_unit > 1.0) {
-        return v_clip / ma_unit + p_clip;
-    } else {
-        return prevSample;
-    }
-}
-
 // Approximation from SMAA presentation from siggraph 2016
 vec4 textureCatmullRomFast(in sampler2D tex, in vec2 coord, in const float sharpness) {
     //vec2 viewSize = textureSize(sampler, 0);
@@ -108,64 +92,54 @@ vec4 textureCatmullRomFast(in sampler2D tex, in vec2 coord, in const float sharp
 
 #define currentLoad(offset) sRGBToYCoCg(texelFetchOffset(colortex0, texel, 0, offset).rgb)
 
-#define minOf(a, b, c, d, e, f, g, h, i) min(min(min(a, b), min(c, d)), min(min(e, f), min(min(g, h), i)))
-#define maxOf(a, b, c, d, e, f, g, h, i) max(max(max(a, b), max(c, d)), max(max(e, f), max(max(g, h), i)))
-
 #define mean(a, b, c, d, e, f, g, h, i) (a + b + c + d + e + f + g + h + i) * rcp(9.0)
 #define sqrMean(a, b, c, d, e, f, g, h, i) (a * a + b * b + c * c + d * d + e * e + f * f + g * g + h * h + i * i) * rcp(9.0)
 
 vec4 CalculateTAA(in vec2 screenCoord, in vec2 motionVector) {
     ivec2 texel = uvToTexel(screenCoord + taaOffset * 0.5);
 
-    vec3 currentSample = loadSceneColor(texel);
+    vec3 currData = loadSceneColor(texel);
     vec2 prevCoord = screenCoord - motionVector;
 
-    if (saturate(prevCoord) != prevCoord) return vec4(currentSample, 1.0);
-
-    vec3 sample0 = sRGBToYCoCg(currentSample);
-    vec3 sample1 = currentLoad(ivec2(-1,  1));
-    vec3 sample2 = currentLoad(ivec2( 0,  1));
-    vec3 sample3 = currentLoad(ivec2( 1,  1));
-    vec3 sample4 = currentLoad(ivec2(-1,  0));
-    vec3 sample5 = currentLoad(ivec2( 1,  0));
-    vec3 sample6 = currentLoad(ivec2(-1, -1));
-    vec3 sample7 = currentLoad(ivec2( 0, -1));
-    vec3 sample8 = currentLoad(ivec2( 1, -1));
-
-    vec3 clipMin = minOf(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
-    vec3 clipMax = maxOf(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
-
-    #ifdef TAA_VARIANCE_CLIPPING
-        // Variance clip
-        vec3 clipAvg = mean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
-        vec3 clipAvg2 = sqrMean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
-
-        vec3 variance = sqrt(abs(clipAvg2 - clipAvg * clipAvg)) * TAA_AGGRESSION;
-        clipMin = min(clipAvg - variance, clipMin);
-        clipMax = max(clipAvg + variance, clipMax);
-    #endif
+    if (saturate(prevCoord) != prevCoord) return vec4(currData, 1.0);
 
     #ifdef TAA_SHARPEN
-        vec3 prevSample = textureCatmullRomFast(colortex1, prevCoord, TAA_SHARPNESS).rgb;
+        vec3 prevData = textureCatmullRomFast(colortex1, prevCoord, TAA_SHARPNESS).rgb;
     #else
-        vec3 prevSample = texture(colortex1, prevCoord).rgb;
+        vec3 prevData = texture(colortex1, prevCoord).rgb;
     #endif
 
-    prevSample = sRGBToYCoCg(prevSample);
-    prevSample = clipAABB(clipMin, clipMax, prevSample);
-    prevSample = YCoCgToSRGB(prevSample);
+	// Ellipsoid intersection clipping
+    #ifdef TAA_EI_CLIP
+        vec3 sample0 = sRGBToYCoCg(currData);
+        vec3 sample1 = currentLoad(ivec2(-1,  1));
+        vec3 sample2 = currentLoad(ivec2( 0,  1));
+        vec3 sample3 = currentLoad(ivec2( 1,  1));
+        vec3 sample4 = currentLoad(ivec2(-1,  0));
+        vec3 sample5 = currentLoad(ivec2( 1,  0));
+        vec3 sample6 = currentLoad(ivec2(-1, -1));
+        vec3 sample7 = currentLoad(ivec2( 0, -1));
+        vec3 sample8 = currentLoad(ivec2( 1, -1));
+
+        vec3 clipAvg = mean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
+        vec3 clipAvg2 = sqrMean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
+        vec3 clipStdDev = sqrt(max(clipAvg2 - clipAvg * clipAvg, 1e-3)) * TAA_EI_AGGRESSION;
+
+        prevData = sRGBToYCoCg(prevData) - clipAvg;
+        prevData *= saturate(inversesqrt(sdot(prevData / clipStdDev)));
+        prevData = YCoCgToSRGB(prevData + clipAvg);
+    #endif
 
     float frameIndex = texture(colortex1, prevCoord).a;
 
     float blendWeight = clamp(++frameIndex, 1.0, TAA_MAX_ACCUM_FRAMES);
     blendWeight /= blendWeight + 1.0;
 
-    vec2 pixelCenterDist = 1.0 - abs(fract(prevCoord * viewSize) * 2.0 - 1.0);
-    float offcenterWeight = sqrt(pixelCenterDist.x * pixelCenterDist.y) * 0.25 + 0.75;
-    blendWeight *= offcenterWeight;
+    float pixelVelocity = length(motionVector * viewSize);
+    blendWeight *= exp2(-0.05 * (pixelVelocity + cameraVelocity));
 
-    currentSample = mix(reinhard(currentSample), reinhard(prevSample), blendWeight);
-    return vec4(invReinhard(currentSample), frameIndex);
+    currData = mix(reinhard(currData), reinhard(prevData), blendWeight);
+    return vec4(invReinhard(currData), frameIndex);
 }
 
 //======// Main //================================================================================//
