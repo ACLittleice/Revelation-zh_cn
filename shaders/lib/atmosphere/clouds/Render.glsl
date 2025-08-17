@@ -151,7 +151,7 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in flo
 		// float powder = 2.0 * oms(exp2(-(density * 32.0 + 0.1)));
 
 		// TODO: Better implementation
-		float inScatterProbability = oms(exp2(-density * 16.0 - 0.25));
+		float inScatterProbability = oms(exp2(-density * 16.0 - 0.25)) * hPI;
 
 		scatteringSun *= integral * inScatterProbability * cirrusAlbedo;
 		scatteringSky *= integral * cirrusAlbedo;
