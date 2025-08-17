@@ -90,7 +90,7 @@ vec3 RenderCloudMid(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in floa
 		// Approximate sunlight multi-scattering
 		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases);
 
-		float opticalDepthSky = density * (CLOUD_MID_THICKNESS * stratusExtinction * -rLOG2);
+		float opticalDepthSky = density * (CLOUD_MID_THICKNESS * 0.5 * stratusExtinction * -rLOG2);
 
 		// Compute skylight multi-scattering
 		// See slide 85 of [Schneider, 2017]
@@ -102,7 +102,7 @@ vec3 RenderCloudMid(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in floa
 		// float powder = 2.0 * oms(exp2(-(density * 32.0 + 0.1)));
 
 		// TODO: Better implementation
-		float inScatterProbability = oms(exp2(-(density * 16.0 + 0.25)));
+		float inScatterProbability = oms(exp2(-16.0 * density - 0.125)) * PI;
 
 		scatteringSun *= integral * inScatterProbability * stratusAlbedo;
 		scatteringSky *= integral * stratusAlbedo;
@@ -139,7 +139,7 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in flo
 		// Approximate sunlight multi-scattering
 		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases);
 
-		float opticalDepthSky = density * (CLOUD_HIGH_THICKNESS * cirrusExtinction * -rLOG2);
+		float opticalDepthSky = density * (CLOUD_HIGH_THICKNESS * 0.5 * cirrusExtinction * -rLOG2);
 
 		// Compute skylight multi-scattering
 		// See slide 85 of [Schneider, 2017]
@@ -151,7 +151,7 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in flo
 		// float powder = 2.0 * oms(exp2(-(density * 32.0 + 0.1)));
 
 		// TODO: Better implementation
-		float inScatterProbability = oms(exp2(-(density * 16.0 + 0.25)));
+		float inScatterProbability = oms(exp2(-density * 16.0 - 0.25));
 
 		scatteringSun *= integral * inScatterProbability * cirrusAlbedo;
 		scatteringSky *= integral * cirrusAlbedo;

@@ -73,26 +73,28 @@ float CloudMidDensity(in vec2 rayPos) {
 	rayPos -= windOffset;
 
 	float localCoverage = GetSmoothNoise(rayPos * 3e-5 + 32.0);
-	localCoverage += texture(noisetex, rayPos * 5e-6).z;
+	localCoverage += texture(noisetex, rayPos * 7e-6).z;
 
 	/* Altostratus clouds */ if (localCoverage > 0.25) {
 		// Curl noise to simulate wind, makes the positioning of the clouds more natural
-		vec2 curl = texture(noisetex, rayPos * 1e-5).xy * 2e-4;
+		vec2 curl = texture(noisetex, rayPos * 1e-5).xy * 1e-4;
 
 		vec2 position = (rayPos - windOffset * 0.5) * 1e-6 + curl;
 		curl *= 0.5;
 
-		float altostratus = texture(noisetex, position * 16.0).z, weight = 0.75;
-		position += altostratus * 5e-3;
+		float altostratus = texture(noisetex, position * 32.0).z, weight = 0.7;
+		position += altostratus * 2e-3;
 
 		// Altostratus FBM
 		for (uint i = 0u; i < 5u; ++i, weight *= 0.55) {
-			position = position * (2.75 - weight) + curl - windOffset * 1e-6;
+			position = position * 2.5 + curl - windOffset * 1e-6;
 			altostratus += weight * texture(noisetex, position).x;
 		}
+		altostratus *= 0.5;
 
-		localCoverage = saturate(localCoverage * 1.15 - 1.0);
-		return sqr(saturate(altostratus * localCoverage * (1.0 + CLOUD_AS_COVERAGE) - 0.5));
+		localCoverage = saturate(localCoverage - 0.8) * (1.5 + 1.5 * CLOUD_AS_COVERAGE);
+		float density = saturate(altostratus + localCoverage - 1.25);
+		return pow(density, 1.0 + altostratus);
 	}
 }
 
@@ -155,10 +157,10 @@ float CloudHighDensity(in vec2 rayPos) {
 			cirrus += oms(texture(noisetex, position).x) * weight;
 			weight *= 0.55;
 		}
-		cirrus -= saturate(localCoverage * 2.0 - 0.9);
+		cirrus -= saturate(localCoverage * 2.0 - 0.75);
 		cirrus = saturate(cirrus * (1.0 + CLOUD_CI_COVERAGE) - 1.75);
 
-		density += exp2(-curl.x * 8.0) * pow4(cirrus);
+		density += pow4(cirrus);
 	}
 	#endif
 
