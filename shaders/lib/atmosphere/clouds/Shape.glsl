@@ -25,8 +25,8 @@
 --------------------------------------------------------------------------------
 */
 
-#if !defined INCLUDE_CLOUDS_LAYERS
-#define INCLUDE_CLOUDS_LAYERS
+#if !defined INCLUDE_CLOUDS_SHAPE
+#define INCLUDE_CLOUDS_SHAPE
 
 #include "/lib/atmosphere/clouds/Common.glsl"
 
