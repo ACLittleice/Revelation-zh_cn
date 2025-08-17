@@ -240,19 +240,18 @@ void main() {
 				vec4 clipAvg = mean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
 				vec4 clipAvg2 = sqrMean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
 
-				vec4 clipStdDev = sqrt(max(clipAvg2 - clipAvg * clipAvg, 1e-3)) * 4.0;
-				vec4 clipDelta = prevData - clipAvg;
-				clipDelta *= saturate(inversesqrt(sdot(clipDelta / clipStdDev)));
-
-				prevData = clipDelta + clipAvg;
+				vec4 clipStdDev = sqrt(max(clipAvg2 - clipAvg * clipAvg, 1e-3)) * 5.0;
+				prevData -= clipAvg;
+				prevData *= saturate(inversesqrt(sdot(prevData / clipStdDev)));
+				prevData += clipAvg;
 			#endif
 
 			// Checkerboard upscaling
 			ivec2 offset = cloudCbrOffset[frameCounter % cloudRenderArea];
 			if (screenTexel % CLOUD_CBR_SCALE == offset) {
 				// Accumulate enough frame for checkerboard pattern
-				float alpha = 1.0 - rcp(float(max(frameOut - cloudRenderArea, 1)));
-				cloudOut = mix(currData, prevData, alpha);
+				float alpha = rcp(float(max(frameOut - cloudRenderArea, 1)));
+				cloudOut = mix(prevData, currData, alpha);
 			} else {
 				cloudOut = prevData;
 			}
