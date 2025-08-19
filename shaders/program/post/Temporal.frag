@@ -137,7 +137,7 @@ vec4 CalculateTAA(in vec2 screenCoord, in vec2 motionVector) {
 
     vec3 clipAvg = mean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
     vec3 clipAvg2 = sqrMean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
-    vec3 clipStdDev = sqrt(max(clipAvg2 - clipAvg * clipAvg, 0.0)) * TAA_AGGRESSION;
+    vec3 clipStdDev = sqrt(max0(clipAvg2 - clipAvg * clipAvg)) * TAA_AGGRESSION;
 
     #ifdef TAA_EI_CLIP
         // Ellipsoid intersection clipping
