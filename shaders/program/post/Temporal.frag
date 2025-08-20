@@ -53,6 +53,22 @@ vec3 GetClosestFragment(in ivec2 texel, in float depth) {
     return closestFragment;
 }
 
+vec3 clipAABB(in vec3 boxMin, in vec3 boxMax, in vec3 prevSample) {
+    vec3 p_clip = 0.5 * (boxMax + boxMin);
+    vec3 e_clip = 0.5 * (boxMax - boxMin);
+
+    vec3 v_clip = prevSample - p_clip;
+    vec3 v_unit = v_clip / e_clip;
+    vec3 a_unit = abs(v_unit);
+    float ma_unit = maxOf(a_unit);
+
+    if (ma_unit > 1.0) {
+        return v_clip / ma_unit + p_clip;
+    } else {
+        return prevSample;
+    }
+}
+
 // Approximation from SMAA presentation from siggraph 2016
 vec4 textureCatmullRomFast(in sampler2D tex, in vec2 coord, in const float sharpness) {
     //vec2 viewSize = textureSize(sampler, 0);
@@ -109,25 +125,30 @@ vec4 CalculateTAA(in vec2 screenCoord, in vec2 motionVector) {
         vec3 prevData = texture(colortex1, prevCoord).rgb;
     #endif
 
-	// Ellipsoid intersection clipping
+    vec3 sample0 = sRGBToYCoCg(currData);
+    vec3 sample1 = currentLoad(ivec2(-1,  1));
+    vec3 sample2 = currentLoad(ivec2( 0,  1));
+    vec3 sample3 = currentLoad(ivec2( 1,  1));
+    vec3 sample4 = currentLoad(ivec2(-1,  0));
+    vec3 sample5 = currentLoad(ivec2( 1,  0));
+    vec3 sample6 = currentLoad(ivec2(-1, -1));
+    vec3 sample7 = currentLoad(ivec2( 0, -1));
+    vec3 sample8 = currentLoad(ivec2( 1, -1));
+
+    vec3 clipAvg = mean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
+    vec3 clipAvg2 = sqrMean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
+    vec3 clipStdDev = sqrt(max0(clipAvg2 - clipAvg * clipAvg)) * TAA_AGGRESSION;
+
     #ifdef TAA_EI_CLIP
-        vec3 sample0 = sRGBToYCoCg(currData);
-        vec3 sample1 = currentLoad(ivec2(-1,  1));
-        vec3 sample2 = currentLoad(ivec2( 0,  1));
-        vec3 sample3 = currentLoad(ivec2( 1,  1));
-        vec3 sample4 = currentLoad(ivec2(-1,  0));
-        vec3 sample5 = currentLoad(ivec2( 1,  0));
-        vec3 sample6 = currentLoad(ivec2(-1, -1));
-        vec3 sample7 = currentLoad(ivec2( 0, -1));
-        vec3 sample8 = currentLoad(ivec2( 1, -1));
-
-        vec3 clipAvg = mean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
-        vec3 clipAvg2 = sqrMean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
-        vec3 clipStdDev = sqrt(max(clipAvg2 - clipAvg * clipAvg, 1e-3)) * TAA_EI_AGGRESSION;
-
+        // Ellipsoid intersection clipping
         prevData = sRGBToYCoCg(prevData) - clipAvg;
         prevData *= saturate(inversesqrt(sdot(prevData / clipStdDev)));
         prevData = YCoCgToSRGB(prevData + clipAvg);
+    #else
+        // Use variance clipping instead
+        vec3 clipMin = clipAvg - clipStdDev;
+        vec3 clipMax = clipAvg + clipStdDev;
+        prevData = YCoCgToSRGB(clipAABB(clipMin, clipMax, sRGBToYCoCg(prevData)));
     #endif
 
     float frameIndex = texture(colortex1, prevCoord).a;
