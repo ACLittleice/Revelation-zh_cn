@@ -65,7 +65,7 @@ vec3 ScreenToViewVectorRaw(in vec2 screenCoord) {
 	return normalize(vec3(diagonal2(gbufferProjectionInverse) * NDCCoord, gbufferProjectionInverse[3].z));
 }
 
-#ifdef SUBGROUP_OPS
+#if (defined SUBGROUP_OPS && !(defined MC_GL_RENDERER_INTEL))
 	#define clusteredMax subgroupClusteredMax
 #else
 	shared float sharedClusteredMax[256];
