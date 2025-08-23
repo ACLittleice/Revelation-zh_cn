@@ -121,6 +121,7 @@ vec4 CalculateTAA(in vec2 screenCoord, in vec2 motionVector) {
 
     #ifdef TAA_SHARPEN
         vec3 prevData = textureCatmullRomFast(colortex1, prevCoord, TAA_SHARPNESS).rgb;
+        prevData = satU16f(prevData);
     #else
         vec3 prevData = texture(colortex1, prevCoord).rgb;
     #endif

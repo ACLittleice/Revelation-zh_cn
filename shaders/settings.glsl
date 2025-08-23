@@ -223,9 +223,9 @@ const ivec2 skyViewRes = ivec2(256, 128);
 /* TAA */
 	#define TAA_ENABLED // Enables temporal Anti-Aliasing
 	#define TAA_CLOSEST_FRAGMENT // Caclulates the closest fragment for TAA. Improves ghosting in the motion objects
-	#define TAA_MAX_ACCUM_FRAMES 64.0 // Maximum number of accumulated frames for TAA. [20.0 24.0 28.0 32.0 36.0 40.0 48.0 56.0 64.0 72.0 80.0 96.0 112.0 128.0 144.0 160.0 192.0 224.0 256.0 320.0 384.0 448.0 512.0 640.0 768.0 896.0 1024.0]
+	#define TAA_MAX_ACCUM_FRAMES 32.0 // Maximum number of accumulated frames for TAA. [20.0 24.0 28.0 32.0 36.0 40.0 48.0 56.0 64.0 72.0 80.0 96.0 112.0 128.0 144.0 160.0 192.0 224.0 256.0 320.0 384.0 448.0 512.0 640.0 768.0 896.0 1024.0]
 
-	#define TAA_EI_CLIP // Enables TAA ellipsoid intersection clipping. When disabled, use variance clipping.
+	// #define TAA_EI_CLIP // Enables TAA ellipsoid intersection clipping. When disabled, use variance clipping.
 	#define TAA_AGGRESSION 2.0 // Aggressiveness of TAA color clipping. [1.0 1.05 1.1 1.15 1.2 1.25 1.3 1.35 1.4 1.45 1.5 1.55 1.6 1.65 1.7 1.75 1.8 1.85 1.9 1.95 2.0 2.05 2.1 2.15 2.2 2.25 2.3 2.35 2.4 2.45 2.5 2.55 2.6 2.65 2.7 2.75 2.8 2.85 2.9 2.95 3.0]
 
 	#define TAA_SHARPEN // Sharpens the image when applying TAA
