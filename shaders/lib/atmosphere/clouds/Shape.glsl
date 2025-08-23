@@ -115,8 +115,8 @@ float CloudHighDensity(in vec2 rayPos) {
 
 		vec2 position = (rayPos - windOffset) * 1e-4 - curl * 0.75;
 
-		float baseCoverage = texture(noisetex, position * 0.1).z;
-		baseCoverage *= saturate(1.0 - texture(noisetex, position * 0.002).y);
+		float baseCoverage = texture(noisetex, position * 0.05).z;
+		baseCoverage = remap(texture(noisetex, position * 0.002).y, 1.0, baseCoverage);
 
 		if (baseCoverage > cloudEpsilon) {
 			windOffset *= 5e-5;
@@ -126,10 +126,10 @@ float CloudHighDensity(in vec2 rayPos) {
 			cirrocumulus += texture(noisetex, position - windOffset + cirrocumulus * 0.125).z;
 			cirrocumulus = saturate(cirrocumulus * 1.25 - 0.75);
 
-			float coverage = saturate((baseCoverage + localCoverage * (1.0 + CLOUD_CC_COVERAGE)) * 2.0 - 2.5);
+			float coverage = saturate((baseCoverage + localCoverage) * (1.0 + CLOUD_CC_COVERAGE) - 1.25);
 
 			cirrocumulus = mix(cirrocumulus * cirrocumulus, cirrocumulus, coverage);
-			cirrocumulus *= remap(0.25, 0.9, coverage);
+			cirrocumulus *= remap(0.1, 0.9, coverage);
 
 			density += curve(saturate(2.0 * cirrocumulus));
 		}
@@ -160,8 +160,8 @@ float CloudHighDensity(in vec2 rayPos) {
 			cirrus += oms(texture(noisetex, position).x) * weight;
 			weight *= 0.55;
 		}
-		cirrus -= saturate(localCoverage * 2.0 - 0.75);
-		cirrus = saturate(cirrus * (1.0 + CLOUD_CI_COVERAGE) - 1.75);
+		cirrus -= saturate(localCoverage * 2.5 - 0.75);
+		cirrus = saturate(cirrus * (1.0 + CLOUD_CI_COVERAGE) - 1.5);
 
 		density += pow4(cirrus);
 	}
@@ -180,7 +180,7 @@ float CloudHighDensity(in vec2 rayPos) {
 	// Adapted from https://github.com/iamlivehaha/Project-VolumetricCloudRendering
 	float GetVerticalProfile(in float relativeHeight, in float cloudType) {
 		float stratus = saturate(relativeHeight * 10.0) * remap(0.25, 0.1, relativeHeight);
-		float cumulus = saturate(relativeHeight * 6.0) * remap(0.85, 0.25, relativeHeight);
+		float cumulus = saturate(relativeHeight * 6.0) * remap(0.75, 0.25, relativeHeight);
 		float altocumulus = saturate(relativeHeight * 8.0) * remap(1.0, 0.75, relativeHeight);
 
 		float verticalProfile = mix(stratus, cumulus, saturate(cloudType * 2.0));
@@ -207,7 +207,7 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 	vec2 cloudMap = texture(cloudMapTex, rayPos.xz * rcp(cloudMapCovDist)).xy;
 
 	// Coveage profile
-	float coverage = cloudMap.x * (4.0 * CLOUD_CU_COVERAGE);
+	float coverage = cloudMap.x * (3.5 * CLOUD_CU_COVERAGE);
 	coverage = saturate(coverage + wetness * 0.5);
 	// coverage = pow(coverage, remap(heightFraction, 0.7, 0.8, 1.0, 1.0 - 0.5 * anvilBias));
 	if (coverage < 1e-2) return 0.0;
@@ -268,7 +268,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	vec2 cloudMap = texture(cloudMapTex, rayPos.xz * rcp(cloudMapCovDist)).xy;
 
 	// Coveage profile
-	float coverage = cloudMap.x * (4.0 * CLOUD_CU_COVERAGE);
+	float coverage = cloudMap.x * (3.5 * CLOUD_CU_COVERAGE);
 	coverage = saturate(coverage + wetness * 0.5);
 	// coverage = pow(coverage, remap(heightFraction, 0.7, 0.8, 1.0, 1.0 - 0.5 * anvilBias));
 	if (coverage < 1e-2) return 0.0;

@@ -72,11 +72,11 @@
     #define CLOUD_HIGH_SUNLIGHT_SAMPLES 3       // Sample count for sunlight optical depth calculation. [2 3 4 5 6 7 8 9 10 12 15 17 20]
 
     #define CLOUD_CIRRUS 	                    // Enables cirrus clouds
-    #define CLOUD_CI_COVERAGE           0.7     // Coverage of cirrus clouds. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
+    #define CLOUD_CI_COVERAGE           0.5     // Coverage of cirrus clouds. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
     #define CLOUD_CI_WIND_SPEED 		40.0    // Wind speed of cirrus clouds. [5.0 10.0 15.0 20.0 25.0 30.0 35.0 40.0 45.0 50.0 55.0 60.0 65.0 70.0 75.0 80.0 85.0 90.0 95.0 100.0 105.0 110.0 115.0 120.0 125.0 130.0 135.0 140.0 145.0 150.0 155.0 160.0 165.0 170.0 175.0 180.0 185.0 190.0 195.0 200.0]
 
     #define CLOUD_CIRROCUMULUS                  // Enables cirrocumulus clouds
-    #define CLOUD_CC_COVERAGE           0.6     // Coverage of cirrocumulus clouds. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
+    #define CLOUD_CC_COVERAGE           0.5     // Coverage of cirrocumulus clouds. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
     #define CLOUD_CC_WIND_SPEED 		35.0    // Wind speed of cirrocumulus clouds. [5.0 10.0 15.0 20.0 25.0 30.0 35.0 40.0 45.0 50.0 55.0 60.0 65.0 70.0 75.0 80.0 85.0 90.0 95.0 100.0 105.0 110.0 115.0 120.0 125.0 130.0 135.0 140.0 145.0 150.0 155.0 160.0 165.0 170.0 175.0 180.0 185.0 190.0 195.0 200.0]
 
 /* Cloud shadows */
