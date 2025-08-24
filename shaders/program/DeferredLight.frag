@@ -306,23 +306,7 @@ void main() {
 				sceneOut += shadow * saturate(sunlightDiffuse);
 
 				#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-					#if TEXTURE_FORMAT == 0
-						vec3 f0;
-						uint metalIndex = uint(material.metalness * 255.0);
-
-						if (metalIndex < 230u) {
-							// Dielectrics
-							f0 = vec3(mix(DEFAULT_DIELECTRIC_F0, 1.0, material.metalness));
-						} else if (metalIndex < 238u) {
-							// Hardcoded metals
-							f0 = HardcodedMetalF0[metalIndex - 230u];
-						} else {
-							// Other metals
-							f0 = albedo;
-						}
-					#else
-						vec3 f0 = mix(vec3(DEFAULT_DIELECTRIC_F0), albedo, material.metalness);
-					#endif
+					vec3 f0 = GetMaterialF0(material.metalness, albedo);
 				#else
 					const vec3 f0 = vec3(DEFAULT_DIELECTRIC_F0);
 				#endif

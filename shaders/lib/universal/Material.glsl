@@ -49,6 +49,27 @@ struct Material {
 		vec3(0.999, 0.998, 0.986)  // 银 - Silver
 	);
 
+	vec3 GetMaterialF0(in float metalness, in vec3 albedo) {
+		#if TEXTURE_FORMAT == 0
+			vec3 f0;
+			uint metalIndex = uint(metalness * 255.0);
+
+			if (metalIndex < 230u) {
+				// Dielectrics
+				f0 = vec3(mix(DEFAULT_DIELECTRIC_F0, 1.0, metalness));
+			} else if (metalIndex < 238u) {
+				// Hardcoded metals
+				f0 = HardcodedMetalF0[metalIndex - 230u];
+			} else {
+				// Other metals
+				f0 = albedo;
+			}
+			return f0;
+		#else
+			return mix(vec3(DEFAULT_DIELECTRIC_F0), albedo, metalness);
+		#endif
+	}
+
 	Material GetMaterialData(in vec4 specTex) {
 		Material material;
 
