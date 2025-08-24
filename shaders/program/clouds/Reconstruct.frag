@@ -219,7 +219,7 @@ void main() {
 		if (disocclusion) {
 			cloudOut = texture(cloudOriginTex, currCoord);
 		} else {
-			vec4 prevData = textureCatmullRomFast(cloudReconstructTex, prevCoord, 0.6);
+			vec4 prevData = textureCatmullRomFast(cloudReconstructTex, prevCoord, 0.5);
 			prevData = satU16f(prevData); // Fix black border artifacts
 			frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
 
@@ -240,7 +240,7 @@ void main() {
 				vec4 clipAvg = mean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
 				vec4 clipAvg2 = sqrMean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
 
-				vec4 clipStdDev = sqrt(maxEps(clipAvg2 - clipAvg * clipAvg)) * 5.0;
+				vec4 clipStdDev = sqrt(maxEps(clipAvg2 - clipAvg * clipAvg)) * 4.0;
 				prevData -= clipAvg;
 				prevData *= saturate(inversesqrt(sdot(prevData / clipStdDev)));
 				prevData += clipAvg;
@@ -250,8 +250,10 @@ void main() {
 			ivec2 offset = cloudCbrOffset[frameCounter % cloudRenderArea];
 			if (screenTexel % CLOUD_CBR_SCALE == offset) {
 				// Accumulate enough frame for checkerboard pattern
-				float alpha = rcp(float(max(frameOut - cloudRenderArea, 1)));
-				cloudOut = mix(prevData, currData, alpha);
+				float blendWeight = 1.0 - rcp(float(max(frameOut - cloudRenderArea, 1)));
+				blendWeight *= 1.0 - sdot(fract(prevCoord * viewSize) * 2.0 - 1.0) * blendWeight;
+
+				cloudOut = mix(currData, prevData, blendWeight);
 			} else {
 				cloudOut = prevData;
 			}
