@@ -1,3 +1,3 @@
 #version 450 core
 
-#include "/program/Composite.frag"
+#include "/program/IntegrateScene.frag"

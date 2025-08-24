@@ -45,7 +45,7 @@ const ivec3 workGroups = ivec3(1, 1, 1);
 //======// Function //============================================================================//
 
 #include "/lib/universal/Random.glsl"
-#include "/lib/atmosphere/Global.glsl"
+#include "/lib/atmosphere/Common.glsl"
 
 vec3 sampleHemisphereVector(in vec3 vector, in vec2 xy) {
     float phi = TAU * xy.x;
@@ -108,7 +108,6 @@ void main() {
 		for (uint band = 0u; band < 4u; ++band) {
 			shCoeff[band] = sharedSkySH[0][band];
 		}
-		
 	#endif
 
 	// Store SH coefficients in thread 0

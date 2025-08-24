@@ -51,7 +51,7 @@ in vec3 viewPos;
 #include "/lib/universal/Random.glsl"
 #include "/lib/universal/Offset.glsl"
 
-#include "/lib/atmosphere/Global.glsl"
+#include "/lib/atmosphere/Common.glsl"
 
 #define PHYSICS_OCEAN_SUPPORT
 
@@ -66,7 +66,7 @@ in vec3 viewPos;
 #endif
 
 #include "/lib/lighting/Shadows.glsl"
-#include "/lib/lighting/DiffuseLighting.glsl"
+#include "/lib/lighting/Common.glsl"
 
 #include "/lib/surface/ScreenSpaceRaytracer.glsl"
 

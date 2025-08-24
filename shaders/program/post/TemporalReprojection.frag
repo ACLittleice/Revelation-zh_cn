@@ -6,7 +6,8 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-    Pass: Temporal Anti-Aliasing
+    Pass: Temporal Reprojection Anti-Aliasing
+    Reference: https://github.com/playdeadgames/temporal
 
 --------------------------------------------------------------------------------
 */

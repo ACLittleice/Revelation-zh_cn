@@ -33,7 +33,7 @@ writeonly uniform image2D cloudShadowImg;
 #include "/lib/universal/Offset.glsl"
 #include "/lib/universal/Random.glsl"
 
-#include "/lib/atmosphere/Global.glsl"
+#include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/clouds/Shadows.glsl"
 
 //======// Main //================================================================================//

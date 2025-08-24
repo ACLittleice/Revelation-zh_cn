@@ -31,8 +31,6 @@ in vec4 at_tangent;
 
 //======// Uniform //=============================================================================//
 
-uniform sampler2D colortex4; // Global illuminances
-
 uniform vec3 chunkOffset;
 
 uniform mat3 normalMatrix;

@@ -51,7 +51,7 @@ uniform sampler2D cloudOriginTex;
 #include "/lib/universal/Offset.glsl"
 #include "/lib/universal/Random.glsl"
 
-#include "/lib/atmosphere/Global.glsl"
+#include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/PrecomputedAtmosphericScattering.glsl"
 #include "/lib/atmosphere/Celestial.glsl"
 
@@ -64,7 +64,7 @@ uniform sampler2D cloudOriginTex;
 #endif
 
 #include "/lib/lighting/Shadows.glsl"
-#include "/lib/lighting/DiffuseLighting.glsl"
+#include "/lib/lighting/Common.glsl"
 
 #if AO_ENABLED > 0 && !defined SSPT_ENABLED
 	#include "/lib/lighting/SSAO.glsl"

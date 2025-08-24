@@ -40,7 +40,7 @@ uniform vec3 lightningShading;
 
 //======// Function //============================================================================//
 
-#include "/lib/atmosphere/Global.glsl"
+#include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/PrecomputedAtmosphericScattering.glsl"
 
 //======// Main //================================================================================//

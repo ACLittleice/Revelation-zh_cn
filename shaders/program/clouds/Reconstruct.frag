@@ -37,7 +37,7 @@ uniform sampler2D cloudDepthOriginTex;
 #include "/lib/universal/Random.glsl"
 #include "/lib/universal/Offset.glsl"
 
-#include "/lib/atmosphere/Global.glsl"
+#include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/clouds/Common.glsl"
 
 vec4 textureCatmullRom(in sampler2D tex, in vec2 coord) {

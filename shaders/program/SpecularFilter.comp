@@ -6,7 +6,7 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-    Pass: Reflection Filter
+    Pass: Specular Reflection Filter
     Reference: https://www.researchgate.net/publication/354065087_ReBLUR_A_Hierarchical_Recurrent_Denoiser
 
 --------------------------------------------------------------------------------
@@ -53,9 +53,9 @@ float lobeWeight(in vec3 cNormal, in vec3 sNormal, in float cRoughness, in float
     return pow(summa * inversesqrt(product) * 0.5, -factor) * sphericalGaussian(cNormal, sNormal, product * (factor / maxEps(summa)));
 }
 
-vec4 ReflectionFilter(in ivec2 texel, in vec4 reflectionData, in float roughness, in vec3 worldNormal, in vec3 worldDir, in float filterSize, in vec2 randOffset) {
+vec4 SpecularFilter(in ivec2 texel, in vec4 specularData, in float roughness, in vec3 worldNormal, in vec3 worldDir, in float filterSize, in vec2 randOffset) {
     float offsetScale = filterSize * saturate(20.0 * roughness);
-    offsetScale *= saturate(0.25 + reflectionData.a * 0.5);
+    offsetScale *= saturate(0.25 + specularData.a * 0.5);
 
     // Calculate kernel basis
     vec3 reflectedDir = reflect(-worldDir, worldNormal);
@@ -70,12 +70,12 @@ vec4 ReflectionFilter(in ivec2 texel, in vec4 reflectionData, in float roughness
     bitangent *= 1.0 / skewFactor;
 
     // float sigmaN = 128.0 / (roughness + 0.125);
-    float hitDistPhi = -0.125 * NdotV * oms(roughness) / (reflectionData.a + 1.0);
+    float hitDistPhi = -0.125 * NdotV * oms(roughness) / (specularData.a + 1.0);
 
-    float sharpenWeight = 0.125 + 0.375 * saturate(reflectionData.a * 0.25);
+    float sharpenWeight = 0.125 + 0.375 * saturate(specularData.a * 0.25);
     ivec2 texelEnd = ivec2(viewSize) - 1;
 
-    reflectionData.rgb *= pow(sdot(reflectionData.rgb) + EPS, 0.5 * sharpenWeight - 0.5);
+    specularData.rgb *= pow(sdot(specularData.rgb) + EPS, 0.5 * sharpenWeight - 0.5);
     float sumWeight = 1.0;
 
     for (uint i = 0u; i < 8u; ++i) {
@@ -89,29 +89,29 @@ vec4 ReflectionFilter(in ivec2 texel, in vec4 reflectionData, in float roughness
         // vec3 sampleReflectedDir = reflect(-worldDir, sampleWorldNormal);
         float sampleRoughness = sqr(1.0 - loadGbufferData1(sampleTexel).x);
 
-        float weight = lobeWeight(worldNormal, sampleWorldNormal, roughness, sampleRoughness, 2.0) * exp2(abs(reflectionData.a - sampleData.a) * hitDistPhi);
+        float weight = lobeWeight(worldNormal, sampleWorldNormal, roughness, sampleRoughness, 2.0) * exp2(abs(specularData.a - sampleData.a) * hitDistPhi);
         weight = saturate(weight);
 
         // Sharpen
         sampleData.rgb *= pow(sdot(sampleData.rgb) + EPS, 0.5 * sharpenWeight - 0.5);
 
-        reflectionData += sampleData * weight;
+        specularData += sampleData * weight;
         sumWeight += weight;
     }
 
-    reflectionData *= 1.0 / sumWeight;
+    specularData *= 1.0 / sumWeight;
 
     // Sharpen
-    reflectionData.rgb *= pow(sdot(reflectionData.rgb) + EPS, 0.5 / sharpenWeight - 0.5);
+    specularData.rgb *= pow(sdot(specularData.rgb) + EPS, 0.5 / sharpenWeight - 0.5);
 
-    return reflectionData;
+    return specularData;
 }
 
 //======// Main //================================================================================//
 void main() {
 	ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
 
-    vec4 reflectionData = imageLoad(colorimg1, screenTexel);
+    vec4 specularData = imageLoad(colorimg1, screenTexel);
 
     #if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
         Material material = GetMaterialData(loadGbufferData1(screenTexel).xy);
@@ -124,9 +124,9 @@ void main() {
             vec3 worldNormal = FetchWorldNormal(screenTexel);
 
             vec2 randOffset = R2(BlueNoiseTemporal(screenTexel));
-            reflectionData = ReflectionFilter(screenTexel, reflectionData, material.roughness, worldNormal, worldDir, REFLECTION_FILTER_SIZE, randOffset);
+            specularData = SpecularFilter(screenTexel, specularData, material.roughness, worldNormal, worldDir, SPECULAR_FILTER_SIZE, randOffset);
         }
     #endif
 
-    imageStore(colorimg1, screenTexel, reflectionData);
+    imageStore(colorimg1, screenTexel, specularData);
 }

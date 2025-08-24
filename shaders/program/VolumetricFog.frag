@@ -51,7 +51,7 @@ uniform float biomeSnowstorm;
 #include "/lib/universal/Fetch.glsl"
 #include "/lib/universal/Random.glsl"
 
-#include "/lib/atmosphere/Global.glsl"
+#include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/clouds/Shadows.glsl"
 
 // x: Mie y: Rayleigh

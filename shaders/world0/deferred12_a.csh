@@ -1,5 +1,5 @@
 #version 450 core
 
-#define REFLECTION_FILTER_SIZE 8.0
+#define SPECULAR_FILTER_SIZE 8.0
 
-#include "/program/ReflectionFilter.comp"
+#include "/program/SpecularFilter.comp"

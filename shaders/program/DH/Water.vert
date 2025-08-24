@@ -21,8 +21,6 @@ in vec4 at_tangent;
 
 //======// Uniform //=============================================================================//
 
-uniform sampler2D colortex4; // Global illuminances
-
 uniform mat4 dhProjection;
 
 uniform mat4 gbufferModelView;
