@@ -155,13 +155,15 @@ vec4 CalculateTAA(in vec2 screenCoord, in vec2 motionVector) {
 
     float frameIndex = texture(colortex1, prevCoord).a;
 
-    float blendWeight = clamp(++frameIndex, 1.0, TAA_MAX_ACCUM_FRAMES);
-    blendWeight /= blendWeight + 1.0;
+    float alpha = min(++frameIndex, TAA_MAX_ACCUM_FRAMES);
+	alpha *= 1.0 - sdot(fract(prevCoord * viewSize) * 2.0 - 1.0) * 0.5;
 
-    float pixelVelocity = length(motionVector * viewSize);
-    blendWeight *= exp2(-0.05 * (pixelVelocity + cameraVelocity));
+    // float lum0 = luminance(currData);
+    // float lum1 = luminance(prevData);
+    // float unbiasedDiff = abs(lum0 - lum1) / max(lum0, lum1);
+	// alpha *= 1.0 - saturate(unbiasedDiff) * 0.5;
 
-    currData = mix(reinhard(currData), reinhard(prevData), blendWeight);
+    currData = mix(reinhard(prevData), reinhard(currData), rcp(alpha + 1.0));
     return vec4(invReinhard(currData), frameIndex);
 }
 
