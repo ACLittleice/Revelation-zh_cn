@@ -62,7 +62,6 @@ uniform sampler2D brdfLutTex;
 #include "/lib/water/WaterFog.glsl"
 
 #include "/lib/surface/BRDF.glsl"
-#include "/lib/surface/Reflection.glsl"
 #include "/lib/surface/Refraction.glsl"
 
 //======// Main //================================================================================//
@@ -173,10 +172,6 @@ void main() {
 			#endif
 
 			sceneOut += blendedData.rgb;
-		} else if (materialID == 46u || materialID == 51u) {
-			// Specular reflections of slime and ender portal
-			vec4 reflections = CalculateSpecularReflections(worldNormal, skyLightmap, screenPos, worldDir, viewPos);
-			sceneOut += (reflections.rgb - sceneOut) * reflections.a;
 		}
 		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
 			else if (material.specularMask) {

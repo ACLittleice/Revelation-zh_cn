@@ -73,7 +73,9 @@ uniform sampler2D cloudOriginTex;
 
 #include "/lib/SpatialUpscale.glsl"
 
-#include "/lib/surface/Reflection.glsl"
+#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+	#include "/lib/surface/Reflection.glsl"
+#endif
 
 #ifdef RAIN_PUDDLES
 	#include "/lib/surface/RainPuddle.glsl"
@@ -166,7 +168,7 @@ void main() {
 			Material material = GetMaterialData(specularTex);
 			specularOut = specularTex.rg;
 		#else
-			Material material = Material(materialID == 46u || materialID == 51u ? 0.005 : 1.0, 0.0, 0.0, false, false);
+			Material material = Material(1.0, 0.0, 0.0, false, false);
 		#endif
 
 		float sssAmount = 0.0;
@@ -404,7 +406,7 @@ void main() {
 
 		// Specular reflections
 		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-			if (material.specularMask && materialID != 46u && materialID != 51u) {
+			if (material.specularMask) {
 				lightmap.y = remap(0.3, 0.7, lightmap.y);
 
 				reflectionOut = CalculateSpecularReflections(material, worldNormal, screenPos, worldDir, viewPos, lightmap.y, dither);
