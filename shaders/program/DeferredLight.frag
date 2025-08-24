@@ -293,10 +293,10 @@ void main() {
 					shadow *= oms(loadGbufferData1(screenTexel).z);
 				#endif
 
-				float halfwayNorm = inversesqrt(2.0 * LdotV + 2.0);
-				float NdotV = abs(dot(worldNormal, -worldDir));
-				float NdotH = saturate((NdotL + NdotV) * halfwayNorm);
-				float LdotH = LdotV * halfwayNorm + halfwayNorm;
+				vec3 halfway = normalize(worldLightVector - worldDir);
+				float NdotV = abs(dot(worldNormal, worldDir));
+				float NdotH = dot(worldNormal, halfway);
+				float LdotH = dot(worldLightVector, halfway);
 
 				// Sunlight diffuse
 				vec3 sunlightDiffuse = DiffuseHammon(LdotV, NdotV, NdotL, NdotH, material.roughness, albedo);
@@ -325,7 +325,7 @@ void main() {
 					const vec3 f0 = vec3(DEFAULT_DIELECTRIC_F0);
 				#endif
 
-				specularHighlight = shadow * SpecularGGX(LdotH, NdotV, saturate(NdotL), NdotH, material.roughness, f0);
+				specularHighlight = shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, material.roughness, f0);
 			}
 		}
 

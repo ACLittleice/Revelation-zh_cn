@@ -77,7 +77,7 @@ vec4 CalculateSpecularReflections(in vec3 normal, in vec3 worldDir, in float dit
     // Unroll the reflect function manually
 	vec3 rayDir = worldDir + normal * NdotV * 2.0;
 
-	if (dot(normal, rayDir) < 1e-6) return vec4(0.0);
+	if (dot(normal, rayDir) < EPS) return vec4(0.0);
 
 	float f0 = F0FromIOR(materialID == 3u ? WATER_REFRACT_IOR : GLASS_REFRACT_IOR);
 	bool withinWater = isEyeInWater == 1 && materialID == 3u;
