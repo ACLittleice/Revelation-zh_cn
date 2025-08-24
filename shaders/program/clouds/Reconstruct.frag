@@ -240,7 +240,7 @@ void main() {
 				vec4 clipAvg = mean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
 				vec4 clipAvg2 = sqrMean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
 
-				vec4 clipStdDev = sqrt(max(clipAvg2 - clipAvg * clipAvg, 1e-3)) * 5.0;
+				vec4 clipStdDev = sqrt(maxEps(clipAvg2 - clipAvg * clipAvg)) * 5.0;
 				prevData -= clipAvg;
 				prevData *= saturate(inversesqrt(sdot(prevData / clipStdDev)));
 				prevData += clipAvg;
