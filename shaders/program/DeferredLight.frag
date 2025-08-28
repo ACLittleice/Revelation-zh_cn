@@ -253,7 +253,7 @@ void main() {
         	if (inShadowMapRange) {
 				float distortionFactor;
 				vec3 normalOffset = flatNormal * (worldDistSquared * 1e-4 + 3e-2) * (2.0 - saturate(NdotL));
-				vec3 shadowScreenPos = WorldToShadowScreenSpace(worldPos + normalOffset, distortionFactor);	
+				vec3 shadowScreenPos = WorldToShadowScreenSpace(worldPos + normalOffset, distortionFactor);
 
 				if (saturate(shadowScreenPos) == shadowScreenPos) {
 					vec2 blockerSearch;
@@ -377,7 +377,7 @@ void main() {
 				float NdotV = abs(dot(worldNormal, worldDir));
 				sceneOut += SpatialUpscale5x5(screenTexel >> 1, worldNormal, length(viewPos), NdotV);
 			#else
-				sceneOut += texelFetch(colortex3, screenTexel >> 1, 0), 0).rgb;
+				sceneOut += texelFetch(colortex3, screenTexel >> 1, 0).rgb;
 			#endif
 		#elif defined RSM_ENABLED
 			float NdotV = abs(dot(worldNormal, worldDir));
