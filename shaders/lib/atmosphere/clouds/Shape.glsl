@@ -220,7 +220,7 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 	float dimensionalProfile = saturate(verticalProfile * coverage);
 	if (dimensionalProfile < cloudEpsilon) return 0.0;
 
-	vec3 position = (rayPos - windOffset * 0.5) * 2.5e-4;
+	vec3 position = (rayPos - windOffset * 0.5) * 3e-4;
 
 	// Perlin-worley + fBm worley noise for base shape
 	float baseNoise = texture(baseNoiseTex, position).x;
@@ -242,7 +242,7 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 		// detailNoise = abs(detailNoise * 2.0 - 1.0);
 	}
 	#endif
-	float noiseComposite = remap(detailNoise * 0.25, 1.0, baseNoise);
+	float noiseComposite = remap(detailNoise * 0.3, 1.0, baseNoise);
 
 	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
 
@@ -281,7 +281,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	dimensionalProfile = saturate(verticalProfile * coverage);
 	if (dimensionalProfile < cloudEpsilon) return 0.0;
 
-	vec3 position = (rayPos - windOffset * 0.5) * 2.5e-4;
+	vec3 position = (rayPos - windOffset * 0.5) * 3e-4;
 
 	// Perlin-worley + fBm worley noise for base shape
 	float baseNoise = texture(baseNoiseTex, position).x;
@@ -301,7 +301,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 		// See [Schneider, 2023]
 		// detailNoise = abs(detailNoise * 2.0 - 1.0);
 	#endif
-	float noiseComposite = remap(detailNoise * 0.25, 1.0, baseNoise);
+	float noiseComposite = remap(detailNoise * 0.3, 1.0, baseNoise);
 
 	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
 
