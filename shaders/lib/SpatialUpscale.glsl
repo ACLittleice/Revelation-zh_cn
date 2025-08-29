@@ -1,12 +1,9 @@
 #if defined PASS_DEFERRED_LIGHTING
 #if (defined SSPT_ENABLED && defined SVGF_ENABLED) || defined RSM_ENABLED
 	vec3 SpatialUpscale5x5(in ivec2 texel, in vec3 worldNormal, in float viewDistance, in float NdotV) {
+		vec3 sum = texelFetch(colortex3, texel, 0).rgb;
 		float sumWeight = 1.0;
 
-		vec4 sum = texelFetch(colortex3, texel, 0);
-		float centerLuma = luminance(sum.rgb);
-
-		float variancePhi = -2.0 * inversesqrt(sum.a + EPS);
 		float sigmaZ = -2.0 * NdotV;
 
 		ivec2 offsetToBR = ivec2(halfViewSize.x, 0);
@@ -14,20 +11,20 @@
 
 		for (uint i = 0u; i < 24u; ++i) {
 			ivec2 sampleTexel = clamp(texel + offset5x5N[i], ivec2(0), texelEnd);
+
+			vec3 prevData = texelFetch(colortex2, sampleTexel + offsetToBR, 0).rgb;
+
+			float weight = pow32(saturate(dot(OctDecodeSnorm(prevData.xy), worldNormal)));
+			weight *= exp2(distance(prevData.z, viewDistance) * sigmaZ);
+
+			if (weight < EPS) continue;
 			vec3 sampleLight = texelFetch(colortex3, sampleTexel, 0).rgb;
 
-			vec4 prevData = texelFetch(colortex2, sampleTexel + offsetToBR, 0);
-
-			float weight = pow32(saturate(dot(prevData.rgb, worldNormal)));
-			weight *= exp2(distance(prevData.a, viewDistance) * sigmaZ + abs(centerLuma - luminance(sampleLight.rgb)) * variancePhi);
-
-			if (weight < 1e-5) continue;
-
-			sum.rgb += sampleLight * weight;
+			sum += sampleLight * weight;
 			sumWeight += weight;
 		}
 
-		return sum.rgb * rcp(sumWeight);
+		return sum * rcp(sumWeight);
 	}
 #endif
 #endif
