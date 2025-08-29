@@ -132,7 +132,7 @@ void main() {
 			screenCoord += viewPixelSize * (dither * 2.0 - 1.0);
 
 			#ifdef CLOUD_CBR_ENABLED
-				vec4 cloudData = textureBicubic(cloudReconstructTex, screenCoord);
+				vec4 cloudData = texture(cloudReconstructTex, screenCoord);
 			#else
 				vec4 cloudData = textureBicubic(cloudOriginTex, screenCoord);
 			#endif

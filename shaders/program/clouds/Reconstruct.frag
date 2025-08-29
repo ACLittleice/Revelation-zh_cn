@@ -217,7 +217,7 @@ void main() {
 		// disocclusion = disocclusion || (gbufferProjection[0].x - gbufferPreviousProjection[0].x) > 0.25;
 
 		if (disocclusion) {
-			cloudOut = texture(cloudOriginTex, currCoord);
+			cloudOut = textureBicubic(cloudOriginTex, currCoord);
 		} else {
 			vec4 prevData = textureCatmullRomFast(cloudReconstructTex, prevCoord, 0.5);
 			prevData = satU16f(prevData); // Fix black border artifacts
@@ -251,7 +251,8 @@ void main() {
 			if (screenTexel % CLOUD_CBR_SCALE == offset) {
 				// Accumulate enough frame for checkerboard pattern
 				float blendWeight = 1.0 - rcp(float(max(frameOut - cloudRenderArea, 1)));
-				blendWeight *= 1.0 - sdot(fract(prevCoord * viewSize) * 2.0 - 1.0) * blendWeight;
+				float subpixelSharpen = sdot(fract(prevCoord * viewSize) * 2.0 - 1.0) * 0.5;
+				blendWeight *= 1.0 - subpixelSharpen * blendWeight;
 
 				cloudOut = mix(currData, prevData, blendWeight);
 			} else {
