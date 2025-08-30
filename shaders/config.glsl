@@ -63,14 +63,14 @@
 	|   Buffer		|   Format          |   Resolution	|   Usage
 	|———————————————|———————————————————|———————————————|———————————————————————————
 	|	colortex0	|   r11f_g11f_b10f  |	Full res  	|	Scene data
-	|	colortex1	|   rgba16f		    |	Full res  	|	Scene history, global exposure | Specular lighting of translucent
-	|	colortex2	|   rgba16f         |	Full res	|	Indirect diffuse lighting history, frame index
+	|	colortex1	|   rgba16f		    |	Full res  	|	Scene history | Indirect specular lighting
+	|	colortex2	|   rgba16f         |	Full res	|	Indirect diffuse lighting history
 	|	colortex3	|   rgba16f         |	Full res  	|	Indirect diffuse lighting -> Motion vector
 	|	colortex4	|   r11f_g11f_b10f  |	Full res  	|	Reprojected scene history -> Bloom tiles
 	|	colortex5	|   r11f_g11f_b10f  |	256, 256   	|	Sky-View LUT
 	|	colortex6	|   rgba8           |	Full res  	|	Solid albedo, rain alpha
 	|	colortex7	|   rgba16ui        |	Full res  	|	Gbuffer data 0
-	|	colortex8	|   rgb16           |	Full res  	|	Gbuffer data 1 -> Bloomy fog transmittance -> LDR output
+	|	colortex8	|   rgb16           |	Full res  	|	Gbuffer data 1 -> Bloomy fog mask
 	|	colortex9	|   rgba16f     	|	Full res	|	Cloud history
 	|	colortex10	|   r8              |	512, 512   	|	Cloud shadow map
 	|	colortex11	|   rgba32ui        |	Half res  	|	Volumetric fog, linear depth
