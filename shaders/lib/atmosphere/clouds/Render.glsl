@@ -319,7 +319,7 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 					float inScatterProbability = sqr(stepDensity * 2.0 + dimensionalProfile);
 					scatteringSun *= inScatterProbability * 2.0;
 
-					vec2 scattering = vec2(scatteringSun + scatteringGround * uniformPhase * worldLightVector.y, 
+					vec2 scattering = vec2(scatteringSun + scatteringGround * uniformPhase * worldLightVector.y,
 										   scatteringSky + scatteringGround);
 
 					float stepOpticalDepth = stepDensity * (cumulusExtinction * -rLOG2) * stepSize;
@@ -328,7 +328,7 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 					// Energy-conserving analytical integration from [Hillaire, 2016]
 					float stepIntegral = transmittance * oms(stepTransmittance);
 					stepScattering += scattering * stepIntegral;
-					transmittance *= stepTransmittance;	
+					transmittance *= stepTransmittance;
 
 					// Break if the cloud has reached the minimum transmittance
 					if (transmittance < cloudMinTransmittance) break;

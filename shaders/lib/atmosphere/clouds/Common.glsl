@@ -101,9 +101,9 @@ const float cloudMsFalloffC 	    = CLOUD_MS_FALLOFF_P;
 const float cloudMapCovDist 		= 192e3; // m
 
 // TODO: Provide adjustable options for these parameters
-const float cloudForwardG 		    = 0.7;
-const float cloudBackwardG 		    = -0.3;
-const float cloudLobeMixer          = 0.35;
+const float cloudForwardG 		    = 0.75;
+const float cloudBackwardG 		    = -0.4;
+const float cloudLobeMixer          = 0.25;
 const float cloudSilverG 		    = 0.95;
 const float cloudSilverI 	        = 0.25;
 
