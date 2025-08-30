@@ -39,9 +39,6 @@ layout (location = 2) out vec2 varianceMoments;
 
 void TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal) {
     vec2 prevCoord = Reproject(screenPos).xy;
-    #if defined DISTANT_HORIZONS
-        if (dhTerrainMask) prevCoord = ReprojectDH(screenPos).xy;
-    #endif
 
     float luma = luminance(texelFetch(colortex3, texel, 0).rgb);
     ivec2 texelEnd = ivec2(halfViewEnd);
