@@ -67,7 +67,7 @@ float Pseudo3DNoiseSmooth(in vec3 position) {
 float CloudMidDensity(in vec2 rayPos) {
 	// Wind field
 	const float windAngle = radians(10.0);
-	const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_AS_WIND_SPEED;
+	const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_MID_WIND_SPEED;
 	vec2 windOffset = windVelocity * worldTimeCounter;
 
 	rayPos -= windOffset;
@@ -99,20 +99,20 @@ float CloudMidDensity(in vec2 rayPos) {
 }
 
 float CloudHighDensity(in vec2 rayPos) {
+	// Wind field
+	const float windAngle = radians(30.0);
+	const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_HIGH_WIND_SPEED;
+	vec2 windOffset = windVelocity * worldTimeCounter;
+
 	// Curl noise to simulate wind, makes the positioning of the clouds more natural
 	vec2 curl = texture(noisetex, rayPos * 5e-6).xy * 0.03;
 	curl += texture(noisetex, rayPos * 1e-5).xy * 0.015;
 
-	float localCoverage = GetSmoothNoise((rayPos - worldTimeCounter * 20.0) * 2e-5 + curl);
+	float localCoverage = GetSmoothNoise((rayPos - windOffset * 0.25) * 2e-5 + curl);
 	float density = 0.0;
 
 	#ifdef CLOUD_CIRROCUMULUS
 	/* Cirrocumulus clouds */ if (localCoverage > 0.4) {
-		// Wind field
-		const float windAngle = radians(20.0);
-		const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_CC_WIND_SPEED;
-		vec2 windOffset = windVelocity * worldTimeCounter;
-
 		vec2 position = (rayPos - windOffset) * 1e-4 - curl * 0.75;
 
 		float baseCoverage = texture(noisetex, position * 0.05).z;
@@ -137,11 +137,6 @@ float CloudHighDensity(in vec2 rayPos) {
 	#endif
 	#ifdef CLOUD_CIRRUS
 	/* Cirrus clouds */ if (localCoverage < 0.6) {
-		// Wind field
-		const float windAngle = radians(30.0);
-		const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_CI_WIND_SPEED;
-		vec2 windOffset = windVelocity * worldTimeCounter;
-
 		vec2 position = (rayPos - windOffset) * 4e-7 + curl * 5e-3;
 		windOffset *= 2e-7;
 
@@ -197,7 +192,7 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 	// Wind field
 	const float windAngle = radians(45.0);
 	const vec3 windDir = vec3(cos(windAngle), 0.5, sin(windAngle));
-	const vec3 windVelocity = windDir * CLOUD_CU_WIND_SPEED;
+	const vec3 windVelocity = windDir * CLOUD_LOW_WIND_SPEED;
 	vec3 windOffset = windVelocity * worldTimeCounter;
 
 	rayPos -= windOffset;
@@ -258,7 +253,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	// Wind field
 	const float windAngle = radians(45.0);
 	const vec3 windDir = vec3(cos(windAngle), 0.5, sin(windAngle));
-	const vec3 windVelocity = windDir * CLOUD_CU_WIND_SPEED;
+	const vec3 windVelocity = windDir * CLOUD_LOW_WIND_SPEED;
 	vec3 windOffset = windVelocity * worldTimeCounter;
 
 	rayPos -= windOffset;

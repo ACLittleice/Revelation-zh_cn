@@ -212,11 +212,11 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 				float rayLength = clamp(intersection.y - intersection.x, 0.0, 1e5 - withinVolumeSmooth * 6e4);
 
 				#if defined PASS_SKY_VIEW
-					uint raySteps = CLOUD_CU_SAMPLES >> 1u;
+					uint raySteps = CLOUD_LOW_SAMPLES >> 1u;
 					// Reduce ray steps for vertical rays
 					raySteps = uint(float(raySteps) * oms(abs(mu) * 0.5));
 				#else
-					uint raySteps = CLOUD_CU_SAMPLES;
+					uint raySteps = CLOUD_LOW_SAMPLES;
 					// Reduce ray steps for vertical rays
 					raySteps = uint(float(raySteps) * mix(oms(abs(mu) * 0.5), 4.0, withinVolumeSmooth));
 				#endif
@@ -285,7 +285,7 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 					#endif
 
 					// Compute the optical depth of sunlight through clouds
-					float opticalDepthSun = CloudVolumeOpticalDepth(rayPos, worldLightVector, lightNoise.x, CLOUD_CU_SUNLIGHT_SAMPLES) * -rLOG2;
+					float opticalDepthSun = CloudVolumeOpticalDepth(rayPos, worldLightVector, lightNoise.x, CLOUD_LOW_SUNLIGHT_SAMPLES) * -rLOG2;
 
 					// Nubis Multiscatter Approximation
 					// float msVolume = remap(0.15, 0.85, dimensionalProfile);
@@ -296,7 +296,7 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 
 					#if CLOUD_CU_SKYLIGHT_SAMPLES > 0
 						// Compute the optical depth of skylight through clouds
-						float opticalDepthSky = CloudVolumeOpticalDepth(rayPos, vec3(0.0, 1.0, 0.0), lightNoise.y, CLOUD_CU_SKYLIGHT_SAMPLES) * -rLOG2;
+						float opticalDepthSky = CloudVolumeOpticalDepth(rayPos, vec3(0.0, 1.0, 0.0), lightNoise.y, CLOUD_LOW_SKYLIGHT_SAMPLES) * -rLOG2;
 
 						// See slide 85 of [Schneider, 2017]
 						// Original formula: Energy = max( exp( - density_along_light_ray ), (exp(-density_along_light_ray * 0.25) * 0.7) )
