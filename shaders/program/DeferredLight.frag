@@ -105,7 +105,7 @@ void main() {
 
 	vec3 albedo = sRGBtoLinear(loadAlbedo(screenTexel));
 
-	float dither = InterleavedGradientNoiseTemporal(gl_FragCoord.xy);
+	float dither = SampleStbnVec1(screenTexel, frameCounter);
 
 	sceneOut = vec3(0.0);
 

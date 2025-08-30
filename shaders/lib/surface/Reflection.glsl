@@ -3,8 +3,8 @@
 vec4 CalculateSpecularReflections(Material material, in vec3 normal, in vec3 screenPos, in vec3 worldDir, in vec3 viewPos, in float skylight, in float dither) {
 #ifdef ROUGH_REFLECTIONS
 	if (material.isRough) {
-		NoiseGenerator noiseGenerator = initNoiseGenerator(uvec2(gl_FragCoord.xy), uint(frameCounter));
-		vec3 halfway = SampleGGXVNDF(nextVec2(noiseGenerator), -worldDir, material.roughness, normal);
+		vec2 stbnVec2 = SampleStbnVec2(ivec2(gl_FragCoord.xy), frameCounter + 1);
+		vec3 halfway = SampleGGXVNDF(stbnVec2, -worldDir, material.roughness, normal);
 
 		vec3 lightDir = reflect(worldDir, halfway);
 
@@ -50,7 +50,7 @@ vec4 CalculateSpecularReflections(Material material, in vec3 normal, in vec3 scr
 			screenPos.xy *= viewPixelSize;
 			float edgeFade = screenPos.x * screenPos.y * oms(screenPos.x) * oms(screenPos.y);
 			edgeFade *= 1e2 + cube(saturate(1.0 - gbufferModelViewInverse[2].y)) * 3e3;
-			reflection += (texelFetch(colortex4, uvToTexel(screenPos.xy * 0.5), 0).rgb - reflection) * saturate(edgeFade);
+			reflection += (texture(colortex4, screenPos.xy * 0.5).rgb - reflection) * saturate(edgeFade);
 		}
 
 		return vec4(satU16f(reflection), 0.0);

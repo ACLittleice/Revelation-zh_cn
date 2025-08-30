@@ -108,7 +108,7 @@ vec4 CalculateSpecularReflections(in vec3 normal, in vec3 worldDir, in float dit
 		screenPos.xy *= viewPixelSize;
 		float edgeFade = screenPos.x * screenPos.y * oms(screenPos.x) * oms(screenPos.y);
 		edgeFade *= 1e2 + cube(saturate(1.0 - gbufferModelViewInverse[2].y)) * 4e3;
-		reflection += (texelFetch(colortex4, uvToTexel(screenPos.xy * 0.5), 0).rgb - reflection) * saturate(edgeFade);
+		reflection += (texture(colortex4, screenPos.xy * 0.5).rgb - reflection) * saturate(edgeFade);
 	}
 
 	return satU16f(vec4(reflection * brdf, brdf));
@@ -118,7 +118,7 @@ vec4 CalculateSpecularReflections(in vec3 normal, in vec3 worldDir, in float dit
 void main() {
 	vec3 worldNormal;
 	vec3 worldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
-	float dither = InterleavedGradientNoiseTemporal(gl_FragCoord.xy);
+	float dither = SampleStbnVec1(ivec2(gl_FragCoord.xy), frameCounter + 4);
 
 	if (materialID == 3u) { // water
 		#ifdef PHYSICS_OCEAN
@@ -192,7 +192,7 @@ void main() {
 		float worldDistSquared = sdot(worldPos);
 
 		vec3 normalOffset = tbnMatrix[2] * (worldDistSquared * 1e-4 + 3e-2) * (2.0 - saturate(NdotL));
-		vec3 shadowScreenPos = WorldToShadowScreenSpace(worldPos + normalOffset, distortionFactor);	
+		vec3 shadowScreenPos = WorldToShadowScreenSpace(worldPos + normalOffset, distortionFactor);
 
 		if (saturate(shadowScreenPos) == shadowScreenPos) {
 			float blockerSearch = BlockerSearch(shadowScreenPos, dither, 0.25 * distortionFactor);
