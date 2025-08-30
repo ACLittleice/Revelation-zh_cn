@@ -84,14 +84,14 @@ void TemporalFilter(in vec3 screenPos, in vec3 worldNormal) {
 
             float alpha = rcp(indirectHistory.a);
 
-            float mipLevel = 4.0 * saturate(1.0 - indirectHistory.a * rcp(8.0));
+            float mipLevel = 2.0 * saturate(1.0 - indirectHistory.a * rcp(8.0));
             indirectHistory.rgb = textureLod(colortex3, screenPos.xy * 0.5, mipLevel).rgb;
             indirectHistory.rgb = mix(prevLight.rgb, indirectHistory.rgb, alpha);
             return;
         }
     }
 
-    indirectHistory.rgb = textureLod(colortex3, screenPos.xy * 0.5, 4.0).rgb;
+    indirectHistory.rgb = textureLod(colortex3, screenPos.xy * 0.5, 2.0).rgb;
 }
 
 float GetClosestDepth(in ivec2 texel) {
