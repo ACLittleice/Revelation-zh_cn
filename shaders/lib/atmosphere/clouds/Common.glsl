@@ -35,9 +35,9 @@
     #define CLOUD_AERIAL_PERSPECTIVE            // Enables aerial perspective for clouds
 
     #define CLOUD_MS_COUNT              4       // Times of multi-scattering for clouds. [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 25 30 35 40 45 50]
-    #define CLOUD_MS_FALLOFF_S          0.5     // Scattering falloff for multi-scattering. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
-    #define CLOUD_MS_FALLOFF_E          0.5     // Extinction falloff for multi-scattering. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
-    #define CLOUD_MS_FALLOFF_P          0.5     // Asymmetry falloff for multi-scattering. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
+    #define CLOUD_MS_FALLOFF_S          0.55    // Scattering falloff for multi-scattering. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
+    #define CLOUD_MS_FALLOFF_E          0.55    // Extinction falloff for multi-scattering. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
+    #define CLOUD_MS_FALLOFF_P          0.55    // Asymmetry falloff for multi-scattering. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
 
 /* Low-level clouds */
     #define CLOUD_CUMULUS 	                    // Enables cumulus clouds
