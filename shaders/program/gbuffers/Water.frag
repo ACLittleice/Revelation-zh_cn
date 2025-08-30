@@ -71,7 +71,7 @@ in vec3 viewPos;
 #include "/lib/surface/ScreenSpaceRaytracer.glsl"
 
 vec4 CalculateSpecularReflections(in vec3 normal, in vec3 worldDir, in float dither, in float skylight) {
-	skylight = remap(0.3, 0.7, cube(skylight));
+	skylight = saturate(8.0 * cube(skylight));
 
 	float NdotV = abs(dot(normal, worldDir));
     // Unroll the reflect function manually
