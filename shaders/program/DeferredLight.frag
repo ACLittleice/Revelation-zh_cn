@@ -86,7 +86,7 @@ void main() {
 	ivec2 screenTexel = ivec2(gl_FragCoord.xy);
     vec2 screenCoord = gl_FragCoord.xy * viewPixelSize;
 
-	vec3 screenPos = vec3(screenCoord, loadDepth0(screenTexel));
+	vec3 screenPos = vec3(screenCoord, FetchDepthFix(screenTexel));
 	vec3 viewPos = ScreenToViewSpace(screenPos);
 
 	#if defined DISTANT_HORIZONS
@@ -202,19 +202,17 @@ void main() {
 		// Ambient occlusion
 		#if AO_ENABLED > 0 && !defined SSPT_ENABLED
 			vec3 ao = vec3(1.0);
-			if (screenPos.z > 0.56) {
-				#if AO_ENABLED == 1
-					ao.x = CalculateSSAO(screenCoord, viewPos, viewNormal, dither);
-				#else
-					ao.x = CalculateGTAO(screenCoord, viewPos, viewNormal, dither);
-				#endif
+			#if AO_ENABLED == 1
+				ao.x = CalculateSSAO(screenCoord, viewPos, viewNormal, dither);
+			#else
+				ao.x = CalculateGTAO(screenCoord, viewPos, viewNormal, dither);
+			#endif
 
-				#ifdef AO_MULTI_BOUNCE
-					ao = ApproxMultiBounce(ao.x, albedo);
-				#else
-					ao = vec3(ao.x);
-				#endif
-			}
+			#ifdef AO_MULTI_BOUNCE
+				ao = ApproxMultiBounce(ao.x, albedo);
+			#else
+				ao = vec3(ao.x);
+			#endif
 		#else
 			const float ao = 1.0;
 		#endif
