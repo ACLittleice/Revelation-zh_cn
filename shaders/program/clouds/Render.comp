@@ -107,18 +107,18 @@ void main() {
 	#endif
 
 	if (depthMax > 1.0 - EPS) {
-		float dither = BlueNoiseTemporal(cloudTexel);
+		vec2 stbnVec2 = SampleStbnVec2(cloudTexel, frameCounter);
 
 		vec3 viewDir  = ScreenToViewVectorRaw(cloudUv);
 		vec3 worldDir = mat3(gbufferModelViewInverse) * viewDir;
 
-		cloudOut = RenderClouds(worldDir, dither, cloudDepth);
+		cloudOut = RenderClouds(worldDir, stbnVec2, cloudDepth);
 
 		// Crepuscular rays
 		#ifdef CREPUSCULAR_RAYS
 			#ifdef CLOUD_SHADOWS
 			if (viewerHeight < cumulusBottomRadius) {
-				vec4 crepuscularRays = RaymarchCrepuscular(worldDir, dither);
+				vec4 crepuscularRays = RaymarchCrepuscular(worldDir, BlueNoiseTemporal(cloudTexel));
 
 				cloudOut *= crepuscularRays.a;
 				cloudOut.rgb += crepuscularRays.rgb;

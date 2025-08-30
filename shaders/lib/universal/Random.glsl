@@ -107,6 +107,10 @@ float BlueNoiseTemporal(in ivec2 texel) {
 	#endif
 }
 
+vec2 SampleStbnVec2(in ivec2 texel, in int frame) {
+    return texelFetch(stbnVec2Tex, ivec3(texel, frame) & ivec3(127, 127, 63), 0).xy;
+}
+
 //================================================================================================//
 
 // Bayer Dithering

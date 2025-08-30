@@ -73,7 +73,7 @@ void main() {
 
 		#ifdef CLOUDS
 			float cloudDepth;
-			vec4 cloudData = RenderClouds(worldDir, 0.5, cloudDepth);
+			vec4 cloudData = RenderClouds(worldDir, vec2(0.5), cloudDepth);
 			skyViewOut = skyViewOut * cloudData.a + cloudData.rgb;
 		#endif
 

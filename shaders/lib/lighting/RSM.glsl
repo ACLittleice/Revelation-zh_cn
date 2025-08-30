@@ -15,7 +15,7 @@ uniform sampler2D shadowcolor1;
 
 //================================================================================================//
 
-vec3 CalculateRSM(in vec3 viewPos, in vec3 worldNormal, in float dither, in float skyLightmap) {
+vec3 CalculateRSM(in vec3 viewPos, in vec3 worldNormal, in vec2 noise, in float skyLightmap) {
 	const float realShadowMapRes = float(shadowMapResolution) * MC_SHADOW_QUALITY;
 
 	vec3 shadowNormal = mat3(shadowModelView) * worldNormal;
@@ -32,12 +32,11 @@ vec3 CalculateRSM(in vec3 viewPos, in vec3 worldNormal, in float dither, in floa
 	const mat2 goldenRotate = mat2(cos(goldenAngle), -sin(goldenAngle), sin(goldenAngle), cos(goldenAngle));
 
 	vec2 offsetRadius = RSM_RADIUS * projectionScale.xy;
-	vec2 dir = sincos(dither * 16.0 * PI) * offsetRadius;
-	dither *= rSteps;
+	vec2 dir = sincos(noise.x * 16.0 * PI) * offsetRadius;
 
 	vec3 sum = vec3(0.0);
 	for (uint i = 0u; i < RSM_SAMPLES; ++i, dir *= goldenRotate) {
-		float sampleRad 			= float(i) * rSteps + dither;
+		float sampleRad 			= (float(i) + noise.y) * rSteps;
 
 		vec2 sampleClipCoord 		= shadowClipPos.xy + dir * sampleRad;
 		vec2 sampleScreenCoord		= sampleClipCoord * CalcDistortionFactor(sampleClipCoord) * 0.5 + 0.5;
@@ -60,7 +59,7 @@ vec3 CalculateRSM(in vec3 viewPos, in vec3 worldNormal, in float dither, in floa
 
 		vec3 sampleNormal 			= OctDecodeUnorm(sampleColor.xy);
 
-		float bounce 				= dot(sampleNormal, -sampleDir);				
+		float bounce 				= dot(sampleNormal, -sampleDir);
 		if (bounce < EPS) 			continue;
 
 		float falloff 	 			= sampleRad / (sampleSqLen + EPS);

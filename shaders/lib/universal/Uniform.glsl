@@ -19,6 +19,8 @@ uniform sampler2D depthtex0;
 uniform sampler2D depthtex1;
 uniform sampler2D depthtex2;
 
+uniform sampler3D stbnVec2Tex;
+
 uniform int frameCounter;
 uniform int isEyeInWater;
 uniform int heldItemId;

@@ -176,7 +176,7 @@ float[cloudMsCount] SetupParticipatingMediaPhases(in float primaryPhase, in floa
 	return phases;
 }
 
-vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, out float cloudDepth) {
+vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 	float LdotV = dot(worldLightVector, rayDir);
 
 	// Compute phases for clouds' sunlight multi-scattering
@@ -230,7 +230,7 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 
 				float stepSize = rayLength * rcp(float(raySteps));
 
-				float startLength = intersection.x + stepSize * dither;
+				float startLength = intersection.x + stepSize * noise.x;
 				vec3 rayPos = startLength * rayDir + cloudViewerPos;
 				vec3 rayStep = stepSize * rayDir;
 
@@ -277,15 +277,8 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 					// 	continue;
 					// }
 
-					#if defined PASS_SKY_VIEW
-						vec2 lightNoise = vec2(0.5);
-					#else
-						// Compute light noise
-						vec2 lightNoise = hash2(fract(rayPos));
-					#endif
-
 					// Compute the optical depth of sunlight through clouds
-					float opticalDepthSun = CloudVolumeOpticalDepth(rayPos, worldLightVector, lightNoise.x, CLOUD_LOW_SUNLIGHT_SAMPLES) * -rLOG2;
+					float opticalDepthSun = CloudVolumeOpticalDepth(rayPos, worldLightVector, noise.y, CLOUD_LOW_SUNLIGHT_SAMPLES) * -rLOG2;
 
 					// Nubis Multiscatter Approximation
 					// float msVolume = remap(0.15, 0.85, dimensionalProfile);
@@ -296,7 +289,7 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 
 					#if CLOUD_CU_SKYLIGHT_SAMPLES > 0
 						// Compute the optical depth of skylight through clouds
-						float opticalDepthSky = CloudVolumeOpticalDepth(rayPos, vec3(0.0, 1.0, 0.0), lightNoise.y, CLOUD_LOW_SKYLIGHT_SAMPLES) * -rLOG2;
+						float opticalDepthSky = CloudVolumeOpticalDepth(rayPos, vec3(0.0, 1.0, 0.0), noise.y, CLOUD_LOW_SKYLIGHT_SAMPLES) * -rLOG2;
 
 						// See slide 85 of [Schneider, 2017]
 						// Original formula: Energy = max( exp( - density_along_light_ray ), (exp(-density_along_light_ray * 0.25) * 0.7) )
@@ -356,7 +349,7 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 			float rayLength = (cloudMidRadius - r) / mu;
 			vec3 rayPos = rayDir * rayLength + cloudViewerPos;
 
-			vec3 cloudTemp = RenderCloudMid(rayPos.xz, rayDir, dither, phases);
+			vec3 cloudTemp = RenderCloudMid(rayPos.xz, rayDir, noise.y, phases);
 
 			// Update integral data
 			if (cloudTemp.z > cloudEpsilon) {
@@ -383,7 +376,7 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 			float rayLength = (cloudHighRadius - r) / mu;
 			vec3 rayPos = rayDir * rayLength + cloudViewerPos;
 
-			vec3 cloudTemp = RenderCloudHigh(rayPos.xz, rayDir, dither, phases);
+			vec3 cloudTemp = RenderCloudHigh(rayPos.xz, rayDir, noise.y, phases);
 
 			// Update integral data
 			if (cloudTemp.z > cloudEpsilon) {
