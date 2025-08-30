@@ -389,7 +389,7 @@ void main() {
 		// Specular reflections
 		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
 			if (material.specularMask) {
-				lightmap.y = saturate(8.0 * lightmap.y);
+				lightmap.y = remap(0.3, 0.7, lightmap.y);
 
 				reflectionOut = CalculateSpecularReflections(material, worldNormal, screenPos, worldDir, viewPos, lightmap.y, dither);
 
