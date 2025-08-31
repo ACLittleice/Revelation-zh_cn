@@ -72,7 +72,7 @@ vec3 SampleGGXVNDF(in vec2 u, in vec3 wi, in float alpha, in vec3 n) {
     float y = sinTheta * sin(phi);
     vec3 cStd = vec3(x, y, z);
     // reflect sample to align with normal
-    vec3 up = vec3(0.0, 0.0, 1.0);
+    vec3 up = abs(n.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
     vec3 wr = n + up;
     vec3 c = dot(wr, cStd) * wr / wr.z - cStd;
     // compute halfway direction as standard normal
