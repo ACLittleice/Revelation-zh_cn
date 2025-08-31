@@ -77,7 +77,7 @@
 	|	colortex12	|               	|	  			|	Unused
 	|	colortex13	|   r8i	        	|	Full res  	|	Cloud frame index
 	|	colortex14	|   rg16            |	Full res	|	Variance history
-	|	colortex15	|   rgb16           |	Double res	|	FSR EASU output
+	|	colortex15	|   	           	|				|	Unused
 
 --------------------------------------------------------------------------------
 */

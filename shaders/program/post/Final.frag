@@ -67,12 +67,6 @@ vec3 FsrCasFilter(in ivec2 texel) {
 	return ((b + d + f + h) * w + e) / (4.0 * w + 1.0);
 }
 
-#ifdef FSR_ENABLED
-	// Make compiler happy, this should never be reached
-	#define FsrEasuCF(coord) vec3(0.0)
-	#include "/lib/post/FSR.glsl"
-#endif
-
 //================================================================================================//
 
 // Approximation from SMAA presentation from siggraph 2016
@@ -134,12 +128,8 @@ void main() {
 	#else
 		if (abs(MC_RENDER_QUALITY - 1.0) < 1e-2) {
 			finalOut = FsrCasFilter(screenTexel);
-			#ifdef FSR_ENABLED
-				} else if (MC_RENDER_QUALITY < 1.0) {
-					finalOut = FsrRcasF(screenTexel);
-			#endif
 		} else {
-			finalOut = textureCatmullRomFast(colortex0, gl_FragCoord.xy * MC_RENDER_QUALITY, 0.6);
+			finalOut = textureCatmullRomFast(colortex0, gl_FragCoord.xy * MC_RENDER_QUALITY, 0.5);
 		}
 	#endif
 
