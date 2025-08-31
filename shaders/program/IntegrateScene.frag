@@ -104,7 +104,7 @@ void main() {
 		vec3 viewNormal = mat3(gbufferModelView) * OctDecodeUnorm(Unpack2x8U(gbufferData0.z));
 		#ifdef RAYTRACED_REFRACTION
 			refractedCoord = CalculateRefractedCoord(waterMask, viewPos, viewNormal, screenPos);
-		#else	
+		#else
 			refractedCoord = CalculateRefractedCoord(waterMask, viewPos, viewNormal, screenPos, gbufferData1, transparentDepth);
 		#endif
 		refractedTexel = uvToTexel(refractedCoord);
@@ -176,15 +176,15 @@ void main() {
 		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
 			else if (material.specularMask) {
 				// Specular reflections of other materials
-				vec4 reflectionData = texelFetch(colortex1, refractedTexel, 0);
-				vec3 albedo = sRGBtoLinear(loadAlbedo(screenTexel));
+				vec3 reflectionData = texelFetch(colortex1, refractedTexel, 0).rgb;
+				vec3 albedo = sRGBtoLinear(loadAlbedo(refractedTexel));
 
 				float NdotV = abs(dot(worldNormal, worldDir));
 				vec2 brdf = texture(brdfLutTex, vec2(material.roughness, NdotV)).xy;
 
 				vec3 f0 = GetMaterialF0(material.metalness, albedo);
 				vec3 specular = f0 * brdf.x + brdf.y;
-				sceneOut += reflectionData.rgb * specular;
+				sceneOut += reflectionData * specular;
 			}
 		#endif
 
