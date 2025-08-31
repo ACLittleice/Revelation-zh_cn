@@ -105,7 +105,7 @@ void main() {
 
 	vec3 albedo = sRGBtoLinear(loadAlbedo(screenTexel));
 
-	float dither = SampleStbnVec1(screenTexel, frameCounter);
+	float dither = BlueNoiseTemporal(screenTexel);
 
 	sceneOut = vec3(0.0);
 
