@@ -68,7 +68,7 @@ const float planetRadius = 6371e3; // The average radius of the Earth: 6,371 kil
 const float mie_phase_g = 0.78;
 
 float viewerHeight = planetRadius + max(1.0, eyeAltitude + VIEWER_BASE_ALTITUDE);
-float moonlightMult = fma(abs(moonPhase - 4.0), 0.25, 0.2) * (NIGHT_BRIGHTNESS + nightVision * 0.02);
+float moonlightMult = (abs(moonPhase - 4.0) + 1.0) * (0.0001 * NIGHT_BRIGHTNESS);
 
 // Values from https://github.com/ebruneton/precomputed_atmospheric_scattering
 const int kLambdaMin = 360;
