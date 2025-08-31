@@ -27,9 +27,30 @@ vec3 SampleConeVector(in vec3 vector, in vec2 xy, in float angle) {
     return rotate(sphereCap, vec3(0.0, 0.0, 1.0), vector);
 }
 
+// pdf = D * NoH / (4 * VoH)
+vec3 SampleGGX(in vec2 Xi, in float a, in vec3 N) {
+    // Spherical coordinates
+    float phi = TAU * Xi.x;
+    float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
+    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+
+    // Convert to hemisphere vector
+    vec3 H;
+    H.x = cos(phi) * sinTheta;
+    H.y = sin(phi) * sinTheta;
+    H.z = cosTheta;
+
+    // Convert tangent space normal to world space
+    vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+    vec3 tangent = normalize(cross(up, N));
+    vec3 bitangent = cross(N, tangent);
+
+    return tangent * H.x + bitangent * H.y + N * H.z;
+}
+
 // From https://ggx-research.github.io/publication/2023/06/09/publication-ggx.html
 // world-space isotropic-only version
-// benefits: 
+// benefits:
 // - no need for moving to tangent space
 // - it avoids the need for an orthonormal basis
 // - it's (slightly) faster than the general version
@@ -62,27 +83,6 @@ vec3 SampleGGXVNDF(in vec2 u, in vec3 wi, in float alpha, in vec3 n) {
     vec3 wm = normalize(wmStd_z + alpha * wmStd_xy);
     // return final normal
     return wm;
-}
-
-// pdf = D * NoH / (4 * VoH)
-vec3 SampleGGX(in vec2 Xi, in float a, in vec3 N) {
-    // Spherical coordinates
-    float phi = TAU * Xi.x;
-    float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
-    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-
-    // Convert to hemisphere vector
-    vec3 H;
-    H.x = cos(phi) * sinTheta;
-    H.y = sin(phi) * sinTheta;
-    H.z = cosTheta;
-
-    // Convert tangent space normal to world space
-    vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-    vec3 tangent = normalize(cross(up, N));
-    vec3 bitangent = cross(N, tangent);
-
-    return tangent * H.x + bitangent * H.y + N * H.z;
 }
 
 //======// Fresnel //=============================================================================//
@@ -278,26 +278,26 @@ float DiffuseBurley(in float LdotH, in float NdotV, in float NdotL, in float rou
 
 // From https://blog.selfshadow.com/publications/turquin/ms_comp_final.pdf
 vec3 TurquinBRDF(in float NdotV, in float NdotL, in float NdotH, in float VdotH, in float f0, in float metallic, in float roughness, in vec3 albedo) {
-    vec3 F0 = mix(vec3(f0), albedo, metallic); 
+    vec3 F0 = mix(vec3(f0), albedo, metallic);
     float alpha2 = roughness * roughness;
 
     // Fresnel term
     vec3 F = FresnelSchlickMS(VdotH, F0, roughness);
 
     // Distribution term
-    float D = NDFTrowbridgeReitz(NdotH, alpha2);   
+    float D = NDFTrowbridgeReitz(NdotH, alpha2);
 
     // Geometric term
-    float G = G2SchlickGGX(NdotL, NdotV, alpha2);      
+    float G = G2SchlickGGX(NdotL, NdotV, alpha2);
 
     // Diffuse contribution with energy compensation
     vec3 kD = oms(F) * oms(metallic);
     vec3 diffuse = kD * albedo * rPI;
 
     // Specular contribution
-    vec3 numerator = D * G * F; 
+    vec3 numerator = D * G * F;
     float denominator = 4.0 * NdotV * NdotL;
-    vec3 specular = numerator / maxEps(denominator);  
+    vec3 specular = numerator / maxEps(denominator);
 
     return (diffuse + specular) * NdotL;
 }
