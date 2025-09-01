@@ -19,8 +19,6 @@ flat out uint materialID;
 out vec3 worldPos;
 out vec3 viewPos;
 
-flat out vec3 directIlluminance;
-
 //======// Attribute //===========================================================================//
 
 in vec3 vaPosition;
@@ -28,16 +26,10 @@ in vec4 vaColor;
 in vec2 vaUV0;
 in vec3 vaNormal;
 
-#ifndef MC_GL_VENDOR_INTEL
-	#define attribute in
-#endif
-
-attribute vec4 mc_Entity;
-attribute vec4 at_tangent;
+in vec4 mc_Entity;
+in vec4 at_tangent;
 
 //======// Uniform //=============================================================================//
-
-uniform sampler2D colortex4; // Global illuminances
 
 uniform vec3 chunkOffset;
 
@@ -91,6 +83,4 @@ void main() {
 	#ifdef TAA_ENABLED
 		gl_Position.xy += taaOffset * gl_Position.w;
 	#endif
-
-	directIlluminance = loadDirectIllum();
 }

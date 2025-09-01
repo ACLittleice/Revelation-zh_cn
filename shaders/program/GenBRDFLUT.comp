@@ -8,6 +8,7 @@
 
 	Pass: Generate BRDF LUT
 	Reference: https://www.gamedevs.org/uploads/real-shading-in-unreal-engine-4.pdf
+               https://ggx-research.github.io/publication/2023/06/09/publication-ggx.html
 
 --------------------------------------------------------------------------------
 */
@@ -15,7 +16,7 @@
 //======// Input //===============================================================================//
 
 layout (local_size_x = 16, local_size_y = 16) in;
-const ivec2 workGroups = ivec2(32, 32);
+const ivec3 workGroups = ivec3(32, 32, 1);
 
 //======// Utility //=============================================================================//
 
@@ -32,29 +33,9 @@ writeonly uniform image2D brdfLutImg;
 #include "/lib/universal/Random.glsl"
 #include "/lib/surface/BRDF.glsl"
 
-vec3 ImportanceSampleGGX(vec2 Xi, float roughness, vec3 N) {
-    float a = roughness * roughness;
+const uint samples = 2048u;
 
-    // Spherical coordinates
-    float phi = TAU * Xi.x;
-    float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
-    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-
-    // Convert to hemisphere vector
-    vec3 H;
-    H.x = cos(phi) * sinTheta;
-    H.y = sin(phi) * sinTheta;
-    H.z = cosTheta;
-
-    // Convert tangent space normal to world space
-    vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-    vec3 tangent = normalize(cross(up, N));
-    vec3 bitangent = cross(N, tangent);
-
-    return tangent * H.x + bitangent * H.y + N * H.z;
-}
-
-vec2 IntegrateBRDF(float NdotV, float roughness, const uint samples) {
+vec2 IntegrateBRDF(in float roughness, in float NdotV) {
     vec3 V; // View direction
     V.x = sqrt(1.0 - NdotV * NdotV); // sin(theta)
     V.y = 0.0;
@@ -66,17 +47,15 @@ vec2 IntegrateBRDF(float NdotV, float roughness, const uint samples) {
 
     for (uint i = 0u; i < samples; ++i) {
         vec2 Xi = Hammersley(i, samples);
-        vec3 H = ImportanceSampleGGX(Xi, roughness, N);
-        vec3 L = normalize(2.0 * dot(V, H) * H - V);
+        vec3 H = SampleGGXVNDF(Xi, V, roughness, N);
+        vec3 L = 2.0 * dot(V, H) * H - V;
 
         float NdotL = L.z;
-        if (NdotL > EPS) {
-			float NdotH = max0(H.z);
-			float VdotH = max0(dot(V, H));
+        if (NdotL > 0.0) {
+			float VdotH = saturate(dot(V, H));
 
             // Geometric occlusion term
-            float G = G2SmithGGX(NdotL, NdotV, sqr(roughness));
-            float G_Vis = (G * VdotH) / (NdotH * NdotV);
+            float G_Vis = G2withG1SmithGGX(NdotL, NdotV, roughness);
 
             // Fresnel term approximation
             float Fc = pow5(1.0 - VdotH);
@@ -95,5 +74,6 @@ void main() {
 	ivec2 lookupTexel = ivec2(gl_GlobalInvocationID.xy);
 	vec2 lookupCoord = (vec2(lookupTexel) + 0.5) / vec2(imageSize(brdfLutImg));
 
-	imageStore(brdfLutImg, lookupTexel, vec4(IntegrateBRDF(lookupCoord.y, lookupCoord.x, 2048u), 0.0, 1.0));
+    vec2 brdf = IntegrateBRDF(lookupCoord.x, lookupCoord.y);
+	imageStore(brdfLutImg, lookupTexel, vec4(brdf, 0.0, 1.0));
 }

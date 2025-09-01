@@ -84,6 +84,7 @@ vec3  curve(vec3 x)	  	 { return sqr(x) * (3.0 - 2.0 * x); }
 
 float sdot(vec2 x) 	 	 { return dot(x, x); }
 float sdot(vec3 x) 	 	 { return dot(x, x); }
+float sdot(vec4 x) 	 	 { return dot(x, x); }
 
 vec2  sincos(float x)    { return vec2(sin(x), cos(x)); }
 vec2  cossin(float x)    { return vec2(cos(x), sin(x)); }

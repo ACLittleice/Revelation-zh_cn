@@ -20,7 +20,7 @@ const float	shadowDistance 	  = 192.0; // [64.0 80.0 96.0 112.0 128.0 160.0 192.
 
 //======// Environment //=========================================================================//
 
-const ivec2 skyViewRes = ivec2(256, 192);
+const ivec2 skyViewRes = ivec2(256, 128);
 
 /* Aurora */
 	// #define AURORA // Enables aurora
@@ -36,8 +36,8 @@ const ivec2 skyViewRes = ivec2(256, 192);
 
 	#define CLOUD_CBR_ENABLED // Enables cloud checkerboard rendering
 	#define CLOUD_CBR_SCALE 2 // Upscaling factor for cloud checkerboard rendering. [2 3 4]
-	#define CLOUD_MAX_ACCUM_FRAMES 48 // Maximum number of accumulated frames for cloud temporal upscaling. [16 20 24 28 32 36 40 44 48 52 56 60 64 68 72 76 80 84 88 92 96 100 104 108 112 116 120 124 128 132 136 140 144 148 152 156 160 164 168 172 176 180 184 188 192 196 200 204 208 212 216 220 224 228 232 236 240 244 248 252]
-	#define CLOUD_VARIANCE_CLIP // Enables variance clipping for cloud temporal upscaling
+	#define CLOUD_MAX_ACCUM_FRAMES 32 // Maximum number of accumulated frames for cloud temporal upscaling. [16 20 24 28 32 36 40 44 48 52 56 60 64 68 72 76 80 84 88 92 96 100 104 108 112 116 120 124 128 132 136 140 144 148 152 156 160 164 168 172 176 180 184 188 192 196 200 204 208 212 216 220 224 228 232 236 240 244 248 252]
+	#define CLOUD_EI_CLIP // Enables ellipsoid intersection clipping for cloud temporal upscaling
 
 	const int cloudRenderArea = CLOUD_CBR_SCALE * CLOUD_CBR_SCALE;
 
@@ -76,7 +76,6 @@ const ivec2 skyViewRes = ivec2(256, 192);
 /* Transparent */
 	#define WATER_PARALLAX // Enables water parallax
 	#define WATER_CAUSTICS // Enables water caustics
-	// #define WATER_CAUSTICS_DISPERSION // Enables water caustics dispersion
 
 	#define WATER_REFRACT_IOR 1.25 	// [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.15 1.2 1.25 1.3 1.33 1.4 1.5 1.6]
 	#define WATER_WAVE_HEIGHT 1.0 	// [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 5.0 7.0 10.0]
@@ -113,7 +112,7 @@ const ivec2 skyViewRes = ivec2(256, 192);
 
 /* Lighting Brightness */
 	#define MINIMUM_AMBIENT_BRIGHTNESS 0.0001 // Minimum brightness of the ambient light. [0.0 0.00001 0.00002 0.00003 0.00005 0.00007 0.0001 0.0002 0.0003 0.0004 0.0005 0.0006 0.0007 0.0008 0.0009 0.001 0.0015 0.002 0.0025 0.003 0.004 0.005 0.006 0.007 0.01 0.05 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
-	#define NIGHT_BRIGHTNESS 0.0005 // Brightness of the night. [0.0 0.00005 0.00007 0.0001 0.0002 0.0003 0.0005 0.0006 0.0007 0.0008 0.0009 0.001 0.0015 0.002 0.0025 0.003 0.004 0.005 0.006 0.007 0.01 0.05 1.0]
+	#define NIGHT_BRIGHTNESS 1.0 // Brightness of the night. [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0] [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.7 2.0 2.5 3.0 4.0 5.0 7.0 10.0]
 
 /* Global Illumination */
 	// #define SSPT_ENABLED // Enables screen-space path tracing
@@ -124,7 +123,7 @@ const ivec2 skyViewRes = ivec2(256, 192);
 		#undef RSM_ENABLED
 	#endif
 
-	#define SSPT_MAX_ACCUM_FRAMES 96.0 // Maximum accumulated frames for SSPT. [20.0 24.0 28.0 32.0 36.0 40.0 48.0 56.0 64.0 72.0 80.0 96.0 112.0 128.0 144.0 160.0 192.0 224.0 256.0 320.0 384.0 448.0 512.0 640.0 768.0 896.0 1024.0]
+	#define SSPT_MAX_ACCUM_FRAMES 72.0 // Maximum accumulated frames for SSPT. [20.0 24.0 28.0 32.0 36.0 40.0 48.0 56.0 64.0 72.0 80.0 96.0 112.0 128.0 144.0 160.0 192.0 224.0 256.0 320.0 384.0 448.0 512.0 640.0 768.0 896.0 1024.0]
 	#define RSM_MAX_ACCUM_FRAMES  64.0 // Maximum accumulated frames for RSM.  [20.0 24.0 28.0 32.0 36.0 40.0 48.0 56.0 64.0 72.0 80.0 96.0 112.0 128.0 144.0 160.0 192.0 224.0 256.0 320.0 384.0 448.0 512.0 640.0 768.0 896.0 1024.0]
 
 /* Ambient Occlusion */
@@ -189,8 +188,7 @@ const ivec2 skyViewRes = ivec2(256, 192);
 	#ifdef REFLECTION_FILTER
 	#endif
 
-	#define SPECULAR_IMPORTANCE_SAMPLING_BIAS 0.7 // Specular importance sampling bias. [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
-	// #define SPECULAR_HIGHLIGHT_BRIGHTNESS 0.6 // Brightness of the specular high light. [0.0 0.01 0.02 0.05 0.07 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 2.0 2.5 3.0 4.0 5.0 7.0 10.0 15.0]
+	#define SPECULAR_IMPORTANCE_SAMPLING_BIAS 0.3 // Specular importance sampling bias. [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
 
 /* Refractions */
 	// #define RAYTRACED_REFRACTION // WIP
@@ -198,7 +196,7 @@ const ivec2 skyViewRes = ivec2(256, 192);
 
 /* Emissive */
 	#define EMISSIVE_MODE 0 // [0 1 2]
-	#define EMISSIVE_BRIGHTNESS 1.0 // Brightness of emissive. [0.0 0.01 0.02 0.05 0.07 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.6 0.7 0.8 0.9 1.0 1.5 2.0 2.5 3.0 3.5 4.0 4.5 5.0 5.5 6.0 6.5 7.0 7.5 8.0 8.5 9.0 9.5 10.0 10.5 11.0 11.5 12.0 12.5 13.0 13.5 14.0 14.5 15.0 15.5 16.0 16.5 17.0 17.5 18.0 18.5 19.0 19.5 20.0 20.5 21.0 21.5 22.0 22.5 23.0 23.5 24.0 24.5 25.0]
+	#define EMISSIVE_BRIGHTNESS 2.0 // Brightness of emissive. [0.0 0.01 0.02 0.05 0.07 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.6 0.7 0.8 0.9 1.0 1.5 2.0 2.5 3.0 3.5 4.0 4.5 5.0 5.5 6.0 6.5 7.0 7.5 8.0 8.5 9.0 9.5 10.0 10.5 11.0 11.5 12.0 12.5 13.0 13.5 14.0 14.5 15.0 15.5 16.0 16.5 17.0 17.5 18.0 18.5 19.0 19.5 20.0 20.5 21.0 21.5 22.0 22.5 23.0 23.5 24.0 24.5 25.0]
 	#define EMISSIVE_CURVE 2.2 // Emissive curve. [1.0 1.2 1.4 1.6 1.8 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 5.2 5.4 5.6 5.8 6.0 6.2 6.4 6.6 6.8 7.0 7.2 7.4 7.6 7.8 8.0 8.2 8.4 8.6 8.8 9.0 9.2 9.4 9.6 9.8 10.0] [1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
 
 /* Subsurface Scattering */
@@ -224,12 +222,12 @@ const ivec2 skyViewRes = ivec2(256, 192);
 /* TAA */
 	#define TAA_ENABLED // Enables temporal Anti-Aliasing
 	#define TAA_CLOSEST_FRAGMENT // Caclulates the closest fragment for TAA. Improves ghosting in the motion objects
-	#define TAA_MAX_ACCUM_FRAMES 64.0 // Maximum number of accumulated frames for TAA. [20.0 24.0 28.0 32.0 36.0 40.0 48.0 56.0 64.0 72.0 80.0 96.0 112.0 128.0 144.0 160.0 192.0 224.0 256.0 320.0 384.0 448.0 512.0 640.0 768.0 896.0 1024.0]
+	#define TAA_MAX_ACCUM_FRAMES 32.0 // Maximum number of accumulated frames for TAA. [20.0 24.0 28.0 32.0 36.0 40.0 48.0 56.0 64.0 72.0 80.0 96.0 112.0 128.0 144.0 160.0 192.0 224.0 256.0 320.0 384.0 448.0 512.0 640.0 768.0 896.0 1024.0]
 
-	#define TAA_VARIANCE_CLIPPING // Enables TAA variance clipping
-	#define TAA_AGGRESSION 1.5 // Strictness of TAA variance clipping. [1.0 1.05 1.1 1.15 1.2 1.25 1.3 1.35 1.4 1.45 1.5 1.55 1.6 1.65 1.7 1.75 1.8 1.85 1.9 1.95 2.0 2.05 2.1 2.15 2.2 2.25 2.3 2.35 2.4 2.45 2.5 2.55 2.6 2.65 2.7 2.75 2.8 2.85 2.9 2.95 3.0]
+	// #define TAA_EI_CLIP // Enables TAA ellipsoid intersection clipping. When disabled, use variance clipping.
+	#define TAA_AGGRESSION 2.0 // Aggressiveness of TAA color clipping. [1.0 1.05 1.1 1.15 1.2 1.25 1.3 1.35 1.4 1.45 1.5 1.55 1.6 1.65 1.7 1.75 1.8 1.85 1.9 1.95 2.0 2.05 2.1 2.15 2.2 2.25 2.3 2.35 2.4 2.45 2.5 2.55 2.6 2.65 2.7 2.75 2.8 2.85 2.9 2.95 3.0]
 
-	// #define TAA_SHARPEN // Sharpens the image when applying TAA
+	#define TAA_SHARPEN // Sharpens the image when applying TAA
 	#define TAA_SHARPNESS 0.5 // Sharpness of the TAA sharpening. [0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
 
 /* Motion Blur */
@@ -243,31 +241,24 @@ const ivec2 skyViewRes = ivec2(256, 192);
 
 /* Exposure */
 	#define MANUAL 0
-	#define AUTO_BASIC 1
+	#define AUTO_BASIC 1 // TODO
 	#define AUTO_HISTOGRAM 2
 
-	#define EXPOSURE_MODE AUTO_HISTOGRAM // [MANUAL AUTO_BASIC AUTO_HISTOGRAM]
-	#define AUTO_EXPOSURE_LOD 5 // LOD level for auto exposure. [1 2 3 4 5 6 7 8 9 10 11 12 14 16]
+	#define EXPOSURE_MODE AUTO_HISTOGRAM // [MANUAL AUTO_HISTOGRAM]
 
-	#define ISO 100.0 // Sensitivity of the camera. [100.0 200.0 320.0 400.0 500.0 640.0 800.0 1000.0 1250.0 1600.0 2000.0 2500.0 3200.0 4000.0 5000.0 6400.0 8000.0 10000.0 12800.0 16000.0 20000.0 25600.0 32000.0 40000.0 51200.0 64000.0 80000.0 10. [100.0 200.0 320.0 400.0 500.0 640.0 800.0 1000.0 1250.0 1600.0 2000.0 2500.0 3200.0 4000.0 5000.0 6400.0 8000.0 10000.0 12800.0 16000.0 20000.0 25600.0 32000.0 40000.0 51200.0 64000.0 80000.0]
-	#define AUTO_EV_MIN -6.0 // Minimum EV value for auto exposure. [-32.0 -31.0 -30.0 -29.0 -28.0 -27.0 -26.0 -25.0 -24.0 -23.0 -22.0 -21.0 -20.0 -19.0 -18.0 -17.0 -16.0 -15.0 -14.0 -13.0 -12.0 -11.0 -10.0 -9.0 -8.0 -7.0 -6.0 -5.0 -4.0 -3.0 -2.0 -1.0 0.0 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0 21.0 22.0 23.0 24.0 25.0 26.0 27.0 28.0 29.0 30.0 31.0 32.0]
-	#define AUTO_EV_MAX 16.0  // Maximum EV value for auto exposure. [-32.0 -31.0 -30.0 -29.0 -28.0 -27.0 -26.0 -25.0 -24.0 -23.0 -22.0 -21.0 -20.0 -19.0 -18.0 -17.0 -16.0 -15.0 -14.0 -13.0 -12.0 -11.0 -10.0 -9.0 -8.0 -7.0 -6.0 -5.0 -4.0 -3.0 -2.0 -1.0 0.0 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0 21.0 22.0 23.0 24.0 25.0 26.0 27.0 28.0 29.0 30.0 31.0 32.0]
-	#define AUTO_EV_BIAS 0.0  // EV bias for auto exposure. [-2.0 -1.9 -1.8 -1.7 -1.6 -1.5 -1.4 -1.3 -1.2 -1.1 -1.0 -0.9 -0.8 -0.7 -0.6 -0.5 -0.4 -0.3 -0.2 -0.1 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0]
+	#define AUTO_EV_MIN -9.0 // Minimum EV value for auto exposure. [-32.0 -31.0 -30.0 -29.0 -28.0 -27.0 -26.0 -25.0 -24.0 -23.0 -22.0 -21.0 -20.0 -19.0 -18.0 -17.0 -16.0 -15.0 -14.0 -13.0 -12.0 -11.0 -10.0 -9.0 -8.0 -7.0 -6.0 -5.0 -4.0 -3.0 -2.0 -1.0 0.0 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0 21.0 22.0 23.0 24.0 25.0 26.0 27.0 28.0 29.0 30.0 31.0 32.0]
+	#define AUTO_EV_MAX 16.0 // Maximum EV value for auto exposure. [-32.0 -31.0 -30.0 -29.0 -28.0 -27.0 -26.0 -25.0 -24.0 -23.0 -22.0 -21.0 -20.0 -19.0 -18.0 -17.0 -16.0 -15.0 -14.0 -13.0 -12.0 -11.0 -10.0 -9.0 -8.0 -7.0 -6.0 -5.0 -4.0 -3.0 -2.0 -1.0 0.0 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0 21.0 22.0 23.0 24.0 25.0 26.0 27.0 28.0 29.0 30.0 31.0 32.0]
+	#define AUTO_EV_BIAS 0.0 // EV bias for auto exposure. [-2.0 -1.9 -1.8 -1.7 -1.6 -1.5 -1.4 -1.3 -1.2 -1.1 -1.0 -0.9 -0.8 -0.7 -0.6 -0.5 -0.4 -0.3 -0.2 -0.1 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0]
 	#define MANUAL_EV 2.0 // Manual exposure value. [0.1 0.3 0.5 1.0 1.5 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 12.0 14.0 16.0 18.0 20.0 25.0 30.0 40.0 50.0]
 
-	#define EXPOSURE_SPEED_UP 2.4 // Dim to bright speed. [0.5 0.6 0.7 0.8 0.9 1.0 1.2 1.6 2.0 2.5 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0 25.0 30.0 40.0 50.0]
-	#define EXPOSURE_SPEED_DOWN 1.2 // Bright to dim speed. [0.5 0.6 0.7 0.8 0.9 1.0 1.2 1.6 2.0 2.5 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0 25.0 30.0 40.0 50.0]
+	#define EXPOSURE_SPEED_UP 2.0 // Dim to bright speed. [0.5 0.6 0.7 0.8 0.9 1.0 1.2 1.6 2.0 2.5 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0 25.0 30.0 40.0 50.0]
+	#define EXPOSURE_SPEED_DOWN 1.0 // Bright to dim speed. [0.5 0.6 0.7 0.8 0.9 1.0 1.2 1.6 2.0 2.5 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0 25.0 30.0 40.0 50.0]
 
-	#define HISTOGRAM_BIN_COUNT 64 // Number of bins for the histogram. [8 16 32 64 128 256 512 1024]
-	#define HISTOGRAM_LOWER_BOUND 0.3 // [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
-	#define HISTOGRAM_UPPER_BOUND 0.6 // [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
+	#define HISTOGRAM_BIN_COUNT 128 // Number of bins for the histogram. [32 64 128 256]
+	#define HISTOGRAM_LOWER_BOUND 0.4 // [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
+	#define HISTOGRAM_UPPER_BOUND 0.8 // [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
 
 /* FidelityFX */
-	// #define FSR_ENABLED // Enables AMD FidelityFX Super Resolution
-	#define FSR_RCAS_DENOISE // Enables RCAS denoising
-	#define FSR_RCAS_LIMIT (0.25 - rcp(16.0))
-	#define FSR_RCAS_SHARPNESS 0.5 // Sharpness of the FSR RCAS. [0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
-
 	#define CAS_ENABLED // Sharpens the final image using AMD FidelityFX CAS (Contrast-Adaptive Sharpening)
 	#define CAS_STRENGTH 0.4 // Strength of the CAS. [0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
 
@@ -282,5 +273,6 @@ const ivec2 skyViewRes = ivec2(256, 192);
 	// #define DEBUG_CLOUD_SHADOWS
 	// #define DEBUG_SKY_COLOR
 	// #define DEBUG_RESHADING
+	// #define FORCE_DISABLE_SUBGROUP_OPS
 
 #endif

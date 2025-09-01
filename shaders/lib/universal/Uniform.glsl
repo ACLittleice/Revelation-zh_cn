@@ -1,10 +1,11 @@
 uniform sampler2D noisetex;
 
+uniform sampler2D colortex0;
 uniform sampler2D colortex1;
 uniform sampler2D colortex2;
 uniform sampler2D colortex3;
 uniform sampler2D colortex4;
-uniform sampler2D colortex5;
+uniform sampler2D skyViewTex;
 uniform sampler2D colortex6;
 uniform usampler2D colortex7;
 uniform sampler2D colortex8;
@@ -12,9 +13,14 @@ uniform sampler2D colortex9;
 uniform sampler2D colortex10;
 uniform usampler2D colortex13;
 uniform sampler2D colortex14;
+uniform sampler2D colortex15;
 
 uniform sampler2D depthtex0;
 uniform sampler2D depthtex1;
+uniform sampler2D depthtex2;
+
+uniform sampler3D stbnVec1Tex;
+uniform sampler3D stbnVec2Tex;
 
 uniform int frameCounter;
 uniform int isEyeInWater;

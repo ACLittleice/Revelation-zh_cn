@@ -4,64 +4,22 @@
 // https://schuttejoe.github.io/post/disneybsdf/
 // https://www.pbr-book.org/3ed-2018/Reflection_Models/Microfacet_Models#\
 // https://media.disneyanimation.com/uploads/production/publication_asset/48/asset/s2012_pbs_disney_brdf_notes_v3.pdf
+// https://www.gamedevs.org/uploads/real-shading-in-unreal-engine-4.pdf
 
 //================================================================================================//
 
-// From https://ggx-research.github.io/publication/2023/06/09/publication-ggx.html
-vec3 sampleGGXVNDF(in vec3 viewDir, in float roughness, in vec2 xy) {
-    // Importance sampling bias
-    xy.x = mix(xy.x, 1.0, SPECULAR_IMPORTANCE_SAMPLING_BIAS);
-
-    // Transform viewer direction to the hemisphere configuration
-    viewDir = normalize(vec3(roughness * viewDir.xy, viewDir.z));
-
-    // Sample a reflection direction off the hemisphere
-    float phi = TAU * xy.x;
-    float cosTheta = oms(xy.y) * (1.0 + viewDir.z) - viewDir.z;
-    float sinTheta = sqrt(saturate(1.0 - cosTheta * cosTheta));
-    vec3 reflected = vec3(cossin(phi) * sinTheta, cosTheta);
-
-    // Evaluate halfway direction
-    // This gives the normal on the hemisphere
-    vec3 halfway = reflected + viewDir;
-
-    // Transform the halfway direction back to hemiellispoid configuation
-    // This gives the final sampled normal
-    return normalize(vec3(roughness * halfway.xy, halfway.z));
-}
-
-vec3 sampleCosineVector(in vec3 vector, in vec2 xy) {
+vec3 SampleCosineHemisphere(in vec3 normal, in vec2 xy) {
     float phi = TAU * xy.x;
     float cosTheta = xy.y * 2.0 - 1.0;
     float sinTheta = sqrt(saturate(1.0 - cosTheta * cosTheta));
     vec3 hemisphere = vec3(cossin(phi) * sinTheta, cosTheta);
 
-	vec3 cosineVector = normalize(vector + hemisphere);
-	return cosineVector * fastSign(dot(cosineVector, vector));
-}
-
-vec3 importanceSampleCosine(in vec3 normal, in vec2 xy) {
-    float phi = TAU * xy.y;
-
-    float cosTheta = sqrt(xy.x);
-    float sinTheta = sqrt(1.0 - xy.x);
-    vec3 sampleHemisphere = vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
-
-    // Orient sample into world space
-    vec3 up = abs(normal.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-    vec3 tangent = normalize(cross(up, normal));
-    vec3 bitangent = cross(normal, tangent);
-
-    vec3 sampleWorld = vec3(0.0);
-    sampleWorld += sampleHemisphere.x * tangent;
-    sampleWorld += sampleHemisphere.y * bitangent;
-    sampleWorld += sampleHemisphere.z * normal;
-
-    return sampleWorld;
+	vec3 cosineVector = normalize(normal + hemisphere);
+	return cosineVector * fastSign(dot(cosineVector, normal));
 }
 
 // From https://github.com/Jessie-LC/open-source-utility-code/blob/main/simple/misc.glsl
-vec3 generateConeVector(vec3 vector, vec2 xy, float angle) {
+vec3 SampleConeVector(in vec3 vector, in vec2 xy, in float angle) {
     xy.x *= TAU;
     float cosAngle = cos(angle);
     xy.y = xy.y * (1.0 - cosAngle) + cosAngle;
@@ -69,10 +27,72 @@ vec3 generateConeVector(vec3 vector, vec2 xy, float angle) {
     return rotate(sphereCap, vec3(0.0, 0.0, 1.0), vector);
 }
 
+// pdf = D * NoH / (4 * VoH)
+vec3 SampleGGX(in vec2 Xi, in float a, in vec3 N) {
+    // Spherical coordinates
+    float phi = TAU * Xi.x;
+    float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
+    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+
+    // Convert to hemisphere vector
+    vec3 H;
+    H.x = cos(phi) * sinTheta;
+    H.y = sin(phi) * sinTheta;
+    H.z = cosTheta;
+
+    // Convert tangent space normal to world space
+    vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+    vec3 tangent = normalize(cross(up, N));
+    vec3 bitangent = cross(N, tangent);
+
+    return tangent * H.x + bitangent * H.y + N * H.z;
+}
+
+// From https://ggx-research.github.io/publication/2023/06/09/publication-ggx.html
+// world-space isotropic-only version
+// benefits:
+// - no need for moving to tangent space
+// - it avoids the need for an orthonormal basis
+// - it's (slightly) faster than the general version
+vec3 SampleGGXVNDF(in vec2 u, in vec3 wi, in float alpha, in vec3 n) {
+    // Importance sampling bias
+    u.x = mix(u.x, 1.0, SPECULAR_IMPORTANCE_SAMPLING_BIAS);
+
+    // decompose the vector in parallel and perpendicular components
+    vec3 wi_z = n * dot(wi, n);
+    vec3 wi_xy = wi - wi_z;
+    // warp to the hemisphere configuration
+    vec3 wiStd = normalize(wi_z - alpha * wi_xy);
+    // sample a spherical cap in (-wiStd.z, 1]
+    float wiStd_z = dot(wiStd, n);
+    float phi = (2.0 * u.x - 1.0) * PI;
+    float z = (1.0 - u.y) * (1.0 + wiStd_z) - wiStd_z;
+    float sinTheta = sqrt(saturate(1.0 - z * z));
+    float x = sinTheta * cos(phi);
+    float y = sinTheta * sin(phi);
+    vec3 cStd = vec3(x, y, z);
+    // reflect sample to align with normal
+    vec3 up = abs(n.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+    vec3 wr = n + up;
+    vec3 c = dot(wr, cStd) * wr / wr.z - cStd;
+    // compute halfway direction as standard normal
+    vec3 wmStd = c + wiStd;
+    vec3 wmStd_z = n * dot(n, wmStd);
+    vec3 wmStd_xy = wmStd_z - wmStd;
+    // warp back to the ellipsoid configuration
+    vec3 wm = normalize(wmStd_z + alpha * wmStd_xy);
+    // return final normal
+    return wm;
+}
+
 //======// Fresnel //=============================================================================//
 
 // Schlick approximation
 float FresnelSchlick(in float cosTheta, in float f0) {
+    return saturate(f0 + oms(f0) * pow5(1.0 - cosTheta));
+}
+
+vec3 FresnelSchlick(in float cosTheta, in vec3 f0) {
     return saturate(f0 + oms(f0) * pow5(1.0 - cosTheta));
 }
 
@@ -221,11 +241,11 @@ float G2SchlickGGX(in float NdotL, in float NdotV, in float alpha) {
 //================================================================================================//
 
 // Cook-Torrance model
-float SpecularBRDF(in float LdotH, in float NdotV, in float NdotL, in float NdotH, in float alpha2, in float f0) {
-    alpha2 = maxEps(alpha2);
+vec3 SpecularGGX(in float LdotH, in float NdotV, in float NdotL, in float NdotH, in float roughness, in vec3 f0) {
+    float alpha2 = maxEps(roughness * roughness);
 
     // Fresnel term
-    float F = FresnelSchlick(LdotH, f0);
+    vec3 F = FresnelSchlick(LdotH, f0);
 
     // Distribution term
 	float D = NDFTrowbridgeReitz(NdotH, alpha2);
@@ -236,41 +256,12 @@ float SpecularBRDF(in float LdotH, in float NdotV, in float NdotL, in float Ndot
 	return F * D * G / (4.0 * NdotV);
 }
 
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP && defined PASS_DEFERRED_LIGHTING
-float SpecularInvPDF(in float NdotV, in float NdotL, in float NdotH, in float alpha2) {
-    float invG1 = G1SmithGGXInverse(NdotL, alpha2);
-	float D = NDFTrowbridgeReitz(NdotH, alpha2);
-    return invG1 / D * 4.0 * NdotV;
-}
-
-vec3 SpecularBRDFwithPDF(in float LdotH, in float NdotV, in float NdotL, in Material material) {
-    vec3 phase = vec3(1.0);
-
-    // Fresnel term
-    if (material.isHardcodedMetal) {
-        phase *= FresnelConductor(LdotH, material.hardcodedMetalCoeff[0], material.hardcodedMetalCoeff[1]);
-    } else if (material.metalness > 0.5) {
-        phase *= FresnelSchlick(LdotH, material.f0);
-    } else {
-        phase *= FresnelSchlickGaussian(LdotH, material.f0);
-    }
-
-    // Geometric term
-    if (material.isRough) {
-		phase *= G2withG1SmithGGX(NdotL, NdotV, material.roughness);
-    }
-
-    // Distribution term has already been offset by the PDF
-    return phase;
-}
-#endif
-
 // From https://www.gdcvault.com/play/1024478/PBR-Diffuse-Lighting-for-GGX
 vec3 DiffuseHammon(in float LdotV, in float NdotV, in float NdotL, in float NdotH, in float roughness, in vec3 albedo) {
-    float facing = max0(LdotV) * 0.5 + 0.5;
+    float facing = saturate(LdotV) * 0.5 + 0.5;
 
     float singleSmooth = 1.05 * oms(pow5(1.0 - NdotL)) * oms(pow5(1.0 - NdotV));
-    float singleRough = facing * (0.45 - 0.2 * facing) * (rcp(NdotH) + 2.0);
+    float singleRough = facing * (0.9 - 0.4 * facing) * (0.5 + NdotH) / NdotH;
 
     float single = mix(singleSmooth, singleRough, roughness) * rPI;
     float multi = 0.1159 * roughness;
@@ -287,26 +278,26 @@ float DiffuseBurley(in float LdotH, in float NdotV, in float NdotL, in float rou
 
 // From https://blog.selfshadow.com/publications/turquin/ms_comp_final.pdf
 vec3 TurquinBRDF(in float NdotV, in float NdotL, in float NdotH, in float VdotH, in float f0, in float metallic, in float roughness, in vec3 albedo) {
-    vec3 F0 = mix(vec3(f0), albedo, metallic); 
+    vec3 F0 = mix(vec3(f0), albedo, metallic);
     float alpha2 = roughness * roughness;
 
     // Fresnel term
     vec3 F = FresnelSchlickMS(VdotH, F0, roughness);
 
     // Distribution term
-    float D = NDFTrowbridgeReitz(NdotH, alpha2);   
+    float D = NDFTrowbridgeReitz(NdotH, alpha2);
 
     // Geometric term
-    float G = G2SchlickGGX(NdotL, NdotV, alpha2);      
+    float G = G2SchlickGGX(NdotL, NdotV, alpha2);
 
     // Diffuse contribution with energy compensation
     vec3 kD = oms(F) * oms(metallic);
     vec3 diffuse = kD * albedo * rPI;
 
     // Specular contribution
-    vec3 numerator = D * G * F; 
+    vec3 numerator = D * G * F;
     float denominator = 4.0 * NdotV * NdotL;
-    vec3 specular = numerator / maxEps(denominator);  
+    vec3 specular = numerator / maxEps(denominator);
 
     return (diffuse + specular) * NdotL;
 }

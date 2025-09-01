@@ -24,22 +24,28 @@ const ivec3 workGroups = ivec3(1, 1, 1);
 
 //======// Uniform //=============================================================================//
 
-writeonly uniform image2D colorimg4;
-
 #include "/lib/universal/Uniform.glsl"
+
+//======// SSBO //================================================================================//
+
+#include "/lib/universal/SSBO.glsl"
 
 //======// Shared Memory //=======================================================================//
 
-#if defined MC_GL_VENDOR_NVIDIA
-	shared vec3[4] sharedSkySH[gl_NumSubgroups];
+#ifdef SUBGROUP_OPS
+	#if defined MC_GL_VENDOR_NVIDIA
+		shared vec3[4] sharedSkySH[gl_NumSubgroups];
+	#else
+		shared vec3[4] sharedSkySH[8];
+	#endif
 #else
-	shared vec3[4] sharedSkySH[64];
+	shared vec3[4] sharedSkySH[128];
 #endif
 
 //======// Function //============================================================================//
 
 #include "/lib/universal/Random.glsl"
-#include "/lib/atmosphere/Global.glsl"
+#include "/lib/atmosphere/Common.glsl"
 
 vec3 sampleHemisphereVector(in vec3 vector, in vec2 xy) {
     float phi = TAU * xy.x;
@@ -72,34 +78,46 @@ void main() {
 
 	// Sample and compute SH coefficients
 	vec3 direction = sampleHemisphereVector(upDir, Hammersley(index, samples));
-	vec3 skyRadiance = texture(colortex5, FromSkyViewLutParams(direction) + vec2(0.0, 0.5)).rgb;
+	vec3 skyRadiance = texture(skyViewTex, FromSkyViewLutParams(direction) + vec2(0.0, 0.5)).rgb;
 
 	vec3[4] shCoeff = ToSphericalHarmonics(skyRadiance, direction);
 
-	// Reduce SH coefficients in subgroup
-	for (uint band = 0u; band < 4u; ++band) {
-		shCoeff[band] = subgroupAdd(shCoeff[band]);
-		if (subgroupElect()) {
-			sharedSkySH[gl_SubgroupID][band] = shCoeff[band];
-		}
-	}
-    barrier();
-
-    if (index < gl_NumSubgroups) {
+	#ifdef SUBGROUP_OPS
+		// Reduce SH coefficients in subgroup
 		for (uint band = 0u; band < 4u; ++band) {
-			shCoeff[band] = subgroupAdd(sharedSkySH[index][band]);
+			shCoeff[band] = subgroupAdd(shCoeff[band]);
+			SCALARIZED_LOAD(sharedSkySH[gl_SubgroupID][band], shCoeff[band]);
 		}
-    }
+		barrier();
+
+		if (index < gl_NumSubgroups) {
+			for (uint band = 0u; band < 4u; ++band) {
+				shCoeff[band] = subgroupAdd(sharedSkySH[index][band]);
+			}
+		}
+		barrier();
+	#else
+		// Reduce SH coefficients in shared memory
+		for (uint band = 0u; band < 4u; ++band) {
+			sharedSkySH[index][band] = shCoeff[band];
+		}
+		barrier();
+
+		ParallelReduceSum(index, samples);
+
+		for (uint band = 0u; band < 4u; ++band) {
+			shCoeff[band] = sharedSkySH[0][band];
+		}
+	#endif
 
 	// Store SH coefficients in thread 0
 	if (index == 0u) {
 		for (uint band = 0u; band < 4u; ++band) {
 			shCoeff[band] *= TAU / float(samples); // Normalization
-			imageStore(colorimg4, ivec2(int(viewWidth) - 1, band + 2), vec4(shCoeff[band], 0.0));
+			global.light.skySH[band] = shCoeff[band];
 		}
 
 		// Evaluate sky illuminance from SH coefficients (facing up)
-		vec3 skyIlluminance = FromSphericalHarmonics(shCoeff, upDir);
-		imageStore(colorimg4, ivec2(int(viewWidth) - 1, 1), vec4(skyIlluminance, 0.0));
+		global.light.skyIlluminance = FromSphericalHarmonics(shCoeff, upDir);
 	}
 }

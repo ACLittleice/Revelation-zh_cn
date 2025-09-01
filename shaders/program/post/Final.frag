@@ -25,8 +25,11 @@ out vec3 finalOut;
 
 //======// Uniform //=============================================================================//
 
-uniform sampler2D colortex0; // LDR input
 #include "/lib/universal/Uniform.glsl"
+
+//======// SSBO //================================================================================//
+
+#include "/lib/universal/SSBO.glsl"
 
 //======// Function //============================================================================//
 
@@ -63,10 +66,6 @@ vec3 FsrCasFilter(in ivec2 texel) {
 
 	return ((b + d + f + h) * w + e) / (4.0 * w + 1.0);
 }
-
-#ifdef FSR_ENABLED
-	#include "/lib/post/FSR.glsl"
-#endif
 
 //================================================================================================//
 
@@ -109,6 +108,17 @@ vec3 textureCatmullRomFast(in sampler2D tex, in vec2 position, in const float sh
 
 #include "/lib/universal/TextRenderer.glsl"
 
+void HistogramDisplay(inout vec3 color, in ivec2 texel) {
+    const int binWidth = 2;
+
+    if (all(lessThan(texel, ivec2(HISTOGRAM_BIN_COUNT * binWidth, 256)))) {
+		int binIndex = texel.x / binWidth;
+		uint binValue = global.exposure.histogram[binIndex];
+
+		color = vec3(step(texel.y + 1, binValue));
+	}
+}
+
 //======// Main //================================================================================//
 void main() {
     ivec2 screenTexel = ivec2(gl_FragCoord.xy);
@@ -118,12 +128,8 @@ void main() {
 	#else
 		if (abs(MC_RENDER_QUALITY - 1.0) < 1e-2) {
 			finalOut = FsrCasFilter(screenTexel);
-			#ifdef FSR_ENABLED
-				} else if (MC_RENDER_QUALITY < 1.0) {
-					finalOut = FsrRcasF(screenTexel);
-			#endif
 		} else {
-			finalOut = textureCatmullRomFast(colortex0, gl_FragCoord.xy * MC_RENDER_QUALITY, 0.6);
+			finalOut = textureCatmullRomFast(colortex0, gl_FragCoord.xy * MC_RENDER_QUALITY, 0.5);
 		}
 	#endif
 
@@ -158,13 +164,17 @@ void main() {
 	#endif
 
 	#ifdef DEBUG_CLOUD_SHADOWS
-		if (all(lessThan(screenTexel, textureSize(colortex10, 0)))) {
-			finalOut = vec3(texelFetch(colortex10, screenTexel, 0).x);
+		if (all(lessThan(screenTexel, textureSize(cloudShadowTex, 0)))) {
+			finalOut = vec3(texelFetch(cloudShadowTex, screenTexel, 0).x);
 		}
 	#endif
 
 	#ifdef DEBUG_SKY_COLOR
 		if (all(lessThan(gl_FragCoord.xy * viewPixelSize, vec2(0.4)))) finalOut = skyColor;
+	#endif
+
+	#if 0
+		HistogramDisplay(finalOut, screenTexel);
 	#endif
 
 	// Apply bayer dithering to reduce banding artifacts

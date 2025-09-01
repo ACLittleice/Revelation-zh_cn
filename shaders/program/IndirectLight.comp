@@ -33,7 +33,7 @@ writeonly restrict uniform image2D colorimg3;
 #include "/lib/universal/Random.glsl"
 #include "/lib/universal/Offset.glsl"
 
-#include "/lib/atmosphere/Global.glsl"
+#include "/lib/atmosphere/Common.glsl"
 
 #include "/lib/surface/BRDF.glsl"
 
@@ -79,9 +79,9 @@ void main() {
 		vec3 viewPos = ScreenToViewSpace(screenPos);
 
 		#ifdef RSM_ENABLED
-			float dither = BlueNoiseTemporal(currentTexel);
+			vec2 stbnVec2 = SampleStbnVec2(currentTexel, frameCounter);
 			float skyLightmap = Unpack2x8UY(gbufferData0.x);
-			imageStore(colorimg3, screenTexel, vec4(CalculateRSM(viewPos, worldNormal, dither, skyLightmap), 1.0));
+			imageStore(colorimg3, screenTexel, vec4(CalculateRSM(viewPos, worldNormal, stbnVec2, skyLightmap), 1.0));
 		#else
 			vec2 lightmap = Unpack2x8U(gbufferData0.x);
 			imageStore(colorimg3, screenTexel, vec4(CalculateSSPT(screenPos, viewPos, worldNormal, lightmap), 1.0));

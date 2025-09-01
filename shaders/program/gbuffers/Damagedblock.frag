@@ -13,7 +13,7 @@ in vec2 texCoord;
 uniform sampler2D tex;
 
 //======// Main //================================================================================//
-void main() {	
+void main() {
 	vec4 albedo = texture(tex, texCoord);
 
     if (albedo.a < 0.1) discard;

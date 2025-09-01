@@ -32,6 +32,7 @@ vec3 RenderSun(in vec3 worldDir, in vec3 sunVector) {
 
     //     return sunBloom * 1e-3;
     }
+    return vec3(0.0);
 }
 
 //================================================================================================//

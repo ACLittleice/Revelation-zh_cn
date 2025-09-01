@@ -41,13 +41,17 @@ uniform float biomeSnowstorm;
 
 #include "/lib/universal/Uniform.glsl"
 
+//======// SSBO //================================================================================//
+
+#include "/lib/universal/SSBO.glsl"
+
 //======// Function //============================================================================//
 
 #include "/lib/universal/Transform.glsl"
 #include "/lib/universal/Fetch.glsl"
 #include "/lib/universal/Random.glsl"
 
-#include "/lib/atmosphere/Global.glsl"
+#include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/clouds/Shadows.glsl"
 
 // x: Mie y: Rayleigh
@@ -167,7 +171,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither) {
 			cloudShadowPos += shadowViewStep.xy;
 
 			// vec2 cloudShadowCoord = DistortCloudShadowPos(cloudShadowPos);
-			float cloudShadow = texture(colortex10, cloudShadowPos).x;
+			float cloudShadow = texture(cloudShadowTex, cloudShadowPos).x;
 			sampleShadow *= cloudShadow * cloudShadow;
 		#endif
 
@@ -188,8 +192,8 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither) {
 		scatteringSun *= 1.0 - wetness * 0.75;
 	#endif
 
-	vec3 directIlluminance = loadDirectIllum();
-	vec3 skyIlluminance = loadSkyIllum();
+	vec3 directIlluminance = global.light.directIlluminance;
+	vec3 skyIlluminance = global.light.skyIlluminance;
 
 	vec3 scattering = scatteringSun * directIlluminance;
 	scattering += scatteringSky * uniformPhase * skyIlluminance;
@@ -224,7 +228,7 @@ void main() {
 
 	vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
 
-	float dither = BlueNoiseTemporal(screenTexel);
+	float dither = SampleStbnVec1(screenTexel, frameCounter + 2);
 
 	mat2x3 volFogData = mat2x3(vec3(0.0), vec3(1.0));
 

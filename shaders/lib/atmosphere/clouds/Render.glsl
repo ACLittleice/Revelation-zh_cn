@@ -90,7 +90,7 @@ vec3 RenderCloudMid(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in floa
 		// Approximate sunlight multi-scattering
 		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases);
 
-		float opticalDepthSky = density * (CLOUD_MID_THICKNESS * stratusExtinction * -rLOG2);
+		float opticalDepthSky = density * (CLOUD_MID_THICKNESS * 0.5 * stratusExtinction * -rLOG2);
 
 		// Compute skylight multi-scattering
 		// See slide 85 of [Schneider, 2017]
@@ -102,7 +102,7 @@ vec3 RenderCloudMid(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in floa
 		// float powder = 2.0 * oms(exp2(-(density * 32.0 + 0.1)));
 
 		// TODO: Better implementation
-		float inScatterProbability = oms(exp2(-(density * 16.0 + 0.25)));
+		float inScatterProbability = oms(exp2(-16.0 * density - 0.125)) * PI;
 
 		scatteringSun *= integral * inScatterProbability * stratusAlbedo;
 		scatteringSky *= integral * stratusAlbedo;
@@ -139,7 +139,7 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in flo
 		// Approximate sunlight multi-scattering
 		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases);
 
-		float opticalDepthSky = density * (CLOUD_HIGH_THICKNESS * cirrusExtinction * -rLOG2);
+		float opticalDepthSky = density * (CLOUD_HIGH_THICKNESS * 0.5 * cirrusExtinction * -rLOG2);
 
 		// Compute skylight multi-scattering
 		// See slide 85 of [Schneider, 2017]
@@ -151,7 +151,7 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in flo
 		// float powder = 2.0 * oms(exp2(-(density * 32.0 + 0.1)));
 
 		// TODO: Better implementation
-		float inScatterProbability = oms(exp2(-(density * 16.0 + 0.25)));
+		float inScatterProbability = oms(exp2(-density * 16.0 - 0.25)) * hPI;
 
 		scatteringSun *= integral * inScatterProbability * cirrusAlbedo;
 		scatteringSky *= integral * cirrusAlbedo;
@@ -176,7 +176,7 @@ float[cloudMsCount] SetupParticipatingMediaPhases(in float primaryPhase, in floa
 	return phases;
 }
 
-vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, out float cloudDepth) {
+vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 	float LdotV = dot(worldLightVector, rayDir);
 
 	// Compute phases for clouds' sunlight multi-scattering
@@ -212,11 +212,11 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 				float rayLength = clamp(intersection.y - intersection.x, 0.0, 1e5 - withinVolumeSmooth * 6e4);
 
 				#if defined PASS_SKY_VIEW
-					uint raySteps = CLOUD_CU_SAMPLES >> 1u;
+					uint raySteps = CLOUD_LOW_SAMPLES >> 1u;
 					// Reduce ray steps for vertical rays
 					raySteps = uint(float(raySteps) * oms(abs(mu) * 0.5));
 				#else
-					uint raySteps = CLOUD_CU_SAMPLES;
+					uint raySteps = CLOUD_LOW_SAMPLES;
 					// Reduce ray steps for vertical rays
 					raySteps = uint(float(raySteps) * mix(oms(abs(mu) * 0.5), 4.0, withinVolumeSmooth));
 				#endif
@@ -230,7 +230,7 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 
 				float stepSize = rayLength * rcp(float(raySteps));
 
-				float startLength = intersection.x + stepSize * dither;
+				float startLength = intersection.x + stepSize * noise.x;
 				vec3 rayPos = startLength * rayDir + cloudViewerPos;
 				vec3 rayStep = stepSize * rayDir;
 
@@ -277,15 +277,8 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 					// 	continue;
 					// }
 
-					#if defined PASS_SKY_VIEW
-						vec2 lightNoise = vec2(0.5);
-					#else
-						// Compute light noise
-						vec2 lightNoise = hash2(fract(rayPos));
-					#endif
-
 					// Compute the optical depth of sunlight through clouds
-					float opticalDepthSun = CloudVolumeOpticalDepth(rayPos, worldLightVector, lightNoise.x, CLOUD_CU_SUNLIGHT_SAMPLES) * -rLOG2;
+					float opticalDepthSun = CloudVolumeOpticalDepth(rayPos, worldLightVector, noise.y, CLOUD_LOW_SUNLIGHT_SAMPLES) * -rLOG2;
 
 					// Nubis Multiscatter Approximation
 					// float msVolume = remap(0.15, 0.85, dimensionalProfile);
@@ -296,14 +289,14 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 
 					#if CLOUD_CU_SKYLIGHT_SAMPLES > 0
 						// Compute the optical depth of skylight through clouds
-						float opticalDepthSky = CloudVolumeOpticalDepth(rayPos, vec3(0.0, 1.0, 0.0), lightNoise.y, CLOUD_CU_SKYLIGHT_SAMPLES) * -rLOG2;
+						float opticalDepthSky = CloudVolumeOpticalDepth(rayPos, vec3(0.0, 1.0, 0.0), noise.y, CLOUD_LOW_SKYLIGHT_SAMPLES) * -rLOG2;
 
 						// See slide 85 of [Schneider, 2017]
 						// Original formula: Energy = max( exp( - density_along_light_ray ), (exp(-density_along_light_ray * 0.25) * 0.7) )
 						float scatteringSky = exp2(max(opticalDepthSky, opticalDepthSky * 0.25 - 0.5));
 					#else
 						// Nubis Ambient Scattering Approximation
-						float scatteringSky = approxSqrt(1.0 - dimensionalProfile) * saturate(heightFraction * 2.0);
+						float scatteringSky = approxSqrt(1.0 - dimensionalProfile);
 					#endif
 
 					// Estimate the light optical depth of the ground from the cloud volume
@@ -319,7 +312,7 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 					float inScatterProbability = sqr(stepDensity * 2.0 + dimensionalProfile);
 					scatteringSun *= inScatterProbability * 2.0;
 
-					vec2 scattering = vec2(scatteringSun + scatteringGround * uniformPhase * worldLightVector.y, 
+					vec2 scattering = vec2(scatteringSun + scatteringGround * uniformPhase * worldLightVector.y,
 										   scatteringSky + scatteringGround);
 
 					float stepOpticalDepth = stepDensity * (cumulusExtinction * -rLOG2) * stepSize;
@@ -328,7 +321,7 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 					// Energy-conserving analytical integration from [Hillaire, 2016]
 					float stepIntegral = transmittance * oms(stepTransmittance);
 					stepScattering += scattering * stepIntegral;
-					transmittance *= stepTransmittance;	
+					transmittance *= stepTransmittance;
 
 					// Break if the cloud has reached the minimum transmittance
 					if (transmittance < cloudMinTransmittance) break;
@@ -356,7 +349,7 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 			float rayLength = (cloudMidRadius - r) / mu;
 			vec3 rayPos = rayDir * rayLength + cloudViewerPos;
 
-			vec3 cloudTemp = RenderCloudMid(rayPos.xz, rayDir, dither, phases);
+			vec3 cloudTemp = RenderCloudMid(rayPos.xz, rayDir, noise.y, phases);
 
 			// Update integral data
 			if (cloudTemp.z > cloudEpsilon) {
@@ -383,7 +376,7 @@ vec4 RenderClouds(in vec3 rayDir/* , in vec3 skyRadiance */, in float dither, ou
 			float rayLength = (cloudHighRadius - r) / mu;
 			vec3 rayPos = rayDir * rayLength + cloudViewerPos;
 
-			vec3 cloudTemp = RenderCloudHigh(rayPos.xz, rayDir, dither, phases);
+			vec3 cloudTemp = RenderCloudHigh(rayPos.xz, rayDir, noise.y, phases);
 
 			// Update integral data
 			if (cloudTemp.z > cloudEpsilon) {
@@ -476,9 +469,9 @@ vec4 RaymarchCrepuscular(in vec3 rayDir, in float dither) {
 	float LdotV = dot(worldLightVector, rayDir);
 	vec2 phase = vec2(CornetteShanksPhase(LdotV, 0.65), RayleighPhase(LdotV));
 
-	float mieDensity = 2.0 * oms(timeNoon - wetness);
-	vec3 extinctionCoeff = (atmosphereModel.mie_extinction * mieDensity + atmosphereModel.rayleigh_scattering) * (2e-3 * CREPUSCULAR_RAYS_INTENSITY);
-	mat2x3 scatteringCoeff = mat2x3(atmosphereModel.mie_scattering * mieDensity, atmosphereModel.rayleigh_scattering) * (2e-3 * CREPUSCULAR_RAYS_INTENSITY);
+	float mieDensity = 4.0 * oms(timeNoon - wetness);
+	vec3 extinctionCoeff = (atmosphereModel.mie_extinction * mieDensity + atmosphereModel.rayleigh_scattering) * (1e-3 * CREPUSCULAR_RAYS_INTENSITY);
+	mat2x3 scatteringCoeff = mat2x3(atmosphereModel.mie_scattering * mieDensity, atmosphereModel.rayleigh_scattering) * (1e-3 * CREPUSCULAR_RAYS_INTENSITY);
 
 	vec3 stepTransmittance = exp2(-rLOG2 * extinctionCoeff * stepLength);
 
@@ -488,15 +481,15 @@ vec4 RaymarchCrepuscular(in vec3 rayDir, in float dither) {
 	// Raymarch through the volume
 	for (uint i = 0u; i < steps; ++i, rayPos += rayStep) {
 		// vec2 cloudShadowCoord = DistortCloudShadowPos(rayPos);
-		float visibility = texture(colortex10, rayPos.xy).x;
+		float visibility = texture(cloudShadowTex, rayPos.xy).x;
 		scattering += visibility * transmittance;
 
 		transmittance *= stepTransmittance;
 	}
 
 	// Process scattering
-	scattering *= scatteringCoeff * phase * oms(stepTransmittance) * loadDirectIllum();
-	scattering += (scatteringCoeff[0] + scatteringCoeff[1]) * uniformPhase * oms(transmittance) * loadSkyIllum();
+	scattering *= scatteringCoeff * phase * oms(stepTransmittance) * global.light.directIlluminance;
+	scattering += (scatteringCoeff[0] + scatteringCoeff[1]) * uniformPhase * oms(transmittance) * global.light.skyIlluminance;
 
 	return vec4(scattering / extinctionCoeff, mean(transmittance));
 }

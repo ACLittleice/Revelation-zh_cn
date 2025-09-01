@@ -1,0 +1,132 @@
+/*
+--------------------------------------------------------------------------------
+
+	Revelation Shaders
+
+	Copyright (C) 2024 HaringPro
+	Apache License 2.0
+
+	Pass: Checkerboard render clouds
+	Reference: https://www.intel.com/content/dam/develop/external/us/en/documents/checkerboard-rendering-for-real-time-upscaling-on-intel-integrated-graphics.pdf
+			   https://developer.nvidia.com/sites/default/files/akamai/gameworks/samples/DeinterleavedTexturing.pdf
+
+--------------------------------------------------------------------------------
+*/
+
+#extension GL_KHR_shader_subgroup_clustered : enable
+
+//======// Utility //=============================================================================//
+
+#include "/lib/Utility.glsl"
+
+//======// Input //===============================================================================//
+
+layout (local_size_x = 16, local_size_y = 16) in;
+
+#ifndef CLOUD_CBR_ENABLED
+	const vec2 workGroupsRender = vec2(1.0, 1.0);
+#elif CLOUD_CBR_SCALE == 2
+	const vec2 workGroupsRender = vec2(0.5, 0.5);
+#elif CLOUD_CBR_SCALE == 3
+	const vec2 workGroupsRender = vec2(0.333333, 0.333333);
+#elif CLOUD_CBR_SCALE == 4
+	const vec2 workGroupsRender = vec2(0.25, 0.25);
+#endif
+
+//======// Uniform //=============================================================================//
+
+writeonly uniform image2D cloudOriginImg;
+writeonly uniform image2D cloudDepthOriginImg;
+
+uniform sampler3D atmosCombinedLut;
+
+#include "/lib/universal/Uniform.glsl"
+
+//======// SSBO //================================================================================//
+
+#include "/lib/universal/SSBO.glsl"
+
+//======// Function //============================================================================//
+
+#include "/lib/universal/Random.glsl"
+#include "/lib/universal/Offset.glsl"
+
+#include "/lib/atmosphere/Common.glsl"
+#include "/lib/atmosphere/PrecomputedAtmosphericScattering.glsl"
+
+#ifdef AURORA
+	#include "/lib/atmosphere/Aurora.glsl"
+#endif
+
+#include "/lib/atmosphere/clouds/Render.glsl"
+
+vec3 ScreenToViewVectorRaw(in vec2 screenCoord) {
+	vec2 NDCCoord = screenCoord * 2.0 - 1.0;
+	return normalize(vec3(diagonal2(gbufferProjectionInverse) * NDCCoord, gbufferProjectionInverse[3].z));
+}
+
+#if (defined SUBGROUP_OPS && !(defined MC_GL_RENDERER_INTEL))
+	#define clusteredMax subgroupClusteredMax
+#else
+	shared float sharedClusteredMax[256];
+
+	float clusteredMax(in float value, in uint clusterSize) {
+		sharedClusteredMax[gl_LocalInvocationIndex] = value;
+		barrier();
+		for (uint stride = 1; stride < clusterSize; stride <<= 1) {
+			if (gl_LocalInvocationIndex < 256 / stride) {
+				sharedClusteredMax[gl_LocalInvocationIndex] = max(sharedClusteredMax[gl_LocalInvocationIndex], sharedClusteredMax[gl_LocalInvocationIndex + stride]);
+			}
+			barrier();
+		}
+		return sharedClusteredMax[gl_LocalInvocationIndex & ~(clusterSize - 1)];
+	}
+#endif
+
+//======// Main //================================================================================//
+void main() {
+    ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
+
+	#ifdef CLOUD_CBR_ENABLED
+		ivec2 cloudTexel = screenTexel * CLOUD_CBR_SCALE + cloudCbrOffset[frameCounter % cloudRenderArea];
+	#else
+		#define cloudTexel screenTexel
+	#endif
+	vec2 cloudUv = texelToUv(cloudTexel);
+
+	vec4 cloudOut = vec4(0.0, 0.0, 0.0, 1.0);
+	float cloudDepth = 128e3;
+
+	float depthMax = loadDepth2(cloudTexel);
+	#if defined DISTANT_HORIZONS
+		if (depthMax > 0.999999) depthMax = loadDepth0DH(cloudTexel);
+	#endif
+
+	#ifdef CLOUD_CBR_ENABLED
+		depthMax = clusteredMax(depthMax, cloudRenderArea);
+	#endif
+
+	if (depthMax > 1.0 - EPS) {
+		vec2 stbnVec2 = SampleStbnVec2(cloudTexel, frameCounter);
+
+		vec3 viewDir  = ScreenToViewVectorRaw(cloudUv);
+		vec3 worldDir = mat3(gbufferModelViewInverse) * viewDir;
+
+		cloudOut = RenderClouds(worldDir, stbnVec2, cloudDepth);
+
+		// Crepuscular rays
+		#ifdef CREPUSCULAR_RAYS
+			#ifdef CLOUD_SHADOWS
+			if (viewerHeight < cumulusBottomRadius) {
+				vec4 crepuscularRays = RaymarchCrepuscular(worldDir, BlueNoiseTemporal(cloudTexel));
+
+				cloudOut *= crepuscularRays.a;
+				cloudOut.rgb += crepuscularRays.rgb;
+			}
+			#endif
+		#endif
+	}
+
+	imageStore(cloudOriginImg, screenTexel, cloudOut);
+	imageStore(cloudDepthOriginImg, screenTexel, vec4(cloudDepth));
+}

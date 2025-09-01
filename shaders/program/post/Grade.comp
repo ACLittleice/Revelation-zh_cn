@@ -39,14 +39,19 @@ writeonly uniform image2D colorimg0; // LDR output
 uniform sampler2D colortex0; // Motion blur output
 uniform sampler2D colortex1; // TAA output
 uniform sampler2D colortex4; // Bloom tiles
-uniform sampler2D colortex5; // Sky-View LUT
 uniform sampler2D colortex6; // Rain alpha
 uniform sampler2D colortex8; // Bloomy fog transmittance
+
+uniform sampler2D skyViewTex;
 
 uniform float aspectRatio;
 uniform float rainStrength;
 
 uniform vec2 viewPixelSize;
+
+//======// SSBO //================================================================================//
+
+#include "/lib/universal/SSBO.glsl"
 
 //======// Function //============================================================================//
 
@@ -185,7 +190,12 @@ vec3 Lottes(in vec3 x) {
 //======// Main //================================================================================//
 void main() {
     ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
-	float exposure = loadExposure();
+
+ 	#if EXPOSURE_MODE == MANUAL
+		float exposure = exp2(-MANUAL_EV);
+	#else
+		float exposure = global.exposure.value;
+	#endif
 
 	#ifdef MOTION_BLUR
 		vec3 HDRImage = texelFetch(colortex0, screenTexel, 0).rgb;
@@ -216,7 +226,7 @@ void main() {
 	// Debug sky-view
 	#ifdef DEBUG_SKYVIEW
 		if (all(lessThan(screenTexel, ivec2(skyViewRes.x, skyViewRes.y << 1)))) {
-			HDRImage = texelFetch(colortex5, screenTexel, 0).rgb;
+			HDRImage = texelFetch(skyViewTex, screenTexel, 0).rgb;
 		}
 	#endif
 

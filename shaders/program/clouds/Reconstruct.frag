@@ -25,6 +25,9 @@ layout (location = 1) out uint frameOut;
 
 //======// Uniform //=============================================================================//
 
+uniform sampler2D cloudOriginTex;
+uniform sampler2D cloudDepthOriginTex;
+
 #include "/lib/universal/Uniform.glsl"
 
 //======// Function //============================================================================//
@@ -34,7 +37,7 @@ layout (location = 1) out uint frameOut;
 #include "/lib/universal/Random.glsl"
 #include "/lib/universal/Offset.glsl"
 
-#include "/lib/atmosphere/Global.glsl"
+#include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/clouds/Common.glsl"
 
 vec4 textureCatmullRom(in sampler2D tex, in vec2 coord) {
@@ -143,7 +146,7 @@ vec4 textureLanczos(in sampler2D tex, in vec2 coord) {
     return sum / weightSum;
 }
 
-#define currentLoad(offset) texelFetchOffset(colortex2, currTexel, 0, offset)
+#define currentLoad(offset) texelFetchOffset(cloudOriginTex, currTexel, 0, offset)
 
 #define mean(a, b, c, d, e, f, g, h, i) (a + b + c + d + e + f + g + h + i) * rcp(9.0)
 #define sqrMean(a, b, c, d, e, f, g, h, i) (a * a + b * b + c * c + d * d + e * e + f * f + g * g + h * h + i * i) * rcp(9.0)
@@ -158,17 +161,17 @@ vec3 ReprojectClouds(in vec2 coord, in float radius) {
 		// Low clouds
 		const float windAngle = radians(45.0);
 		const vec3 windDir = vec3(cos(windAngle), 0.5, sin(windAngle));
-		const vec3 windVelocity = windDir * CLOUD_CU_WIND_SPEED;
+		const vec3 windVelocity = windDir * CLOUD_LOW_WIND_SPEED;
 		motionVector -= windVelocity;
 	} else if (radius < cloudHighRadius) {
 		// Mid clouds
 		const float windAngle = radians(10.0);
-		const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_AS_WIND_SPEED;
+		const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_MID_WIND_SPEED;
 		motionVector.xz -= windVelocity;
 	} else {
 		// High clouds
 		const float windAngle = radians(30.0);
-		const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_CI_WIND_SPEED;
+		const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_HIGH_WIND_SPEED;
 		motionVector.xz -= windVelocity;
 	}
 	motionVector *= frameTime * float(doDaylightCycle);
@@ -187,12 +190,12 @@ void main() {
 	frameOut = 0u;
 
     ivec2 screenTexel = ivec2(gl_FragCoord.xy);
-	float depth = loadDepth0(screenTexel);
+	float depth = loadDepth2(screenTexel);
 	#if defined DISTANT_HORIZONS
 		if (depth > 0.999999) depth = loadDepth0DH(screenTexel);
 	#endif
 
-	if (depth > 0.999999 || depth < 0.56) {
+	if (depth > 1.0 - EPS) {
 		frameOut = 1u;
 
 		vec2 screenCoord = gl_FragCoord.xy * viewPixelSize;
@@ -200,7 +203,7 @@ void main() {
 		const float currScale = rcp(float(CLOUD_CBR_SCALE));
 		vec2 currCoord = min(screenCoord * currScale, currScale - viewPixelSize);
 
-		float cloudDepth = minOf(textureGather(colortex3, currCoord, 0));
+		float cloudDepth = minOf(textureGather(cloudDepthOriginTex, currCoord, 0));
 
 		vec2 prevCoord = ReprojectClouds(screenCoord, cloudDepth).xy;
 		uint frameIndex = texture(colortex13, prevCoord).x;
@@ -214,22 +217,17 @@ void main() {
 		// disocclusion = disocclusion || (gbufferProjection[0].x - gbufferPreviousProjection[0].x) > 0.25;
 
 		if (disocclusion) {
-			cloudOut = texture(colortex2, currCoord);
+			cloudOut = textureBicubic(cloudOriginTex, currCoord);
 		} else {
-			vec4 prevData = textureCatmullRomFast(colortex9, prevCoord, 0.5);
-			// vec4 prevData = textureSmoothFilter(colortex9, prevCoord);
+			vec4 prevData = textureCatmullRomFast(cloudReconstructTex, prevCoord, 0.5);
 			prevData = satU16f(prevData); // Fix black border artifacts
-			frameOut += frameIndex;
+			frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
 
 			ivec2 currTexel = clamp(screenTexel / CLOUD_CBR_SCALE, ivec2(0), ivec2(viewSize) / CLOUD_CBR_SCALE - 1);
-			vec4 currData = texelFetch(colortex2, currTexel, 0);
+			vec4 currData = texelFetch(cloudOriginTex, currTexel, 0);
 
-			// Variance clip
-			#ifdef CLOUD_VARIANCE_CLIP
-			float velocityWeight = sqr(cameraVelocity * rcp(frameTime));
-			velocityWeight /= 1.0 + velocityWeight;
-
-			if (velocityWeight > 0.125) {
+			// Ellipsoid intersection clipping
+			#ifdef CLOUD_EI_CLIP
 				vec4 sample1 = currentLoad(ivec2(-1,  1));
 				vec4 sample2 = currentLoad(ivec2( 0,  1));
 				vec4 sample3 = currentLoad(ivec2( 1,  1));
@@ -242,32 +240,24 @@ void main() {
 				vec4 clipAvg = mean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
 				vec4 clipAvg2 = sqrMean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
 
-				vec4 variance = sqrt(abs(clipAvg2 - clipAvg * clipAvg)) * 2.0;
-				vec4 clipMin = clipAvg - variance;
-				vec4 clipMax = clipAvg + variance;
-
-				prevData = mix(prevData, clamp(prevData, clipMin, clipMax), velocityWeight);
-			}
+				vec4 clipStdDev = sqrt(maxEps(clipAvg2 - clipAvg * clipAvg)) * 4.0;
+				prevData -= clipAvg;
+				prevData *= saturate(inversesqrt(sdot(prevData / clipStdDev)));
+				prevData += clipAvg;
 			#endif
 
 			// Checkerboard upscaling
 			ivec2 offset = cloudCbrOffset[frameCounter % cloudRenderArea];
 			if (screenTexel % CLOUD_CBR_SCALE == offset) {
 				// Accumulate enough frame for checkerboard pattern
-				float blendWeight = 1.0 - rcp(max(float(min(frameOut, CLOUD_MAX_ACCUM_FRAMES)) - cloudRenderArea, 1.0));
+				float blendWeight = 1.0 - rcp(float(max(frameOut - cloudRenderArea, 1)));
+				float subpixelSharpen = sdot(fract(prevCoord * viewSize) * 2.0 - 1.0) * 0.5;
+				blendWeight *= 1.0 - subpixelSharpen * blendWeight;
 
-				// Offcenter rejection
-				vec2 pixelCenterDist = 1.0 - abs(fract(prevCoord * viewSize) * 2.0 - 1.0);
-				blendWeight *= sqrt(pixelCenterDist.x * pixelCenterDist.y) * 0.5 + 0.5;
-
-				#ifndef CLOUD_VARIANCE_CLIP
-					// Camera movement rejection
-					blendWeight *= exp2(-cameraVelocity * (0.125 / frameTime)) * 0.75 + 0.25;
-				#endif
-
-				// Blend with current frame
-				cloudOut = mix(currData, prevData, saturate(blendWeight));
-			} else cloudOut = prevData;
+				cloudOut = mix(currData, prevData, blendWeight);
+			} else {
+				cloudOut = prevData;
+			}
 		}
 	}
 }

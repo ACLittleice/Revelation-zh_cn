@@ -32,8 +32,13 @@ layout (location = 2) out vec2 specularOut;
 //======// Uniform //=============================================================================//
 
 uniform sampler3D atmosCombinedLut;
+uniform sampler2D cloudOriginTex;
 
 #include "/lib/universal/Uniform.glsl"
+
+//======// SSBO //================================================================================//
+
+#include "/lib/universal/SSBO.glsl"
 
 //======// Struct //==============================================================================//
 
@@ -46,7 +51,7 @@ uniform sampler3D atmosCombinedLut;
 #include "/lib/universal/Offset.glsl"
 #include "/lib/universal/Random.glsl"
 
-#include "/lib/atmosphere/Global.glsl"
+#include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/PrecomputedAtmosphericScattering.glsl"
 #include "/lib/atmosphere/Celestial.glsl"
 
@@ -59,7 +64,7 @@ uniform sampler3D atmosCombinedLut;
 #endif
 
 #include "/lib/lighting/Shadows.glsl"
-#include "/lib/lighting/DiffuseLighting.glsl"
+#include "/lib/lighting/Common.glsl"
 
 #if AO_ENABLED > 0 && !defined SSPT_ENABLED
 	#include "/lib/lighting/SSAO.glsl"
@@ -68,7 +73,9 @@ uniform sampler3D atmosCombinedLut;
 
 #include "/lib/SpatialUpscale.glsl"
 
-#include "/lib/surface/Reflection.glsl"
+#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+	#include "/lib/surface/Reflection.glsl"
+#endif
 
 #ifdef RAIN_PUDDLES
 	#include "/lib/surface/RainPuddle.glsl"
@@ -79,7 +86,7 @@ void main() {
 	ivec2 screenTexel = ivec2(gl_FragCoord.xy);
     vec2 screenCoord = gl_FragCoord.xy * viewPixelSize;
 
-	vec3 screenPos = vec3(screenCoord, loadDepth0(screenTexel));
+	vec3 screenPos = vec3(screenCoord, FetchDepthFix(screenTexel));
 	vec3 viewPos = ScreenToViewSpace(screenPos);
 
 	#if defined DISTANT_HORIZONS
@@ -96,16 +103,15 @@ void main() {
 
 	uint materialID = gbufferData0.y;
 
-	vec3 albedoRaw = loadAlbedo(screenTexel);
-	vec3 albedo = sRGBtoLinear(albedoRaw);
+	vec3 albedo = sRGBtoLinear(loadAlbedo(screenTexel));
 
-	float dither = InterleavedGradientNoiseTemporal(gl_FragCoord.xy);
+	float dither = BlueNoiseTemporal(screenTexel);
 
 	sceneOut = vec3(0.0);
 
 	if (screenPos.z > 1.0 - EPS + float(materialID)) {
 		vec2 skyViewCoord = FromSkyViewLutParams(worldDir);
-		sceneOut = textureBicubic(colortex5, skyViewCoord).rgb;
+		sceneOut = textureBicubic(skyViewTex, skyViewCoord).rgb;
 
 		if (!RayIntersectsGround(viewerHeight, worldDir.y)) {
 			vec3 celestial = RenderSun(worldDir, worldSunVector);
@@ -126,9 +132,9 @@ void main() {
 			screenCoord += viewPixelSize * (dither * 2.0 - 1.0);
 
 			#ifdef CLOUD_CBR_ENABLED
-				vec4 cloudData = textureBicubic(colortex9, screenCoord);
+				vec4 cloudData = texture(cloudReconstructTex, screenCoord);
 			#else
-				vec4 cloudData = textureBicubic(colortex2, screenCoord);
+				vec4 cloudData = textureBicubic(cloudOriginTex, screenCoord);
 			#endif
 			sceneOut = sceneOut * cloudData.a + cloudData.rgb;
 		#endif
@@ -162,7 +168,7 @@ void main() {
 			Material material = GetMaterialData(specularTex);
 			specularOut = specularTex.rg;
 		#else
-			Material material = Material(materialID == 46u || materialID == 51u ? 0.005 : 1.0, 0.0, DEFAULT_DIELECTRIC_F0, 0.0, false, false);
+			Material material = Material(1.0, 0.0, 0.0, false, false);
 		#endif
 
 		float sssAmount = 0.0;
@@ -196,19 +202,17 @@ void main() {
 		// Ambient occlusion
 		#if AO_ENABLED > 0 && !defined SSPT_ENABLED
 			vec3 ao = vec3(1.0);
-			if (screenPos.z > 0.56) {
-				#if AO_ENABLED == 1
-					ao.x = CalculateSSAO(screenCoord, viewPos, viewNormal, dither);
-				#else
-					ao.x = CalculateGTAO(screenCoord, viewPos, viewNormal, dither);
-				#endif
+			#if AO_ENABLED == 1
+				ao.x = CalculateSSAO(screenCoord, viewPos, viewNormal, dither);
+			#else
+				ao.x = CalculateGTAO(screenCoord, viewPos, viewNormal, dither);
+			#endif
 
-				#ifdef AO_MULTI_BOUNCE
-					ao = ApproxMultiBounce(ao.x, albedo);
-				#else
-					ao = vec3(ao.x);
-				#endif
-			}
+			#ifdef AO_MULTI_BOUNCE
+				ao = ApproxMultiBounce(ao.x, albedo);
+			#else
+				ao = vec3(ao.x);
+			#endif
 		#else
 			const float ao = 1.0;
 		#endif
@@ -216,14 +220,14 @@ void main() {
 		// Cloud shadows
 		#ifdef CLOUD_SHADOWS
 			// float cloudShadow = CalculateCloudShadows(worldPos);
-			vec2 cloudShadowCoord = WorldToCloudShadowPos(worldPos) + (dither * 2.0 - 1.0) / textureSize(colortex10, 0);
-			float cloudShadow = textureBicubic(colortex10, saturate(cloudShadowCoord)).x;
+			vec2 cloudShadowCoord = WorldToCloudShadowPos(worldPos) + (dither * 2.0 - 1.0) / textureSize(cloudShadowTex, 0);
+			float cloudShadow = textureBicubic(cloudShadowTex, saturate(cloudShadowCoord)).x;
 		#else
 			float cloudShadow = 1.0 - wetness * 0.96;
 		#endif
 
 		// Sunlight
-		vec3 sunlightMult = cloudShadow * loadDirectIllum();
+		vec3 sunlightMult = cloudShadow * global.light.directIlluminance;
 		vec3 specularHighlight = vec3(0.0);
 
 		float worldDistSquared = sdot(worldPos);
@@ -247,7 +251,7 @@ void main() {
         	if (inShadowMapRange) {
 				float distortionFactor;
 				vec3 normalOffset = flatNormal * (worldDistSquared * 1e-4 + 3e-2) * (2.0 - saturate(NdotL));
-				vec3 shadowScreenPos = WorldToShadowScreenSpace(worldPos + normalOffset, distortionFactor);	
+				vec3 shadowScreenPos = WorldToShadowScreenSpace(worldPos + normalOffset, distortionFactor);
 
 				if (saturate(shadowScreenPos) == shadowScreenPos) {
 					vec2 blockerSearch;
@@ -289,18 +293,23 @@ void main() {
 					shadow *= oms(loadGbufferData1(screenTexel).z);
 				#endif
 
-				float halfwayNorm = inversesqrt(2.0 * LdotV + 2.0);
-				float NdotV = abs(dot(worldNormal, -worldDir));
-				float NdotH = saturate((NdotL + NdotV) * halfwayNorm);
-				float LdotH = LdotV * halfwayNorm + halfwayNorm;
+				vec3 halfway = normalize(worldLightVector - worldDir);
+				float NdotV = abs(dot(worldNormal, worldDir));
+				float NdotH = dot(worldNormal, halfway);
+				float LdotH = dot(worldLightVector, halfway);
 
 				// Sunlight diffuse
 				vec3 sunlightDiffuse = DiffuseHammon(LdotV, NdotV, NdotL, NdotH, material.roughness, albedo);
 				sunlightDiffuse += PI * SUBSURFACE_SCATTERING_BRIGHTNESS * uniformPhase * sssAmount * distanceFade;
 				sceneOut += shadow * saturate(sunlightDiffuse);
 
-				specularHighlight = shadow * SpecularBRDF(LdotH, NdotV, saturate(NdotL), NdotH, material.roughness, material.f0);
-				specularHighlight *= oms(material.metalness * oms(albedo));
+				#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+					vec3 f0 = GetMaterialF0(material.metalness, albedo);
+				#else
+					const vec3 f0 = vec3(DEFAULT_DIELECTRIC_F0);
+				#endif
+
+				specularHighlight = shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, material.roughness, f0);
 			}
 		}
 
@@ -315,11 +324,7 @@ void main() {
 				skylight *= 0.02 * (worldNormal.y * 0.5 + 0.5);
 
 				// Spherical harmonics skylight
-				vec3[4] skySH;
-				for (uint band = 0u; band < 4u; ++band) {
-					skySH[band] = texelFetch(colortex4, ivec2(int(viewWidth) - 1, band + 2), 0).rgb;
-				}
-				skylight += max(FromSphericalHarmonics(skySH, worldNormal), skySH[0] * 0.2820947918);
+				skylight += max(FromSphericalHarmonics(global.light.skySH, worldNormal), global.light.skySH[0] * 0.2820947918);
 
 				sceneOut += skylight * cube(lightmap.y) * ao;
 
@@ -339,18 +344,18 @@ void main() {
 		#endif
 		#if EMISSIVE_MODE < 2
 			// Hard-coded emissive
-			vec4 emissive = HardCodeEmissive(materialID, albedo, albedoRaw, worldPos, blocklightColor);
+			vec4 emissive = HardCodeEmissive(materialID, albedo, worldPos, blocklightColor);
 			#ifndef SSPT_ENABLED
 				if (emissive.a * lightmap.x > 1e-5) {
 					lightmap.x = CalculateBlocklightFalloff(lightmap.x);
-					sceneOut += lightmap.x * (ao * oms(lightmap.x) + lightmap.x) * blocklightColor * emissive.a;
+					sceneOut += lightmap.x * emissive.a * 2.0 * (ao * oms(lightmap.x) + lightmap.x) * blocklightColor;
 				}
 			#endif
 
 			sceneOut += emissive.rgb * EMISSIVE_BRIGHTNESS;
 		#elif !defined SSPT_ENABLED
 			lightmap.x = CalculateBlocklightFalloff(lightmap.x);
-			sceneOut += lightmap.x * (ao * oms(lightmap.x) + lightmap.x) * blocklightColor;
+			sceneOut += lightmap.x * 2.0 * (ao * oms(lightmap.x) + lightmap.x) * blocklightColor;
 		#endif
 
 		// Handheld light
@@ -364,28 +369,13 @@ void main() {
 			}
 		#endif
 
-		// Specular reflections
-		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-			if (material.hasReflections && materialID != 46u && materialID != 51u) {
-				lightmap.y = remap(0.3, 0.7, lightmap.y);
-
-				reflectionOut = CalculateSpecularReflections(material, worldNormal, screenPos, worldDir, viewPos, lightmap.y, dither);
-
-				// Metallic diffuse elimination
-				material.metalness *= 0.2 * lightmap.y + 0.8;
-				albedo *= oms(material.metalness);
-			} else
-		#endif
-		// Clear buffer
-		reflectionOut = vec4(0.0);
-
-		// Global illumination
+		// Indirect diffuse lighting
 		#ifdef SSPT_ENABLED
 			#ifdef SVGF_ENABLED
 				float NdotV = abs(dot(worldNormal, worldDir));
 				sceneOut += SpatialUpscale5x5(screenTexel >> 1, worldNormal, length(viewPos), NdotV);
 			#else
-				sceneOut += texelFetch(colortex3, screenTexel >> 1, 0), 0).rgb;
+				sceneOut += texelFetch(colortex3, screenTexel >> 1, 0).rgb;
 			#endif
 		#elif defined RSM_ENABLED
 			float NdotV = abs(dot(worldNormal, worldDir));
@@ -395,6 +385,25 @@ void main() {
 
 		// Minimal ambient light
 		sceneOut += vec3(0.77, 0.82, 1.0) * ((worldNormal.y * 0.4 + 0.6) * MINIMUM_AMBIENT_BRIGHTNESS) * ao;
+
+		// Specular reflections
+		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+			if (material.specularMask) {
+				lightmap.y = remap(0.3, 0.7, lightmap.y);
+
+				reflectionOut = CalculateSpecularReflections(material, worldNormal, screenPos, worldDir, viewPos, lightmap.y, dither);
+
+				// Metallic diffuse elimination
+				#if TEXTURE_FORMAT == 0
+					material.metalness = step(229.5 / 255.0, material.metalness);
+				#endif
+
+				material.metalness *= 0.2 * lightmap.y + 0.8;
+				sceneOut *= oms(material.metalness);
+			} else
+		#endif
+		// Clear buffer
+		reflectionOut = vec4(0.0);
 
 		// Apply albedo
 		sceneOut *= albedo;

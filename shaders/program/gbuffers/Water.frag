@@ -24,6 +24,10 @@ uniform sampler2D tex;
 
 #include "/lib/universal/Uniform.glsl"
 
+//======// SSBO //================================================================================//
+
+#include "/lib/universal/SSBO.glsl"
+
 //======// Input //===============================================================================//
 
 flat in mat3 tbnMatrix;
@@ -36,8 +40,6 @@ flat in uint materialID;
 in vec3 worldPos;
 in vec3 viewPos;
 
-flat in vec3 directIlluminance;
-
 //======// Struct //==============================================================================//
 
 #include "/lib/universal/Material.glsl"
@@ -49,7 +51,7 @@ flat in vec3 directIlluminance;
 #include "/lib/universal/Random.glsl"
 #include "/lib/universal/Offset.glsl"
 
-#include "/lib/atmosphere/Global.glsl"
+#include "/lib/atmosphere/Common.glsl"
 
 #define PHYSICS_OCEAN_SUPPORT
 
@@ -64,7 +66,7 @@ flat in vec3 directIlluminance;
 #endif
 
 #include "/lib/lighting/Shadows.glsl"
-#include "/lib/lighting/DiffuseLighting.glsl"
+#include "/lib/lighting/Common.glsl"
 
 #include "/lib/surface/ScreenSpaceRaytracer.glsl"
 
@@ -75,7 +77,7 @@ vec4 CalculateSpecularReflections(in vec3 normal, in vec3 worldDir, in float dit
     // Unroll the reflect function manually
 	vec3 rayDir = worldDir + normal * NdotV * 2.0;
 
-	if (dot(normal, rayDir) < 1e-6) return vec4(0.0);
+	if (dot(normal, rayDir) < EPS) return vec4(0.0);
 
 	float f0 = F0FromIOR(materialID == 3u ? WATER_REFRACT_IOR : GLASS_REFRACT_IOR);
 	bool withinWater = isEyeInWater == 1 && materialID == 3u;
@@ -83,7 +85,7 @@ vec4 CalculateSpecularReflections(in vec3 normal, in vec3 worldDir, in float dit
 	vec3 reflection = vec3(0.0);
 	if (skylight > 1e-3 && !withinWater) {
 		vec2 skyViewCoord = FromSkyViewLutParams(rayDir) + vec2(0.0, 0.5);
-		vec3 skyRadiance = textureBicubic(colortex5, skyViewCoord).rgb;
+		vec3 skyRadiance = textureBicubic(skyViewTex, skyViewCoord).rgb;
 
 		reflection = skyRadiance * skylight;
 	}
@@ -106,7 +108,7 @@ vec4 CalculateSpecularReflections(in vec3 normal, in vec3 worldDir, in float dit
 		screenPos.xy *= viewPixelSize;
 		float edgeFade = screenPos.x * screenPos.y * oms(screenPos.x) * oms(screenPos.y);
 		edgeFade *= 1e2 + cube(saturate(1.0 - gbufferModelViewInverse[2].y)) * 4e3;
-		reflection += (texelFetch(colortex4, uvToTexel(screenPos.xy * 0.5), 0).rgb - reflection) * saturate(edgeFade);
+		reflection += (texture(colortex4, screenPos.xy * 0.5).rgb - reflection) * saturate(edgeFade);
 	}
 
 	return satU16f(vec4(reflection * brdf, brdf));
@@ -116,7 +118,7 @@ vec4 CalculateSpecularReflections(in vec3 normal, in vec3 worldDir, in float dit
 void main() {
 	vec3 worldNormal;
 	vec3 worldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
-	float dither = InterleavedGradientNoiseTemporal(gl_FragCoord.xy);
+	float dither = SampleStbnVec1(ivec2(gl_FragCoord.xy), frameCounter + 4);
 
 	if (materialID == 3u) { // water
 		#ifdef PHYSICS_OCEAN
@@ -175,13 +177,13 @@ void main() {
 	#ifdef CLOUD_SHADOWS
 		// float cloudShadow = CalculateCloudShadows(worldPos);
 		vec2 cloudShadowCoord = WorldToCloudShadowPos(worldPos);
-		float cloudShadow = textureBicubic(colortex10, saturate(cloudShadowCoord)).x;
+		float cloudShadow = textureBicubic(cloudShadowTex, saturate(cloudShadowCoord)).x;
 	#else
 		float cloudShadow = 1.0 - wetness * 0.96;
 	#endif
 
 	// Sunlight
-	vec3 sunlightMult = cloudShadow * directIlluminance;
+	vec3 sunlightMult = cloudShadow * global.light.directIlluminance;
 	float NdotL = dot(worldNormal, worldLightVector);
 
 	// Direct specular lighting
@@ -190,7 +192,7 @@ void main() {
 		float worldDistSquared = sdot(worldPos);
 
 		vec3 normalOffset = tbnMatrix[2] * (worldDistSquared * 1e-4 + 3e-2) * (2.0 - saturate(NdotL));
-		vec3 shadowScreenPos = WorldToShadowScreenSpace(worldPos + normalOffset, distortionFactor);	
+		vec3 shadowScreenPos = WorldToShadowScreenSpace(worldPos + normalOffset, distortionFactor);
 
 		if (saturate(shadowScreenPos) == shadowScreenPos) {
 			float blockerSearch = BlockerSearch(shadowScreenPos, dither, 0.25 * distortionFactor);
@@ -208,7 +210,7 @@ void main() {
 				shadow *= sunlightMult;
 
 				float f0 = F0FromIOR(materialID == 3u ? WATER_REFRACT_IOR : GLASS_REFRACT_IOR);
-				lightingOut.rgb += shadow * SpecularBRDF(LdotH, NdotV, NdotL, NdotH, sqr(TRANSLUCENT_ROUGHNESS), f0);
+				lightingOut.rgb += shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, TRANSLUCENT_ROUGHNESS, vec3(f0));
 			}
 		}
 	}

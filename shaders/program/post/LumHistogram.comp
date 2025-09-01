@@ -1,0 +1,72 @@
+/*
+--------------------------------------------------------------------------------
+
+	Revelation Shaders
+
+	Copyright (C) 2024 HaringPro
+	Apache License 2.0
+
+	Pass: Build luminance histogram for auto exposure
+    Reference:  https://knarkowicz.wordpress.com/2016/01/09/automatic-exposure/
+                https://bruop.github.io/exposure/
+
+--------------------------------------------------------------------------------
+*/
+
+//======// Utility //=============================================================================//
+
+#include "/lib/Utility.glsl"
+
+//======// Input //===============================================================================//
+
+layout (local_size_x = 16, local_size_y = 16) in;
+const vec2 workGroupsRender = vec2(0.5, 0.5);
+
+//======// Uniform //=============================================================================//
+
+layout (r11f_g11f_b10f) readonly uniform image2D colorimg4;
+
+#include "/lib/universal/Uniform.glsl"
+
+//======// SSBO //================================================================================//
+
+#include "/lib/universal/SSBO.glsl"
+
+//======// Shared Memory //=======================================================================//
+
+shared uint sharedHistogram[HISTOGRAM_BIN_COUNT];
+
+//======// Function //============================================================================//
+
+const float autoEvRange = AUTO_EV_MAX - AUTO_EV_MIN;
+const float autoEvRangeInv = 1.0 / autoEvRange;
+
+uint histogramLumToBin(in float lum) {
+    float bin = log2(lum) * autoEvRangeInv - (AUTO_EV_MIN * autoEvRangeInv);
+	return uint(saturate(bin) * float(HISTOGRAM_BIN_COUNT - 1u));
+}
+
+//======// Main //================================================================================//
+void main() {
+	uint index = gl_LocalInvocationIndex;
+
+	// Initialize
+	sharedHistogram[index] = 0u;
+	barrier();
+
+	if (all(lessThan(gl_GlobalInvocationID.xy, imageSize(colorimg4) >> 1u))) {
+		// Compute luminance
+		ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
+		float luminance = luminance(imageLoad(colorimg4, texel).rgb);
+
+		// Update histogram
+		uint binIndex = histogramLumToBin(luminance);
+		atomicAdd(sharedHistogram[binIndex], 1u);
+	}
+	barrier();
+
+	// Store histogram
+	if (index < HISTOGRAM_BIN_COUNT) {
+    	atomicAdd(global.exposure.histogram[index], sharedHistogram[index]);
+	}
+}

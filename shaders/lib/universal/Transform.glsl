@@ -2,7 +2,7 @@ vec3 ProjectDivide(in vec3 v, in mat4 m) {
 	return projMAD(m, v) * rcp(m[2].w * v.z + m[3].w);
 }
 
-vec3 ScreenToViewSpaceRaw(in vec3 screenPos) {	
+vec3 ScreenToViewSpaceRaw(in vec3 screenPos) {
 	vec3 NDCPos = screenPos * 2.0 - 1.0;
 	return ProjectDivide(NDCPos, gbufferProjectionInverse);
 }
@@ -85,7 +85,7 @@ float ViewToScreenDepth(in float depth) {
 //======// Distant Horizons Transform Function //=================================================//
 
 #if defined DISTANT_HORIZONS
-	vec3 ScreenToViewSpaceRawDH(in vec3 screenPos) {	
+	vec3 ScreenToViewSpaceRawDH(in vec3 screenPos) {
 		vec3 NDCPos = screenPos * 2.0 - 1.0;
 		return ProjectDivide(NDCPos, dhProjectionInverse);
 	}

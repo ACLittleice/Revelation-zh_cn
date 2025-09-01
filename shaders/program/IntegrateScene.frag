@@ -30,15 +30,18 @@ layout (location = 1) out float bloomyFogTrans;
 
 //======// Uniform //=============================================================================//
 
-uniform sampler2D colortex0;
-
 uniform usampler2D colortex11; // Volumetric Fog, linear depth
+uniform sampler2D brdfLutTex;
 
 #if defined DEPTH_OF_FIELD && CAMERA_FOCUS_MODE == 0
     uniform float centerDepthSmooth;
 #endif
 
 #include "/lib/universal/Uniform.glsl"
+
+//======// SSBO //================================================================================//
+
+#include "/lib/universal/SSBO.glsl"
 
 //======// Struct //==============================================================================//
 
@@ -50,7 +53,7 @@ uniform usampler2D colortex11; // Volumetric Fog, linear depth
 #include "/lib/universal/Fetch.glsl"
 #include "/lib/universal/Random.glsl"
 
-#include "/lib/atmosphere/Global.glsl"
+#include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/Rainbow.glsl"
 #include "/lib/atmosphere/CommonFog.glsl"
 
@@ -59,7 +62,6 @@ uniform usampler2D colortex11; // Volumetric Fog, linear depth
 #include "/lib/water/WaterFog.glsl"
 
 #include "/lib/surface/BRDF.glsl"
-#include "/lib/surface/Reflection.glsl"
 #include "/lib/surface/Refraction.glsl"
 
 //======// Main //================================================================================//
@@ -102,7 +104,7 @@ void main() {
 		vec3 viewNormal = mat3(gbufferModelView) * OctDecodeUnorm(Unpack2x8U(gbufferData0.z));
 		#ifdef RAYTRACED_REFRACTION
 			refractedCoord = CalculateRefractedCoord(waterMask, viewPos, viewNormal, screenPos);
-		#else	
+		#else
 			refractedCoord = CalculateRefractedCoord(waterMask, viewPos, viewNormal, screenPos, gbufferData1, transparentDepth);
 		#endif
 		refractedTexel = uvToTexel(refractedCoord);
@@ -170,22 +172,19 @@ void main() {
 			#endif
 
 			sceneOut += blendedData.rgb;
-		} else if (materialID == 46u || materialID == 51u) {
-			// Specular reflections of slime and ender portal
-			vec4 reflections = CalculateSpecularReflections(worldNormal, skyLightmap, screenPos, worldDir, viewPos);
-			sceneOut += (reflections.rgb - sceneOut) * reflections.a;
 		}
 		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-			else if (material.hasReflections) {
+			else if (material.specularMask) {
 				// Specular reflections of other materials
-				vec4 reflectionData = texelFetch(colortex1, refractedTexel, 0);
-				vec3 albedo = sRGBtoLinear(loadAlbedo(screenTexel));
+				vec3 reflectionData = texelFetch(colortex1, refractedTexel, 0).rgb;
+				vec3 albedo = sRGBtoLinear(loadAlbedo(refractedTexel));
 
-				// float NdotV = saturate(-dot(worldNormal, worldDir));
-				// vec2 brdf = texture(brdfLutTex, vec2(material.roughness, NdotV)).xy;
-				// reflectionData.rgb *= mix(vec3(material.f0), albedo, material.metalness) * brdf.x + brdf.y;
+				float NdotV = abs(dot(worldNormal, worldDir));
+				vec2 brdf = texture(brdfLutTex, vec2(material.roughness, NdotV)).xy;
 
-				sceneOut += reflectionData.rgb * oms(material.metalness * oms(albedo));
+				vec3 f0 = GetMaterialF0(material.metalness, albedo);
+				vec3 specular = f0 * brdf.x + brdf.y;
+				sceneOut += reflectionData * specular;
 			}
 		#endif
 
@@ -199,7 +198,7 @@ void main() {
 				float density = saturate(1.0 - exp2(-pow8(sdot(worldPos.xz) * rcp(far * far)) * BORDER_FOG_FALLOFF));
 				density *= exp2(-5.0 * curve(saturate(worldDir.y * 3.0)));
 
-				vec3 skyRadiance = textureBicubic(colortex5, FromSkyViewLutParams(worldDir)).rgb;
+				vec3 skyRadiance = textureBicubic(skyViewTex, FromSkyViewLutParams(worldDir)).rgb;
 				sceneOut = mix(sceneOut, skyRadiance, density);
 			}
 		#endif
@@ -232,7 +231,7 @@ void main() {
 	#ifdef RAINBOWS
 		float rainbowVis = wetness * oms(rainStrength);
 		if (rainbowVis > EPS) {
-			sceneOut += RenderRainbows(LdotV, viewDistance) * loadDirectIllum() * rainbowVis;
+			sceneOut += RenderRainbows(LdotV, viewDistance) * global.light.directIlluminance * rainbowVis;
 		}
 	#endif
 
@@ -244,4 +243,6 @@ void main() {
 	#elif DEBUG_NORMALS == 2
 		sceneOut = FetchFlatNormal(gbufferData0) * 0.5 + 0.5;
 	#endif
+
+	// sceneOut = texelFetch(brdfLutTex, screenTexel, 0).xyz;
 }
