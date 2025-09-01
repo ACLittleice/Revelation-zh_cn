@@ -384,7 +384,7 @@ void main() {
 		#endif
 
 		// Minimal ambient light
-		sceneOut += vec3(0.77, 0.82, 1.0) * ((worldNormal.y * 0.4 + 0.6) * MINIMUM_AMBIENT_BRIGHTNESS) * ao;
+		sceneOut += (worldNormal.y * 0.4 + 0.6) * max(MINIMUM_AMBIENT_BRIGHTNESS, 5e-3 * nightVision) * ao;
 
 		// Specular reflections
 		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP

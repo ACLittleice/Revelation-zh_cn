@@ -125,7 +125,7 @@ vec3 PurkinjeShift(in vec3 image) {
 	vec3 scotopic = xyz * max0(1.33 * (1.0 + (xyz.y + xyz.z) / xyz.x) - 1.68);
 
 	float rodLuminance = dot(scotopic * XYZtoSRGB, rodResponse);
-	return mix(image, rodLuminance * vec3(0.56, 0.72, 1.0), exp2(-(64.0 / PURKINJE_SHIFT_STRENGTH) * rodLuminance));
+	return mix(image, rodLuminance * vec3(0.56, 0.72, 1.0), exp2(-(16.0 / PURKINJE_SHIFT_STRENGTH) * rodLuminance));
 }
 
 vec3 None(in vec3 x) {
@@ -208,13 +208,13 @@ void main() {
 		CombineBloomAndFog(HDRImage, screenTexel, exposure);
 	#endif
 
+	// Apply exposure
+	HDRImage *= exposure;
+
 	// Purkinje shift
 	#ifdef PURKINJE_SHIFT
 		HDRImage = PurkinjeShift(HDRImage);
 	#endif
-
-	// Apply exposure
-	HDRImage *= exposure;
 
 	// Vignetting
 	#ifdef VIGNETTE_ENABLED
