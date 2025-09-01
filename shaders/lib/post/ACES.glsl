@@ -231,7 +231,7 @@ vec3 RRTSweeteners(in vec3 aces) {
 }
 
 
-#define log10(x) (log(x) * rcp(log(10.0)))
+#define log10(x) (log2(x) * rcp(log2(10.0)))
 
 // Textbook monomial to basis-function conversion matrix
 const mat3 M = mat3(
@@ -337,7 +337,7 @@ float segmented_spline_c9_fwd(float x, SegmentedSplineParams_c9 params) { // par
         float t = knot_coord - j;
 
         vec3 cf = vec3(params.coeffsLow[j], params.coeffsLow[j + 1], params.coeffsLow[j + 2]);
-        
+
         vec3 monomials = vec3(t * t, t, 1.0);
         logy = dot(monomials, M * cf);
     } else if (( logx >= logMidPoint ) && ( logx < logMaxPoint )) {
@@ -346,7 +346,7 @@ float segmented_spline_c9_fwd(float x, SegmentedSplineParams_c9 params) { // par
         float t = knot_coord - j;
 
         vec3 cf = vec3(params.coeffsHigh[j], params.coeffsHigh[j + 1], params.coeffsHigh[j + 2]);
-        
+
         vec3 monomials = vec3(t * t, t, 1.0);
         logy = dot(monomials, M * cf);
     } else { //if ( logIn >= logMaxPoint ) {
@@ -496,7 +496,7 @@ vec3 ODT_sRGB_100nits_dim(in vec3 rgbPre) {
     // Clip values < 0 or > 1 (i.e. projecting outside the display primaries)
     linearCV = saturate(linearCV);
 
-	const float dispGamma = 2.4; 
+	const float dispGamma = 2.4;
 	const float offset = 0.055;
 
     // Encode linear code values with transfer function
@@ -556,9 +556,9 @@ vec3 ODT_Rec2020_P3D65limited_100nits_dim(in vec3 rgbPre) {
     // Clip values < 0 or > 1 (i.e. projecting outside the display primaries)
     linearCV = saturate(linearCV);
 
-	const float dispGamma = 2.4; 
-	const float lW = 1.0; 
-	const float lB = 0.0; 
+	const float dispGamma = 2.4;
+	const float lW = 1.0;
+	const float lB = 0.0;
 
     // Encode linear code values with transfer function
 	return bt1886_r(linearCV, dispGamma, lW, lB);

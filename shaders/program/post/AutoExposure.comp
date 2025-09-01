@@ -7,7 +7,8 @@
 	Apache License 2.0
 
 	Pass: Compute auto exposure
-	Reference: https://bruop.github.io/exposure/
+    Reference:  https://knarkowicz.wordpress.com/2016/01/09/automatic-exposure/
+                https://bruop.github.io/exposure/
 
 --------------------------------------------------------------------------------
 */
@@ -33,6 +34,7 @@ const ivec3 workGroups = ivec3(1, 1, 1);
 
 //======// Shared Memory //=======================================================================//
 
+shared uint sharedPrefix[HISTOGRAM_BIN_COUNT];
 #ifdef SUBGROUP_OPS
     #if defined MC_GL_VENDOR_NVIDIA
         shared uint sharedBinIndex[gl_NumSubgroups];
@@ -52,51 +54,89 @@ float histogramBinToLum(in float bin) {
     return exp2(bin * (autoEvRange / float(HISTOGRAM_BIN_COUNT - 1u)) + AUTO_EV_MIN);
 }
 
-//======// Main //================================================================================//
-void main() {
-	uint index = gl_LocalInvocationIndex;
-
-    uint count = global.exposure.histogram[index];
-
-    // Sum histogram bin index
+void ParallelSum(in uint index) {
     #ifdef SUBGROUP_OPS
-        uint subgroupSum = subgroupAdd(count * index);
+        uint sum = subgroupAdd(sharedBinIndex[index]);
 
-        SCALARIZED_LOAD(sharedBinIndex[gl_SubgroupID], subgroupSum);
+        SCALARIZED_LOAD(sharedBinIndex[gl_SubgroupID], sum);
         barrier();
 
         if (index < gl_NumSubgroups) {
-            subgroupSum = subgroupAdd(sharedBinIndex[index]);
+            sharedBinIndex[0] = subgroupAdd(sharedBinIndex[index]);
         }
-
-        #define sum subgroupSum
     #else
-        sharedBinIndex[index] = count * index;
-        barrier();
-
         for (uint stride = HISTOGRAM_BIN_COUNT >> 1u; stride > 0u; stride >>= 1u) {
             if (index < stride) {
                 sharedBinIndex[index] += sharedBinIndex[index + stride];
             }
             barrier();
         }
-
-        #define sum sharedBinIndex[0]
     #endif
+}
 
+void ParallelPrefixSum(in uint index) {
+    #ifdef SUBGROUP_OPS
+        uint prefix = subgroupInclusiveAdd(global.exposure.histogram[index]);
+        if (gl_SubgroupInvocationID == gl_SubgroupSize - 1u) {
+            sharedPrefix[gl_SubgroupID] = prefix;
+        }
+        barrier();
+
+        if (gl_SubgroupID == 0u) {
+            sharedPrefix[index] = subgroupInclusiveAdd(sharedPrefix[index]);
+        }
+        barrier();
+
+        prefix += gl_SubgroupID > 0u ? sharedPrefix[gl_SubgroupID - 1u] : 0u;
+        sharedPrefix[index] = prefix;
+    #else
+        sharedPrefix[index] = global.exposure.histogram[index];
+        for (uint stride = 1u; stride < HISTOGRAM_BIN_COUNT; stride <<= 1u) {
+            uint dstIndex = index + stride;
+            if (dstIndex < HISTOGRAM_BIN_COUNT) {
+                sharedPrefix[dstIndex] += sharedPrefix[index];
+            }
+            barrier();
+        }
+    #endif
+}
+
+//======// Main //================================================================================//
+void main() {
+	uint index = gl_LocalInvocationIndex;
+
+    // Get cumulative histogram
+	ParallelPrefixSum(index);
+
+    float sumBin = float(sharedPrefix[HISTOGRAM_BIN_COUNT - 1u]);
+    uint lowerBound = uint(round(HISTOGRAM_LOWER_BOUND * sumBin));
+    uint upperBound = uint(round(HISTOGRAM_UPPER_BOUND * sumBin));
+
+	sharedPrefix[index] = clamp(sharedPrefix[index], lowerBound, upperBound);
+	barrier();
+
+    // Get weighted bin index
+	sharedPrefix[index] -= index > 0u ? sharedPrefix[index - 1u] : 0u;
+    sharedBinIndex[index] = sharedPrefix[index] * index;
+
+	ParallelSum(index);
+
+    // Compute exposure value in thread 0
     if (index == 0u) {
-        float weightedLogAverage = float(sum) / max(viewWidth * viewHeight * 0.25 - float(count), 1.0);
-		float avgLuminance = histogramBinToLum(weightedLogAverage);
+		float avgLuminance = float(sharedBinIndex[0]) / float(upperBound - lowerBound);
+        avgLuminance = histogramBinToLum(avgLuminance);
 
-        const float K = 18.0; // Calibration constant
-        const float calibration = exp2(AUTO_EV_BIAS) * K / ISO;
+        // Exposure compensation curve
+        #define log10(x) (log2(x) * rcp(log2(10.0)))
+        float keyValue = 1.03 - 2.0 / (log10(avgLuminance + 1.0) + 2.0);
 
-        float targetExposure = calibration / avgLuminance;
+        float targetExposure = exp2(AUTO_EV_BIAS) * keyValue / avgLuminance;
         float prevExposure = global.exposure.value;
 
         float exposureRate = targetExposure > prevExposure ? EXPOSURE_SPEED_DOWN : EXPOSURE_SPEED_UP;
         global.exposure.value = mix(targetExposure, prevExposure, exp2(-exposureRate * frameTime));
 	}
 
+    // Clear histogram bin
     global.exposure.histogram[index] = 0u;
 }
