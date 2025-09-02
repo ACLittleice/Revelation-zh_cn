@@ -94,7 +94,7 @@ float CloudMidDensity(in vec2 rayPos) {
 
 		localCoverage = saturate(localCoverage - 0.8) * (1.5 + 1.5 * CLOUD_AS_COVERAGE);
 		float density = saturate(altostratus + localCoverage - 1.25);
-		return pow(density, 1.0 + altostratus);
+		return curve(density);
 	}
 }
 
@@ -115,7 +115,7 @@ float CloudHighDensity(in vec2 rayPos) {
 	/* Cirrocumulus clouds */ if (localCoverage > 0.4) {
 		vec2 position = (rayPos - windOffset) * 1e-4 - curl * 0.75;
 
-		float baseCoverage = texture(noisetex, position * 0.05).z;
+		float baseCoverage = texture(noisetex, position * 0.06).z;
 		baseCoverage = remap(texture(noisetex, position * 0.002).y, 1.0, baseCoverage);
 
 		if (baseCoverage > cloudEpsilon) {
@@ -129,9 +129,9 @@ float CloudHighDensity(in vec2 rayPos) {
 			float coverage = saturate((baseCoverage + localCoverage) * (1.0 + CLOUD_CC_COVERAGE) - 1.25);
 
 			cirrocumulus = mix(cirrocumulus * cirrocumulus, cirrocumulus, coverage);
-			cirrocumulus *= remap(0.1, 0.9, coverage);
+			cirrocumulus *= 3.0 * (coverage - 0.15);
 
-			density += curve(saturate(2.0 * cirrocumulus));
+			density += curve(saturate(cirrocumulus));
 		}
 	}
 	#endif
