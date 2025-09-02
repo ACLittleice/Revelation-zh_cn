@@ -205,7 +205,7 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 	float coverage = cloudMap.x * (3.5 * CLOUD_CU_COVERAGE);
 	coverage = saturate(coverage + wetness * 0.5);
 	// coverage = pow(coverage, remap(heightFraction, 0.7, 0.8, 1.0, 1.0 - 0.5 * anvilBias));
-	if (coverage < 1e-2) return 0.0;
+	if (coverage < 0.1) return 0.0;
 
 	// Vertical profile
 	float verticalProfile = GetVerticalProfile(heightFraction, cloudMap.y);
@@ -225,7 +225,7 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 	#if !defined PASS_SKY_VIEW
 	if (detail) {
 		vec2 curlNoise = texture(noisetex, position.xz * 0.25).xy;
-		position.xz += curlNoise * 0.1 * oms(heightFraction);
+		position.xz += curlNoise * 0.05 * oms(heightFraction);
 
 		// fBm worley noise for detail shape
 		detailNoise = texture(detailNoiseTex, position * 8.0 - windOffset * 1e-3).x;
@@ -237,7 +237,7 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 		// detailNoise = abs(detailNoise * 2.0 - 1.0);
 	}
 	#endif
-	float noiseComposite = remap(detailNoise * 0.3, 1.0, baseNoise);
+	float noiseComposite = remap(sqr(detailNoise) * 0.5, 1.0, baseNoise);
 
 	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
 
@@ -266,7 +266,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	float coverage = cloudMap.x * (3.5 * CLOUD_CU_COVERAGE);
 	coverage = saturate(coverage + wetness * 0.5);
 	// coverage = pow(coverage, remap(heightFraction, 0.7, 0.8, 1.0, 1.0 - 0.5 * anvilBias));
-	if (coverage < 1e-2) return 0.0;
+	if (coverage < 0.1) return 0.0;
 
 	// Vertical profile
 	float verticalProfile = GetVerticalProfile(heightFraction, cloudMap.y);
@@ -285,7 +285,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	float detailNoise = 0.5;
 	#if !defined PASS_SKY_VIEW
 		vec2 curlNoise = texture(noisetex, position.xz * 0.25).xy;
-		position.xz += curlNoise * 0.1 * oms(heightFraction);
+		position.xz += curlNoise * 0.05 * oms(heightFraction);
 
 		// fBm worley noise for detail shape
 		detailNoise = texture(detailNoiseTex, position * 8.0 - windOffset * 1e-3).x;
@@ -296,7 +296,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 		// See [Schneider, 2023]
 		// detailNoise = abs(detailNoise * 2.0 - 1.0);
 	#endif
-	float noiseComposite = remap(detailNoise * 0.3, 1.0, baseNoise);
+	float noiseComposite = remap(sqr(detailNoise) * 0.5, 1.0, baseNoise);
 
 	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
 
