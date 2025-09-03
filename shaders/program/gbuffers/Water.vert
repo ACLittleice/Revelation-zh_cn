@@ -56,7 +56,11 @@ uniform vec2 taaOffset;
 void main() {
 	texCoord = vaUV0;
 
-	lightmap = saturate(vec2(vaUV2) * r240);
+	#ifdef IS_IRIS
+	    lightmap = saturate((vec2(vaUV2) - 8.0) * rcp(232.0));
+	#else
+		lightmap = saturate(vec2(vaUV2) * r240);
+	#endif
 
 	vertColor = vaColor;
 

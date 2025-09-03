@@ -78,7 +78,11 @@ void main() {
 	#endif
 
 	#ifdef RSM_ENABLED
-		skyLightmap = saturate(vec2(vaUV2).y * r240);
+		#ifdef IS_IRIS
+			skyLightmap = saturate((float(vaUV2.y) - 8.0) * rcp(232.0));
+		#else
+			skyLightmap = saturate(float(vaUV2.y) * r240);
+		#endif
 		flatNormal = normal;
 	#endif
 
