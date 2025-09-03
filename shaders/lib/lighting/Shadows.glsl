@@ -161,9 +161,9 @@ float ScreenSpaceShadow(in vec3 viewPos, in vec3 viewNormal, in float dither, in
 	float NdotL = dot(viewLightVector, viewNormal);
 	viewPos += viewDist * maxOf(viewPixelSize) / max(sqr(NdotL), 0.05) * 0.5 * viewNormal;
 
-    float absorption = exp2(-0.25 * approxSqrt(viewDist) / sssAmount);
+    float absorption = exp2(-0.125 * approxSqrt(viewDist) / sssAmount);
 
-	vec3 rayDir = viewLightVector * -viewPos.z * (0.1 / float(SCREEN_SPACE_SHADOWS_SAMPLES)) * oms(sssAmount * 0.75);
+	vec3 rayDir = viewLightVector * -viewPos.z * (0.1 / float(SCREEN_SPACE_SHADOWS_SAMPLES)) * oms(sssAmount * 0.5);
 	rayDir = vec3(diagonal2(gbufferProjection) * rayDir.xy * 0.5, -rayDir.z);
 
 	vec3 rayPos = vec3((diagonal2(gbufferProjection) * viewPos.xy + gbufferProjection[3].xy) * 0.5, -viewPos.z);
