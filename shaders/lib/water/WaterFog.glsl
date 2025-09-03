@@ -23,13 +23,12 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 
 #if defined PASS_VOLUMETRIC_FOG
 	#include "/lib/water/WaterWave.glsl"
-	float CalculateWaterCaustics(in vec3 rayPos, in vec3 lightVector) {
-		vec2 waveCoord = rayPos.xz - rayPos.y / lightVector.y * lightVector.xz;
-		vec3 waveNormal = CalculateWaterNormal(waveCoord).xzy;
+	vec3 CalculateWaterCaustics(in vec3 shadowScreenPos, in float waterDepth) {
+		vec3 waveNormal = OctDecodeUnorm(texture(shadowcolor1, shadowScreenPos.xy).xy);
 		vec3 refractDir = fastRefract(vec3(0.0, 1.0, 0.0), waveNormal, 1.0 / WATER_REFRACT_IOR);
 
 		vec3 projectPos = vec3(0.0, 1.0, 0.0) - refractDir * rcp(refractDir.y);
-		return saturate(1.0 - 32.0 * sdot(projectPos));
+		return saturate(1.0 - 64.0 * sdot(projectPos)) * exp2(-rLOG2 * UW_VF_DENSITY * waterExtinction * max(waterDepth, 4.0));
 	}
 
 	mat2x3 RaymarchWaterFog(in vec3 worldPos, in float dither) {
@@ -79,17 +78,10 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 				sampleSunlight = step(shadowScreenPos.z, texelFetch(shadowtex1, shadowTexel, 0).xxx);
 
 				if (sampleSunlight.x != sampleDepth0) {
-					float waterDepth = abs(texelFetch(shadowcolor1, shadowTexel, 0).w * 512.0 - 128.0 - shadowPos.y - eyeAltitude);
-					if (waterDepth > 0.1) {
-						sampleSunlight = vec3(CalculateWaterCaustics(rayPos, worldLightVector));
-				#ifdef COLORED_VOLUMETRIC_FOG
-					} else {
-						vec3 shadowColorSample = cube(texelFetch(shadowcolor0, shadowTexel, 0).rgb);
-						sampleSunlight = shadowColorSample * (sampleSunlight - sampleDepth0) + vec3(sampleDepth0);
-				#endif
+					float waterDepth = max0(texelFetch(shadowcolor1, shadowTexel, 0).w * 512.0 - 128.0 - shadowPos.y - eyeAltitude);
+					if (waterDepth > EPS) {
+						sampleSunlight = CalculateWaterCaustics(shadowScreenPos, waterDepth);
 					}
-
-					sampleSunlight *= exp2(-rLOG2 * waterExtinction * UW_VF_DENSITY * max(waterDepth, 8.0));
 				}
 			}
 

@@ -8,6 +8,13 @@ const float realShadowMapRes = float(shadowMapResolution) * MC_SHADOW_QUALITY;
 
 #include "ShadowDistortion.glsl"
 
+vec3 WorldToShadowScreenSpace(in vec3 worldPos) {
+	vec3 shadowClipPos = transMAD(shadowModelView, worldPos);
+	shadowClipPos = projMAD(shadowProjection, shadowClipPos);
+
+	return DistortShadowSpace(shadowClipPos) * 0.5 + 0.5;
+}
+
 vec3 WorldToShadowScreenSpace(in vec3 worldPos, out float distortionFactor) {
 	vec3 shadowClipPos = transMAD(shadowModelView, worldPos);
 	shadowClipPos = projMAD(shadowProjection, shadowClipPos);
@@ -81,26 +88,25 @@ vec2 BlockerSearchSSS(in vec3 shadowScreenPos, in float dither, in float searchS
 	return vec2(searchDepth, sssDepth * shadowProjectionInverse[2].z);
 }
 
-#include "/lib/water/WaterWave.glsl"
-
 vec3 CalculateWaterCaustics(in vec3 worldPos, in float waterDepth, in float dither) {
 	vec3 surfacePos = worldPos + vec3(0.0, 1.0, 0.0);
 
 	float caustics = 0.0;
-	for (uint i = 0u; i < 8u; ++i) {
+	for (uint i = 0u; i < 16u; ++i) {
 		vec3 samplePos = surfacePos;
 		vec2 rand = fract(R2(i) + dither);
-		samplePos.xz += sincos(rand.x * TAU) * approxSqrt(rand.y) * 0.125;
+		samplePos.xz += sincos(rand.x * TAU) * approxSqrt(rand.y) * 0.15;
 
-		vec3 waveNormal = CalculateWaterNormal(samplePos.xz - samplePos.y).xzy;
+		vec2 sampleCoord = WorldToShadowScreenSpace(samplePos).xy;
+		vec3 waveNormal = OctDecodeUnorm(texture(shadowcolor1, sampleCoord).xy);
 
-		vec3 refractDir = fastRefract(vec3(0.0, -1.0, 0.0), waveNormal, 1.0 / WATER_REFRACT_IOR);
+		vec3 refractDir = fastRefract(vec3(0.0, 1.0, 0.0), waveNormal, 1.0 / WATER_REFRACT_IOR);
 		vec3 refractedPos = samplePos - refractDir * rcp(refractDir.y);
 
-		caustics += saturate(1.0 - 256.0 * sdot(worldPos - refractedPos));
+		caustics += saturate(1.0 - 512.0 * sdot(worldPos - refractedPos));
 	}
 
-	return pow4(caustics) * exp2(-rLOG2 * WATER_FOG_DENSITY * waterDepth * waterExtinction);
+	return caustics * exp2(-rLOG2 * WATER_FOG_DENSITY * waterDepth * waterExtinction);
 }
 
 vec3 PercentageCloserFilter(in vec3 shadowScreenPos, in vec3 worldPos, in float dither, in float penumbraScale) {
@@ -138,9 +144,8 @@ vec3 PercentageCloserFilter(in vec3 shadowScreenPos, in vec3 worldPos, in float 
 	#ifdef WATER_CAUSTICS
 		if (causticData.y > EPS) {
 			causticData.x /= causticData.y;
-			worldPos += cameraPosition;
 
-			float waterDepth = max0(causticData.x * 512.0 - 128.0 - worldPos.y);
+			float waterDepth = max0(causticData.x * 512.0 - 128.0 - worldPos.y - eyeAltitude);
 			vec3 caustics = CalculateWaterCaustics(worldPos, waterDepth, dither);
 			result += causticData.y * rSteps * (caustics - result);
 		}

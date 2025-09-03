@@ -40,25 +40,18 @@ flat in uint isWater;
 
 uniform sampler2D tex;
 
+#include "/lib/universal/Uniform.glsl"
+
+//======// Function //============================================================================//
+
+#include "/lib/water/WaterWave.glsl"
+
 //======// Main //================================================================================//
 void main() {
 	if (isWater == 1u) {
-		// #ifdef WATER_CAUSTICS
-			// float dither = BlueNoiseTemporal(ivec2(gl_FragCoord.xy));
-			// vec3 lightVector = fastRefract(worldLightVector, vec3(0.0, 1.0, 0.0), 1.0 / WATER_REFRACT_IOR);
-			// float caustics = CalculateWaterCaustics(vectorData, lightVector, dither);
-
-			// shadowcolor0Out = vec3(caustics);
-			// #ifdef RSM_ENABLED
-			// 	shadowcolor1Out.xy = OctEncodeUnorm(normal);
-			// #endif
-			shadowcolor1Out.w = vectorData.y * rcp(512.0) + 0.25;
-		// #else
-		// 	shadowcolor0Out = vec3(0.8);
-			// #ifdef RSM_ENABLED
-			// 	shadowcolor1Out.xy = OctEncodeUnorm(tbnMatrix[2]);
-			// #endif
-		// #endif
+		vec3 waveNormal = CalculateWaterNormal(vectorData.xz - vectorData.y);
+		shadowcolor1Out.xy = OctEncodeUnorm(waveNormal.xzy);
+		shadowcolor1Out.w = vectorData.y * rcp(512.0) + 0.25;
 	} else {
 		vec4 albedo = texture(tex, texCoord);
 		if (albedo.a < 0.1) discard;
