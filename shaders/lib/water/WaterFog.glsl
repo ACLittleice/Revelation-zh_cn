@@ -1,8 +1,3 @@
-
-const vec3 waterAbsorption = vec3(WATER_ABSORPTION_R, WATER_ABSORPTION_G, WATER_ABSORPTION_B);
-const vec3 waterScattering = vec3(0.015);
-const vec3 waterExtinction = waterAbsorption + waterScattering;
-
 //================================================================================================//
 
 mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) {
@@ -27,25 +22,17 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 //================================================================================================//
 
 #if defined PASS_VOLUMETRIC_FOG
-	vec3 fastRefract(in vec3 dir, in vec3 normal, in float eta) {
-		float NdotD = dot(normal, dir);
-		float k = 1.0 - eta * eta * oms(NdotD * NdotD);
-		if (k < 0.0) return vec3(0.0);
-
-		return dir * eta - normal * (sqrt(k) + NdotD * eta);
-	}
-
 	#include "/lib/water/WaterWave.glsl"
 	float CalculateWaterCaustics(in vec3 rayPos, in vec3 lightVector) {
 		vec2 waveCoord = rayPos.xz - rayPos.y / lightVector.y * lightVector.xz;
 		vec3 waveNormal = CalculateWaterNormal(waveCoord).xzy;
 		vec3 refractDir = fastRefract(vec3(0.0, 1.0, 0.0), waveNormal, 1.0 / WATER_REFRACT_IOR);
 
-		vec3 projectPos = vec3(0.0, 1.0, 0.0) - refractDir / refractDir.y;
-		return exp2(-256.0 * sdot(projectPos));
+		vec3 projectPos = vec3(0.0, 1.0, 0.0) - refractDir * rcp(refractDir.y);
+		return saturate(1.0 - 32.0 * sdot(projectPos));
 	}
 
-	mat2x3 RaymarchWaterFog(in vec3 worldPos, in float dither, in float skylight) {
+	mat2x3 RaymarchWaterFog(in vec3 worldPos, in float dither) {
 		float rayLength = sdot(worldPos);
 		float norm = inversesqrt(rayLength);
 		rayLength = min(rayLength * norm, far);
@@ -122,7 +109,7 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 
 		transmittance = exp2(-rLOG2 * waterExtinction * UW_VF_DENSITY * rayLength);
 		vec3 scattering = scatteringSun * oms(stepTransmittance) + scatteringSky * oms(transmittance);
-		scattering *= skylight * (waterScattering / waterExtinction);
+		scattering *= waterScattering / waterExtinction;
 
 		return mat2x3(scattering, transmittance);
 	}
