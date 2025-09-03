@@ -99,13 +99,15 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither) {
 	);
 
 	for (uint i = 0u; i < steps; ++i, rayPos += rayStep, shadowPos += shadowStep) {
-		vec3 shadowScreenPos = DistortShadowSpace(shadowPos) * 0.5 + 0.5;
-
 		vec2 stepFogmass = CalculateFogDensity(rayPos) + uniformFog;
 		stepFogmass *= stepLength;
 
 		if (dot(stepFogmass, vec2(1.0)) < 1e-5) continue; // Faster than maxOf()
 
+    #if defined PASS_SKY_VIEW
+        const float sampleShadow = 1.0;
+    #else
+		vec3 shadowScreenPos = DistortShadowSpace(shadowPos) * 0.5 + 0.5;
 		#ifdef COLORED_VOLUMETRIC_FOG
 			vec3 sampleShadow = vec3(1.0);
 			if (saturate(shadowScreenPos) == shadowScreenPos) {
@@ -125,6 +127,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither) {
 				sampleShadow = step(shadowScreenPos.z, texelFetch(shadowtex1, shadowTexel, 0).x);
 			}
 		#endif
+    #endif
 
 		#ifdef VF_CLOUD_SHADOWS
 			cloudShadowPos += shadowViewStep.xy;

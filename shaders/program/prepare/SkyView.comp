@@ -47,6 +47,7 @@ uniform sampler3D atmosCombinedLut;
 #endif
 
 #include "/lib/atmosphere/clouds/Render.glsl"
+#include "/lib/atmosphere/AtmosphericFog.glsl"
 
 //======// Main //================================================================================//
 void main() {
@@ -75,6 +76,13 @@ void main() {
 			float cloudDepth;
 			vec4 cloudData = RenderClouds(worldDir, vec2(0.5), cloudDepth);
 			skyViewOut = skyViewOut * cloudData.a + cloudData.rgb;
+		#endif
+
+		#ifdef VOLUMETRIC_FOG
+			if (isEyeInWater == 0) {
+				mat2x3 volFogData = RaymarchAtmosphericFog(worldDir * far, 0.5);
+				skyViewOut = ApplyFog(skyViewOut, volFogData);
+			}
 		#endif
 
 		// Sky-view LUT with clouds
