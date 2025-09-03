@@ -221,7 +221,7 @@ void main() {
 		#ifdef UW_VOLUMETRIC_FOG
 			mat2x3 waterFog = VolumetricFogSpatialUpscale(screenTexel >> 1, -viewPos.z);
 		#else
-			mat2x3 waterFog = AnalyticWaterFog(saturate(eyeSkylightSmooth + 0.2), viewDistance, LdotV);
+			mat2x3 waterFog = AnalyticWaterFog(eyeSkylightSmooth, viewDistance, LdotV);
 		#endif
 		sceneOut = ApplyFog(sceneOut, waterFog);
 		bloomyFogTrans = mean(waterFog[1]);

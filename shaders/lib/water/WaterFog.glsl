@@ -45,7 +45,7 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 		return exp2(-256.0 * sdot(projectPos));
 	}
 
-	mat2x3 RaymarchWaterFog(in vec3 worldPos, in float dither) {
+	mat2x3 RaymarchWaterFog(in vec3 worldPos, in float dither, in float skylight) {
 		float rayLength = sdot(worldPos);
 		float norm = inversesqrt(rayLength);
 		rayLength = min(rayLength * norm, far);
@@ -84,7 +84,7 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 			if (saturate(shadowScreenPos) != shadowScreenPos) continue;
 
 			ivec2 shadowTexel = ivec2(shadowScreenPos.xy * realShadowMapRes);
-		
+
 			float sampleDepth0 = step(shadowScreenPos.z, texelFetch(shadowtex0, shadowTexel, 0).x);
 			vec3 sampleSunlight = vec3(1.0);
 
@@ -122,7 +122,8 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 
 		transmittance = exp2(-rLOG2 * waterExtinction * UW_VF_DENSITY * rayLength);
 		vec3 scattering = scatteringSun * oms(stepTransmittance) + scatteringSky * oms(transmittance);
+		scattering *= skylight * (waterScattering / waterExtinction);
 
-		return mat2x3(scattering * (waterScattering / waterExtinction), transmittance);
+		return mat2x3(scattering, transmittance);
 	}
 #endif
