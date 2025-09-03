@@ -97,7 +97,7 @@ vec3 CalculateWaterCaustics(in vec3 worldPos, in float waterDepth, in float dith
 		vec2 rand = fract(R2(i) + dither);
 		samplePos.xz += sincos(rand.x * TAU) * approxSqrt(rand.y) * 0.15;
 
-		vec2 sampleCoord = WorldToShadowScreenSpace(samplePos).xy;
+		vec2 sampleCoord = WorldToShadowScreenSpace(samplePos - vec3(0.0, 1.0, 0.0)).xy;
 		vec3 waveNormal = OctDecodeUnorm(texture(shadowcolor1, sampleCoord).xy);
 
 		vec3 refractDir = fastRefract(vec3(0.0, 1.0, 0.0), waveNormal, 1.0 / WATER_REFRACT_IOR);
