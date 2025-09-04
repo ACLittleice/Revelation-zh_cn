@@ -70,18 +70,14 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 			if (saturate(shadowScreenPos) != shadowScreenPos) continue;
 
 			ivec2 shadowTexel = ivec2(shadowScreenPos.xy * realShadowMapRes);
+			vec3 sampleSunlight = vec3(step(shadowScreenPos.z, texelFetch(shadowtex1, shadowTexel, 0).x));
 
-			float sampleDepth0 = step(shadowScreenPos.z, texelFetch(shadowtex0, shadowTexel, 0).x);
-			vec3 sampleSunlight = vec3(1.0);
-
-			if (sampleDepth0 < 1.0) {
-				sampleSunlight = step(shadowScreenPos.z, texelFetch(shadowtex1, shadowTexel, 0).xxx);
-
-				if (sampleSunlight.x != sampleDepth0) {
-					float waterDepth = max0(texelFetch(shadowcolor1, shadowTexel, 0).w * 512.0 - 128.0 - shadowPos.y - eyeAltitude);
-					if (waterDepth > EPS) {
-						sampleSunlight = CalculateWaterCaustics(shadowScreenPos, waterDepth);
-					}
+			float sampleDepth0 = texelFetch(shadowtex0, shadowTexel, 0).x;
+			if (sampleSunlight.x != step(shadowScreenPos.z, sampleDepth0)) {
+				float waterMask = texelFetch(shadowcolor1, shadowTexel, 0).w;
+				if (waterMask > EPS) {
+					float waterDepth = (sampleDepth0 - shadowScreenPos.z) * shadowProjectionInverse[2].z * 5.0;
+					sampleSunlight = CalculateWaterCaustics(shadowScreenPos, waterDepth);
 				}
 			}
 

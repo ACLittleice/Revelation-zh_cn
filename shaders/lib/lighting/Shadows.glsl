@@ -119,7 +119,7 @@ vec3 PercentageCloserFilter(in vec3 shadowScreenPos, in vec3 worldPos, in float 
 	const mat2 rot = mat2(angleStep, -angleStep.y, angleStep.x);
 
 	vec3 result = vec3(0.0);
-	vec2 causticData = vec2(0.0);
+	vec2 waterData = vec2(0.0);
 
 	for (uint i = 0u; i < PCF_SAMPLES; ++i, dir *= rot) {
 		float radius = (float(i) + dither) * rSteps;
@@ -129,11 +129,15 @@ vec3 PercentageCloserFilter(in vec3 shadowScreenPos, in vec3 worldPos, in float 
 
 	#ifdef COLORED_SHADOWS
 		ivec2 sampleTexel = ivec2(sampleCoord * realShadowMapRes);
-		float sampleDepth0 = step(shadowScreenPos.z, texelFetch(shadowtex0, sampleTexel, 0).x);
-		if (sampleDepth0 != sampleDepth1) {
-			float waterDepth = texelFetch(shadowcolor1, sampleTexel, 0).w;
-			if (waterDepth > EPS) causticData += vec2(waterDepth, 1.0);
-			else result += pow4(texelFetch(shadowcolor0, sampleTexel, 0).rgb) * sampleDepth1;
+		float sampleDepth0 = texelFetch(shadowtex0, sampleTexel, 0).x;
+
+		if (step(shadowScreenPos.z, sampleDepth0) != sampleDepth1) {
+			float waterMask = texelFetch(shadowcolor1, sampleTexel, 0).w;
+			if (waterMask > EPS) {
+				waterData += vec2(sampleDepth0 - shadowScreenPos.z, 1.0);
+			} else {
+				result += pow4(texelFetch(shadowcolor0, sampleTexel, 0).rgb) * sampleDepth1;
+			}
 		} else
 	#endif
 		result += sampleDepth1;
@@ -142,12 +146,12 @@ vec3 PercentageCloserFilter(in vec3 shadowScreenPos, in vec3 worldPos, in float 
 	result *= rSteps;
 
 	#ifdef WATER_CAUSTICS
-		if (causticData.y > EPS) {
-			causticData.x /= causticData.y;
+		if (waterData.y > EPS) {
+			waterData.x /= waterData.y;
 
-			float waterDepth = max0(causticData.x * 512.0 - 128.0 - worldPos.y - eyeAltitude);
+			float waterDepth = waterData.x * shadowProjectionInverse[2].z * 5.0;
 			vec3 caustics = CalculateWaterCaustics(worldPos, waterDepth, dither);
-			result += causticData.y * rSteps * (caustics - result);
+			result += waterData.y * rSteps * (caustics - result);
 		}
 	#endif
 
