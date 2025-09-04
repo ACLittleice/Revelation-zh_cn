@@ -38,7 +38,7 @@ vec4 HardCodeEmissive(in uint materialID, in vec3 albedo, in vec3 worldPos, in v
             return vec4(blocklightColor * (4.0 * float(albedo.r > 0.6 || albedo.r > albedo.g * 2.0)), 0.2);
         // Fire
         case 7u: case 22u:
-            return vec4(blocklightColor * (2.0 * cube(albedoLuminance)), 0.1);
+            return vec4(blocklightColor * (2.0 * albedoLuminance), 0.1);
         // Glowstone like
         case 23u:
             return vec4(blocklightColor * (3.0 * cube(albedoLuminance)), 0.1);
