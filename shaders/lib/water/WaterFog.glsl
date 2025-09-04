@@ -1,7 +1,7 @@
 //================================================================================================//
 
 mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) {
-	float fogDensity = WATER_FOG_DENSITY * max(waterDepth, 1.0);
+	float fogDensity = max(waterDepth, 1.0);
 
 	vec3 transmittance = exp2(-rLOG2 * waterExtinction * fogDensity);
 
@@ -28,7 +28,7 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 		vec3 refractDir = fastRefract(vec3(0.0, 1.0, 0.0), waveNormal, 1.0 / WATER_REFRACT_IOR);
 
 		vec3 projectPos = vec3(0.0, 1.0, 0.0) - refractDir * rcp(refractDir.y);
-		return saturate(1.0 - 64.0 * sdot(projectPos)) * exp2(-rLOG2 * UW_VF_DENSITY * waterExtinction * max(waterDepth, 4.0));
+		return saturate(1.0 - 64.0 * sdot(projectPos)) * exp2(-rLOG2 * waterExtinction * max(waterDepth, 4.0));
 	}
 
 	mat2x3 RaymarchWaterFog(in vec3 worldPos, in float dither) {
@@ -42,7 +42,7 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 
 		float rSteps = 1.0 / float(steps);
 
-		float stepLength = min(rayLength, 48.0) * rSteps * UW_VF_DENSITY;
+		float stepLength = min(rayLength, 48.0) * rSteps;
 
 		vec3 rayStart = gbufferModelViewInverse[3].xyz,
 			 rayStep  = worldDir * stepLength;
@@ -95,7 +95,7 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 		scatteringSun *= oms(wetnessCustom * 0.8) * phase * directIlluminance;
 		vec3 scatteringSky = uniformPhase * skyIlluminance;
 
-		transmittance = exp2(-rLOG2 * waterExtinction * UW_VF_DENSITY * rayLength);
+		transmittance = exp2(-rLOG2 * waterExtinction * rayLength);
 		vec3 scattering = scatteringSun * oms(stepTransmittance) + scatteringSky * oms(transmittance);
 		scattering *= waterScattering / waterExtinction;
 

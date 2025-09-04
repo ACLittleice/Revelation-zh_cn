@@ -65,7 +65,6 @@ const ivec2 skyViewRes = ivec2(256, 128);
 	#define VF_MIE_DENSITY_RAIN_MULT 4.0 // Mie scattering density multiplier when raining. [0.0 0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0 4.5 5.0 5.5 6.0 6.5 7.0 7.5 8.0 8.5 9.0 9.5 10.0 10.5 11.0 11.5 12.0 12.5 13.0 13.5 14.0 14.5 15.0 15.5 16.0 16.5 17.0 17.5 18.0 18.5 19.0 19.5 20.0]
 
 	#define UW_VOLUMETRIC_FOG // Enables underwater volumetric fog
-	#define UW_VF_DENSITY 1.0 // Density of underwater volumetric fog. [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0] [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.7 2.0 2.5 3.0 4.0 5.0 7.0 10.0]
 	#define UW_VF_MAX_SAMPLES 16 // Maximum sample count of underwater volumetric fog. [2 4 6 8 9 10 12 14 15 16 18 20 22 24 26 28 30 40 50 70 100 150 200 300 500]
 
 	#ifdef PER_BIOME_FOG
@@ -94,8 +93,8 @@ const ivec2 skyViewRes = ivec2(256, 128);
 	#ifdef TRANSLUCENT_REFLECTION_BLEND
 	#endif
 
-	const vec3 waterAbsorption = vec3(WATER_ABSORPTION_R, WATER_ABSORPTION_G, WATER_ABSORPTION_B);
-	const vec3 waterScattering = vec3(0.015);
+	const vec3 waterAbsorption = vec3(WATER_ABSORPTION_R, WATER_ABSORPTION_G, WATER_ABSORPTION_B) * WATER_FOG_DENSITY;
+	const vec3 waterScattering = vec3(0.015) * WATER_FOG_DENSITY;
 	const vec3 waterExtinction = waterAbsorption + waterScattering;
 
 /* Weather */

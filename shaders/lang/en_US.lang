@@ -160,7 +160,6 @@ option.VF_TIME_FADE=Volumetric Fog Time Fade
 option.COLORED_VOLUMETRIC_FOG=Colored Volumetric Fog
 
 option.UW_VOLUMETRIC_FOG=Underwater Volumetric Fog
-option.UW_VF_DENSITY=Underwater Volumetric Fog Density
 option.UW_VF_MAX_SAMPLES=Underwater Volumetric Fog Max Samples
 
 option.BORDER_FOG=Border Fog
