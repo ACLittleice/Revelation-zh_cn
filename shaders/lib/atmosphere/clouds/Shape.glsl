@@ -174,9 +174,9 @@ float CloudHighDensity(in vec2 rayPos) {
 #else
 	// Adapted from https://github.com/iamlivehaha/Project-VolumetricCloudRendering
 	float GetVerticalProfile(in float relativeHeight, in float cloudType) {
-		float stratus = saturate(relativeHeight * 10.0) * remap(0.25, 0.1, relativeHeight);
-		float cumulus = saturate(relativeHeight * 6.0) * remap(0.75, 0.25, relativeHeight);
-		float altocumulus = saturate(relativeHeight * 8.0) * remap(1.0, 0.75, relativeHeight);
+		float stratus = saturate(relativeHeight * 10.0) * remap(0.2, 0.1, relativeHeight);
+		float cumulus = saturate(relativeHeight * 5.0) * remap(0.75, 0.2, relativeHeight);
+		float altocumulus = saturate(relativeHeight * 8.0) * remap(1.0, 0.65, relativeHeight);
 
 		float verticalProfile = mix(stratus, cumulus, saturate(cloudType * 2.0));
 		verticalProfile = mix(verticalProfile, altocumulus, saturate(cloudType * 2.0 - 1.0));
