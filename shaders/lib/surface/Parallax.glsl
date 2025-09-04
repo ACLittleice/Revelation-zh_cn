@@ -1,53 +1,53 @@
-
 uniform ivec2 atlasSize;
 
-#define OffsetCoord(coord) (tileOffset + tileScale * fract(coord))
+#define atlasCoord(coord) (tileOffset + tileScale * fract(coord))
+#define atlasTexel(coord) ivec2((tileOffset + tileScale * fract(coord)) * vec2(atlasSize))
 
-vec3 CalculateParallax(in vec3 tangentViewDir, in vec2 texSize, in float dither) {
-    const float rSteps = 1.0 / float(PARALLAX_SAMPLES);
-    vec3 stepSize = vec3(tangentViewDir.xy, -1.0) * rSteps;
-    stepSize.xy *= PARALLAX_DEPTH / -tangentViewDir.z;
-    stepSize *= 2.0 * rSteps * (dither + 0.5);
+const float rSteps = 1.0 / float(PARALLAX_SAMPLES);
 
-    uint refinementIndex = 0u;
-    vec3 offsetCoord = vec3(tileBase, 1.0);
+vec3 CalculateParallax(in vec3 tangentDir, in float dither) {
+    vec3 rayStep = vec3(tangentDir.xy, 1.0) * -rSteps;
+    rayStep.xy *= PARALLAX_DEPTH / tangentDir.z;
 
-    for (uint i = 1u; i <= PARALLAX_SAMPLES; ++i) {
-        offsetCoord += stepSize * float(i);
-        float sampleHeight = texelFetch(normals, ivec2(OffsetCoord(offsetCoord.xy) * texSize), 0).a;
+    vec3 rayPos = vec3(tileBase, 1.0) + rayStep * dither;
 
-        #ifdef PARALLAX_REFINEMENT
-            // Refine the parallax mapping (binary search)
-            if (sampleHeight > offsetCoord.z) {
-                if (refinementIndex >= PARALLAX_REFINEMENT_STEPS) break;
-                offsetCoord -= stepSize * float(i);
-                stepSize *= 0.5;
-                ++refinementIndex;
-            }
-        #endif
+    float sampleHeight;
+    for (uint i = 0u; i < PARALLAX_SAMPLES; ++i) {
+        rayPos += rayStep;
+        sampleHeight = texelFetch(normals, atlasTexel(rayPos.xy), 0).a;
+        if (sampleHeight > rayPos.z) break;
+
     }
 
-    return offsetCoord;
-}
+    // Refine the parallax mapping (binary search)
+    #ifdef PARALLAX_REFINEMENT
+        rayPos -= rayStep;
+        rayStep *= 0.5;
 
-//================================================================================================//
+        for (uint i = 0u; i < PARALLAX_REFINEMENT_STEPS; ++i) {
+            sampleHeight = texelFetch(normals, atlasTexel(rayPos.xy), 0).a;
 
-#ifdef PARALLAX_SHADOW
-    float CalculateParallaxShadow(in vec3 tangentLightDir, in vec3 offsetCoord, in vec2 texSize, in float dither) {
-        float parallaxShadow = 1.0;
-
-        const float rSteps = 1.0 / float(PARALLAX_SAMPLES);
-        vec3 stepSize = vec3(tangentLightDir.xy, 1.0) * offsetCoord.z * rSteps;
-        stepSize.xy *= PARALLAX_DEPTH / tangentLightDir.z;
-        stepSize *= 2.0 * rSteps * (dither + 0.5);
-
-        for (uint i = 1u; i <= PARALLAX_SAMPLES && parallaxShadow > 1e-3; ++i) {
-            float sampleHeight = texelFetch(normals, ivec2(OffsetCoord(offsetCoord.xy) * texSize), 0).a;
-
-            parallaxShadow *= step(sampleHeight, offsetCoord.z);
-            offsetCoord += stepSize * float(i);
+            rayPos += rayStep * (step(sampleHeight, rayPos.z) * 2.0 - 1.0);
+            rayStep *= 0.5;
         }
 
-        return 1.0 - parallaxShadow;
+        rayPos += rayStep * 2.0;
+    #endif
+
+    return rayPos;
+}
+
+float CalculateParallaxShadow(in vec3 tangentDir, in vec3 rayPos, in float dither) {
+    vec3 rayStep = vec3(tangentDir.xy, 1.0) * rayPos.z * rSteps;
+    rayStep.xy *= PARALLAX_DEPTH / tangentDir.z;
+    rayPos += rayStep * dither;
+
+    for (uint i = 0u; i < PARALLAX_SAMPLES; ++i) {
+        float sampleHeight = texelFetch(normals, atlasTexel(rayPos.xy), 0).a;
+
+        if (sampleHeight > rayPos.z) return 1.0;
+        rayPos += rayStep;
     }
-#endif
+
+    return 0.0;
+}

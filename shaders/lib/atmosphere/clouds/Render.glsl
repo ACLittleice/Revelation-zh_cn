@@ -46,8 +46,8 @@ float CloudVolumeOpticalDepth(in vec3 rayPos, in vec3 rayDir, in float lightNois
 }
 
 // Approximate method from [Wrenninge et al., 2013]
-float CloudMultiScatteringApproximation(in float opticalDepth, in float phases[cloudMsCount]) {
-	float scatteringFalloff = cloudMsFalloffA;
+float CloudMultiScatteringApproximation(in float opticalDepth, in float phases[cloudMsCount], in float scatterProbability) {
+	float scatteringFalloff = cloudMsFalloffA * scatterProbability;
 	float extinctionFalloff = cloudMsFalloffB;
 
 	// opticalDepth has already been multiplied by -rLOG2 so we can use exp2() directly
@@ -67,7 +67,7 @@ float CloudMultiScatteringApproximation(in float opticalDepth, in float phases[c
 
 vec3 RenderCloudMid(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in float phases[cloudMsCount]) {
 	float density = CloudMidDensity(rayPos);
-	if (density > cloudEpsilon) {
+	if (density > EPS) {
 		float opticalDepth = density * CLOUD_MID_THICKNESS / abs(rayDir.y);
 		float integral = oms(exp2(-rLOG2 * stratusExtinction * opticalDepth));
 
@@ -88,7 +88,8 @@ vec3 RenderCloudMid(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in floa
 		}
 
 		// Approximate sunlight multi-scattering
-		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases);
+		float scatterProbability = oms(exp2(-32.0 * density)) * 1.75;
+		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases, scatterProbability);
 
 		float opticalDepthSky = density * (CLOUD_MID_THICKNESS * 0.5 * stratusExtinction * -rLOG2);
 
@@ -102,9 +103,9 @@ vec3 RenderCloudMid(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in floa
 		// float powder = 2.0 * oms(exp2(-(density * 32.0 + 0.1)));
 
 		// TODO: Better implementation
-		float inScatterProbability = oms(exp2(-16.0 * density - 0.125)) * PI;
+		// float inScatterProbability = oms(exp2(-16.0 * density - 0.125)) * PI;
 
-		scatteringSun *= integral * inScatterProbability * stratusAlbedo;
+		scatteringSun *= integral * stratusAlbedo;
 		scatteringSky *= integral * stratusAlbedo;
 		return vec3(scatteringSun, scatteringSky, integral);
 	} else {
@@ -116,7 +117,7 @@ vec3 RenderCloudMid(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in floa
 
 vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in float phases[cloudMsCount]) {
 	float density = CloudHighDensity(rayPos);
-	if (density > cloudEpsilon) {
+	if (density > EPS) {
 		float opticalDepth = density * CLOUD_HIGH_THICKNESS / abs(rayDir.y);
 		float integral = oms(exp2(-rLOG2 * cirrusExtinction * opticalDepth));
 
@@ -137,7 +138,8 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in flo
 		}
 
 		// Approximate sunlight multi-scattering
-		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases);
+		float scatterProbability = oms(exp2(-32.0 * density)) * hPI;
+		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases, scatterProbability);
 
 		float opticalDepthSky = density * (CLOUD_HIGH_THICKNESS * 0.5 * cirrusExtinction * -rLOG2);
 
@@ -151,9 +153,9 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in flo
 		// float powder = 2.0 * oms(exp2(-(density * 32.0 + 0.1)));
 
 		// TODO: Better implementation
-		float inScatterProbability = oms(exp2(-density * 16.0 - 0.25)) * hPI;
+		// float inScatterProbability = oms(exp2(-density * 16.0 - 0.25)) * hPI;
 
-		scatteringSun *= integral * inScatterProbability * cirrusAlbedo;
+		scatteringSun *= integral * cirrusAlbedo;
 		scatteringSky *= integral * cirrusAlbedo;
 		return vec3(scatteringSun, scatteringSky, integral);
 	} else {
@@ -180,8 +182,8 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 	float LdotV = dot(worldLightVector, rayDir);
 
 	// Compute phases for clouds' sunlight multi-scattering
-	float phase = TripleLobePhase(LdotV, cloudForwardG, cloudBackwardG, cloudLobeMixer, cloudSilverG, cloudSilverI);
-	// float phase = HgDrainePhase(LdotV, 35.0);
+	// float phase = TripleLobePhase(LdotV, cloudForwardG, cloudBackwardG, cloudLobeMixer, cloudSilverG, cloudSilverI);
+	float phase = HgDrainePhase(LdotV, 20.0);
 	float phases[cloudMsCount] = SetupParticipatingMediaPhases(phase, cloudMsFalloffC);
 
 	float r = viewerHeight; // length(camera)
@@ -285,7 +287,8 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 					// float scatteredEnergy = msVolume;
 
 					// Approximate sunlight multi-scattering
-					float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases);
+					float scatterProbability = (dimensionalProfile * saturate(heightFraction * 4.0) + stepDensity) * 2.0;
+					float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases, scatterProbability);
 
 					#if CLOUD_CU_SKYLIGHT_SAMPLES > 0
 						// Compute the optical depth of skylight through clouds
@@ -309,8 +312,6 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 					// float verticalProbability = pow(remap(heightFraction, 0.07, 0.14, 0.1, 1.0), 0.75);
 					// float inScatterProbability = depthProbability * verticalProbability;
 					// scatteringSun *= inScatterProbability;
-					float inScatterProbability = sqr(stepDensity * 2.0 + dimensionalProfile);
-					scatteringSun *= inScatterProbability * 2.0;
 
 					vec2 scattering = vec2(scatteringSun + scatteringGround * uniformPhase * worldLightVector.y,
 										   scatteringSky + scatteringGround);

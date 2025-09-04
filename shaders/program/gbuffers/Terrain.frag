@@ -119,11 +119,10 @@ void main() {
 		#endif
 
 		if (normalTex.w < 0.999) {
-			vec2 texSize = vec2(atlasSize);
 			float parallaxFade = exp2(-0.1 * max0(length(tangentViewPos) - 2.0));
 
-			vec3 offsetCoord = CalculateParallax(normalize(tangentViewPos), texSize, dither);
-			parallaxCoord = OffsetCoord(offsetCoord.xy);
+			vec3 offsetCoord = CalculateParallax(normalize(tangentViewPos), dither);
+			parallaxCoord = atlasCoord(offsetCoord.xy);
 
 			normalTex = ReadTexture(normals);
 
@@ -134,11 +133,11 @@ void main() {
 					gl_FragDepth = ViewToScreenDepth(ScreenToViewDepth(gl_FragDepth) - oms(offsetCoord.z) * PARALLAX_DEPTH);
 				#elif defined PARALLAX_SHADOW
 					if (dot(tbnMatrix[2], worldLightVector) > 1e-3) {
-						gbufferOut1.z = CalculateParallaxShadow(worldLightVector * tbnMatrix, offsetCoord, texSize, dither) * parallaxFade;
+						gbufferOut1.z = CalculateParallaxShadow(worldLightVector * tbnMatrix, offsetCoord, dither) * parallaxFade;
 					}
 				#endif
 				#ifdef PARALLAX_BASED_NORMAL
-					#define sampleHeight(uv) textureGrad(normals, OffsetCoord(uv), texGrad[0], texGrad[1]).w
+					#define sampleHeight(uv) textureGrad(normals, atlasCoord(uv), texGrad[0], texGrad[1]).w
 
 					vec2 bias = 1e-2 * tileScale;
 					float heightR = sampleHeight(offsetCoord.xy + vec2(bias.x, 0.0));

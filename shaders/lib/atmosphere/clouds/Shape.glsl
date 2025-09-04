@@ -94,7 +94,7 @@ float CloudMidDensity(in vec2 rayPos) {
 
 		localCoverage = saturate(localCoverage - 0.8) * (1.5 + 1.5 * CLOUD_AS_COVERAGE);
 		float density = saturate(altostratus + localCoverage - 1.25);
-		return pow(density, 1.0 + altostratus);
+		return curve(density);
 	}
 }
 
@@ -115,7 +115,7 @@ float CloudHighDensity(in vec2 rayPos) {
 	/* Cirrocumulus clouds */ if (localCoverage > 0.4) {
 		vec2 position = (rayPos - windOffset) * 1e-4 - curl * 0.75;
 
-		float baseCoverage = texture(noisetex, position * 0.05).z;
+		float baseCoverage = texture(noisetex, position * 0.06).z;
 		baseCoverage = remap(texture(noisetex, position * 0.002).y, 1.0, baseCoverage);
 
 		if (baseCoverage > cloudEpsilon) {
@@ -126,12 +126,12 @@ float CloudHighDensity(in vec2 rayPos) {
 			cirrocumulus += texture(noisetex, position - windOffset + cirrocumulus * 0.125).z;
 			cirrocumulus = saturate(cirrocumulus * 1.25 - 0.75);
 
-			float coverage = saturate((baseCoverage + localCoverage) * (1.0 + CLOUD_CC_COVERAGE) - 1.25);
+			float coverage = saturate((baseCoverage + localCoverage) * (1.0 + CLOUD_CC_COVERAGE) - 1.1);
 
 			cirrocumulus = mix(cirrocumulus * cirrocumulus, cirrocumulus, coverage);
-			cirrocumulus *= remap(0.1, 0.9, coverage);
+			cirrocumulus *= curve(coverage);
 
-			density += curve(saturate(2.0 * cirrocumulus));
+			density += curve(cirrocumulus);
 		}
 	}
 	#endif
@@ -205,7 +205,7 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 	float coverage = cloudMap.x * (3.5 * CLOUD_CU_COVERAGE);
 	coverage = saturate(coverage + wetness * 0.5);
 	// coverage = pow(coverage, remap(heightFraction, 0.7, 0.8, 1.0, 1.0 - 0.5 * anvilBias));
-	if (coverage < 1e-2) return 0.0;
+	if (coverage < 0.1) return 0.0;
 
 	// Vertical profile
 	float verticalProfile = GetVerticalProfile(heightFraction, cloudMap.y);
@@ -225,7 +225,7 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 	#if !defined PASS_SKY_VIEW
 	if (detail) {
 		vec2 curlNoise = texture(noisetex, position.xz * 0.25).xy;
-		position.xz += curlNoise * 0.1 * oms(heightFraction);
+		position.xz += curlNoise * 0.05 * oms(heightFraction);
 
 		// fBm worley noise for detail shape
 		detailNoise = texture(detailNoiseTex, position * 8.0 - windOffset * 1e-3).x;
@@ -237,12 +237,13 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 		// detailNoise = abs(detailNoise * 2.0 - 1.0);
 	}
 	#endif
-	float noiseComposite = remap(detailNoise * 0.3, 1.0, baseNoise);
+	float noiseComposite = remap(sqr(detailNoise) * 0.5, 1.0, baseNoise);
 
 	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
+	cloudDensity = 1.0 - pow4(1.0 - cloudDensity);
 
 	float densityProfile = saturate(heightFraction * 2.0);
-	return approxSqrt(cloudDensity) * densityProfile;
+	return cloudDensity * densityProfile;
 }
 
 float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dimensionalProfile) {
@@ -266,7 +267,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	float coverage = cloudMap.x * (3.5 * CLOUD_CU_COVERAGE);
 	coverage = saturate(coverage + wetness * 0.5);
 	// coverage = pow(coverage, remap(heightFraction, 0.7, 0.8, 1.0, 1.0 - 0.5 * anvilBias));
-	if (coverage < 1e-2) return 0.0;
+	if (coverage < 0.1) return 0.0;
 
 	// Vertical profile
 	float verticalProfile = GetVerticalProfile(heightFraction, cloudMap.y);
@@ -285,7 +286,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	float detailNoise = 0.5;
 	#if !defined PASS_SKY_VIEW
 		vec2 curlNoise = texture(noisetex, position.xz * 0.25).xy;
-		position.xz += curlNoise * 0.1 * oms(heightFraction);
+		position.xz += curlNoise * 0.05 * oms(heightFraction);
 
 		// fBm worley noise for detail shape
 		detailNoise = texture(detailNoiseTex, position * 8.0 - windOffset * 1e-3).x;
@@ -296,12 +297,13 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 		// See [Schneider, 2023]
 		// detailNoise = abs(detailNoise * 2.0 - 1.0);
 	#endif
-	float noiseComposite = remap(detailNoise * 0.3, 1.0, baseNoise);
+	float noiseComposite = remap(sqr(detailNoise) * 0.5, 1.0, baseNoise);
 
 	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
+	cloudDensity = 1.0 - pow4(1.0 - cloudDensity);
 
 	float densityProfile = saturate(heightFraction * 2.0);
-	return approxSqrt(cloudDensity) * densityProfile;
+	return cloudDensity * densityProfile;
 }
 
 #endif

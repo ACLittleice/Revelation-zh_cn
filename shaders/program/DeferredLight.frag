@@ -150,7 +150,6 @@ void main() {
 		vec3 viewNormal = mat3(gbufferModelView) * worldNormal;
 
 		vec2 lightmap = Unpack2x8U(gbufferData0.x);
-		lightmap.y = saturate(lightmap.y + float(isEyeInWater));
 
 		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
 			vec2 specularData = loadGbufferData1(screenTexel).xy;
@@ -227,7 +226,7 @@ void main() {
 		#endif
 
 		// Sunlight
-		vec3 sunlightMult = cloudShadow * global.light.directIlluminance;
+		vec3 sunlightMult = cloudShadow * saturate(lightmap.y * 1e6 + float(isEyeInWater)) * global.light.directIlluminance;
 		vec3 specularHighlight = vec3(0.0);
 
 		float worldDistSquared = sdot(worldPos);
@@ -271,7 +270,7 @@ void main() {
 					if (doShadows) {
 						shadowScreenPos.z -= (worldDistSquared * 1e-9 + 3e-6) * (1.0 + dither) / distortionFactor * shadowDistance;
 
-						shadow *= PercentageCloserFilter(shadowScreenPos, worldPos, dither, 0.5 * blockerSearch.x * distortionFactor) * saturate(lightmap.y * 1e8);
+						shadow *= PercentageCloserFilter(shadowScreenPos, worldPos, dither, 0.5 * blockerSearch.x * distortionFactor);
 					}
 				}
 			}
@@ -315,7 +314,7 @@ void main() {
 
 		// Skylight and bounced sunlight
 		#ifndef SSPT_ENABLED
-			if (lightmap.y > 1e-5) {
+			if (lightmap.y > EPS) {
 				// Skylight
 				vec3 skylight = lightningShading;
 				#ifdef AURORA
@@ -384,7 +383,7 @@ void main() {
 		#endif
 
 		// Minimal ambient light
-		sceneOut += vec3(0.77, 0.82, 1.0) * ((worldNormal.y * 0.4 + 0.6) * MINIMUM_AMBIENT_BRIGHTNESS) * ao;
+		sceneOut += (worldNormal.y * 0.4 + 0.6) * max(MINIMUM_AMBIENT_BRIGHTNESS, 5e-3 * nightVision) * ao;
 
 		// Specular reflections
 		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP

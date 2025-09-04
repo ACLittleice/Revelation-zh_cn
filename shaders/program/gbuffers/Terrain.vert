@@ -66,7 +66,11 @@ void main() {
 	vertColor = vaColor.rgb;
 	texCoord = vaUV0;
 
-	lightmap = saturate(vec2(vaUV2) * r240);
+	#ifdef IS_IRIS
+	    lightmap = saturate((vec2(vaUV2) - 8.0) * rcp(232.0));
+	#else
+		lightmap = saturate(vec2(vaUV2) * r240);
+	#endif
 
 	vec3 worldPos = transMAD(gbufferModelViewInverse, transMAD(modelViewMatrix, vaPosition + chunkOffset));
 

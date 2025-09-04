@@ -1,14 +1,3 @@
-
-vec3 fastRefract(in vec3 dir, in vec3 normal, in float eta) {
-    float NdotD = dot(normal, dir);
-    float k = 1.0 - eta * eta * oms(NdotD * NdotD);
-    if (k < 0.0) return vec3(0.0);
-
-    return dir * eta - normal * (sqrt(k) + NdotD * eta);
-}
-
-//================================================================================================//
-
 #ifdef RAYTRACED_REFRACTION
 
 vec2 CalculateRefractedCoord(in bool waterMask, in vec3 viewPos, in vec3 viewNormal, in vec3 screenPos) {

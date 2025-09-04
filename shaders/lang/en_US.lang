@@ -1,0 +1,391 @@
+# PROFILES
+profile.Default=Default
+profile.ResPBR=Resource Pack PBR
+
+
+# SCREENS
+screen.Environment=Environment
+screen.Lighting=Lighting
+screen.Materials=Materials
+screen.PostProcessing=Post-Processing
+screen.Debug=Debug
+screen.Compatibility=Compatibility
+
+screen.Atmospherics=Atmospherics
+screen.Transparent=Transparent
+screen.Foliage=Foliage
+screen.Weather=Weather
+
+screen.Clouds=Clouds
+screen.CrepuscularRays=Crepuscular Rays
+screen.Rainbows=Rainbows
+
+screen.CloudLighting=Cloud Lighting
+screen.LowLevelClouds=Low-level Clouds
+screen.MidLevelClouds=Mid-level Clouds
+screen.HighLevelClouds=High-level Clouds
+
+screen.Fog=Fog
+screen.Volumetric=Volumetric Fog
+screen.WaterParams=Water Parameters
+
+screen.GlobalIllumination=Global Illumination
+screen.AmbientOcclusion=Ambient Occlusion
+screen.Reflections=Reflections
+screen.Refractions=Refractions
+screen.Shadows=Shadows
+screen.Misc=Misc
+
+screen.Normal=Normal
+screen.Parallax=Parallax
+screen.Emissive=Emissive
+screen.SubsurfaceScattering=Subsurface Scattering
+
+screen.FidelityFX=FidelityFX
+screen.DoF=DoF
+screen.TAA=TAA
+screen.MotionBlur=Motion Blur
+screen.Bloom=Bloom
+screen.Exposure=Exposure
+screen.Vignette=Vignette
+screen.Color=Color
+
+
+# OPTIONS
+option.INFO=Revelation
+option.AUTHOR=Author
+option.AUTHOR.comment=Copyright (C) 2024 HaringPro. Apache License 2.0
+
+# Atmospherics
+option.PLANET_GROUND=Planet Ground
+option.VIEWER_BASE_ALTITUDE=Viewer Base Altitude
+
+option.ATMOSPHERE_BOTTOM_ALTITUDE=Atmosphere Bottom Altitude
+option.ATMOSPHERE_TOP_ALTITUDE=Atmosphere Top Altitude
+
+option.AURORA=Aurora
+option.AURORA_STRENGTH=Aurora Strength
+
+option.SUN_RADIUS_MULT=Sun Radius Multiplier
+
+option.STARS_COVERAGE=Stars Coverage
+option.STARS_INTENSITY=Stars Intensity
+
+option.GALAXY=Galaxy
+option.GALAXY_INTENSITY=Galaxy Intensity
+option.GALAXY_SOLAR_POS=Galaxy Solar Position
+
+option.CREPUSCULAR_RAYS=Crepuscular Rays
+option.CREPUSCULAR_RAYS_INTENSITY=Crepuscular Rays Intensity
+option.CREPUSCULAR_RAYS_SAMPLES=Crepuscular Rays Samples
+
+option.RAINBOWS=Rainbows
+option.RAINBOWS_PRIMARY_INTENSITY=Primary Rainbow Intensity
+option.RAINBOWS_SECONDARY_INTENSITY=Secondary Rainbow Intensity
+
+# Clouds
+option.CLOUDS=Clouds
+option.CLOUD_CBR_ENABLED=Checkerboard Rendering
+option.CLOUD_CBR_SCALE=CBR Scale
+suffix.CLOUD_CBR_SCALE=x
+
+option.CLOUD_EI_CLIP=Ellipsoid Intersection Clip
+option.CLOUD_MAX_ACCUM_FRAMES=Max Accumulated Frames
+option.CLOUD_AERIAL_PERSPECTIVE=Aerial Perspective
+
+option.CLOUD_MS_COUNT=Multi-scattering Count
+option.CLOUD_MS_FALLOFF_E=Extinction Falloff
+option.CLOUD_MS_FALLOFF_S=Scattering Falloff
+option.CLOUD_MS_FALLOFF_P=Phase Falloff
+
+option.CLOUD_LOW_SAMPLES=Samples
+option.CLOUD_LOW_SKYLIGHT_SAMPLES=Skylight Samples
+option.CLOUD_LOW_SUNLIGHT_SAMPLES=Sunlight Samples
+option.CLOUD_LOW_WIND_SPEED=Wind Speed
+suffix.CLOUD_LOW_WIND_SPEED=m/s
+
+option.CLOUD_MID_ALTITUDE=Altitude
+option.CLOUD_MID_THICKNESS=Thickness
+option.CLOUD_MID_SUNLIGHT_SAMPLES=Sunlight Samples
+option.CLOUD_MID_WIND_SPEED=Wind Speed
+suffix.CLOUD_MID_ALTITUDE=m
+suffix.CLOUD_MID_THICKNESS=m
+suffix.CLOUD_MID_WIND_SPEED=m/s
+
+option.CLOUD_HIGH_ALTITUDE=Altitude
+option.CLOUD_HIGH_THICKNESS=Thickness
+option.CLOUD_HIGH_SUNLIGHT_SAMPLES=Sunlight Samples
+option.CLOUD_HIGH_WIND_SPEED=Wind Speed
+suffix.CLOUD_HIGH_ALTITUDE=m
+suffix.CLOUD_HIGH_THICKNESS=m
+suffix.CLOUD_HIGH_WIND_SPEED=m/s
+
+option.CLOUD_CUMULUS=Cumulus
+option.CLOUD_CU_COVERAGE=Cumulus Coverage
+option.CLOUD_CU_ALTITUDE=Cumulus Altitude
+option.CLOUD_CU_THICKNESS=Cumulus Thickness
+suffix.CLOUD_CU_ALTITUDE=m
+suffix.CLOUD_CU_THICKNESS=m
+
+option.CLOUD_ALTOSTRATUS=Altostratus
+option.CLOUD_AS_COVERAGE=Altostratus Coverage
+option.CLOUD_CIRRUS=Cirrus
+option.CLOUD_CI_COVERAGE=Cirrus Coverage
+option.CLOUD_CIRROCUMULUS=Cirrocumulus
+option.CLOUD_CC_COVERAGE=Cirrocumulus Coverage
+
+option.CLOUD_SHADOWS=Cloud Shadows
+option.CLOUD_SHADOW_SAMPLES=Cloud Shadow Samples
+option.CLOUD_SHADOW_DISTANCE=Cloud Shadow Distance
+value.CLOUD_SHADOW_DISTANCE.1024.0=64 Chunks
+value.CLOUD_SHADOW_DISTANCE.2048.0=128 Chunks
+value.CLOUD_SHADOW_DISTANCE.4096.0=256 Chunks
+value.CLOUD_SHADOW_DISTANCE.8192.0=512 Chunks
+value.CLOUD_SHADOW_DISTANCE.16384.0=1024 Chunks
+value.CLOUD_SHADOW_DISTANCE.32768.0=2048 Chunks
+value.CLOUD_SHADOW_DISTANCE.65536.0=4096 Chunks
+
+# Fog
+option.VOLUMETRIC_FOG=Volumetric Fog
+option.VF_MAX_SAMPLES=Volumetric Fog Max Samples
+option.VF_CLOUD_SHADOWS=Volumetric Fog Cloud Shadows
+option.VF_HEIGHT=Volumetric Fog Height
+suffix.VF_HEIGHT=m
+
+option.VF_RAYLEIGH_DENSITY=Volumetric Fog Rayleigh Density
+option.VF_MIE_DENSITY=Volumetric Fog Mie Density
+option.VF_MIE_DENSITY_RAIN_MULT=Volumetric Fog Mie Density Rain Multiplier
+option.VF_NOISE_QUALITY=Volumetric Fog Noise Quality
+option.VF_TIME_FADE=Volumetric Fog Time Fade
+option.COLORED_VOLUMETRIC_FOG=Colored Volumetric Fog
+
+option.UW_VOLUMETRIC_FOG=Underwater Volumetric Fog
+option.UW_VF_DENSITY=Underwater Volumetric Fog Density
+option.UW_VF_MAX_SAMPLES=Underwater Volumetric Fog Max Samples
+
+option.BORDER_FOG=Border Fog
+option.BORDER_FOG_FALLOFF=Border Fog Falloff
+
+option.PER_BIOME_FOG=Per-Biome Fog
+option.LAVA_FOG=Lava Fog
+option.POWDERED_SNOW_FOG=Powdered Snow Fog
+option.BLINDNESS_DARKNESS_FOG=Blindness & Darkness Fog
+
+# Transparent
+option.WATER_PARALLAX=Water Parallax
+option.WATER_CAUSTICS=Water Caustics
+option.WATER_WAVE_HEIGHT=Water Wave Height
+option.WATER_WAVE_SPEED=Water Wave Speed
+option.WATER_ABSORPTION_R=Water Absorption R
+option.WATER_ABSORPTION_G=Water Absorption G
+option.WATER_ABSORPTION_B=Water Absorption B
+option.WATER_FOG_DENSITY=Water Fog Density
+option.WATER_REFRACT_IOR=Water Refract IOR
+
+option.TRANSLUCENT_REFLECTION_BLEND=Translucent Reflection Blend
+option.TRANSLUCENT_ROUGHNESS=Translucent Roughness
+option.GLASS_REFRACT_IOR=Glass Refract IOR
+
+option.RAIN_PUDDLES=Rain Puddles
+option.RAIN_PUDDLE_SCALE=Rain Puddle Scale
+option.RAIN_PUDDLE_SMOOTHNESS=Rain Puddle Smoothness
+
+option.RAIN_VISIBILITY=Rain/Snow Visibility
+option.RAIN_SCALE_X=Rain/Snow Scale X
+option.RAIN_SCALE_Y=Rain/Snow Scale Y
+
+option.SELECTION_BOX_COLOR_R=Selection Box Color R
+option.SELECTION_BOX_COLOR_G=Selection Box Color G
+option.SELECTION_BOX_COLOR_B=Selection Box Color B
+option.SELECTION_BOX_WIDTH=Selection Box Width
+
+option.WAVING_FOLIAGE=Waving Foliage
+option.UNLABELLED_FOILAGE_DETECTION=Unlabelled Foliage Detection
+
+
+# Lighting
+option.shadowDistance=Shadow Map Distance
+value.shadowDistance.64.0=4 Chunks
+value.shadowDistance.80.0=5 Chunks
+value.shadowDistance.96.0=6 Chunks
+value.shadowDistance.112.0=7 Chunks
+value.shadowDistance.128.0=8 Chunks
+value.shadowDistance.160.0=10 Chunks
+value.shadowDistance.192.0=12 Chunks
+value.shadowDistance.224.0=14 Chunks
+value.shadowDistance.256.0=16 Chunks
+value.shadowDistance.320.0=20 Chunks
+value.shadowDistance.384.0=24 Chunks
+value.shadowDistance.512.0=32 Chunks
+value.shadowDistance.768.0=48 Chunks
+value.shadowDistance.1024.0=64 Chunks
+value.shadowDistance.2048.0=128 Chunks
+value.shadowDistance.4096.0=256 Chunks
+value.shadowDistance.8192.0=512 Chunks
+value.shadowDistance.16384.0=1024 Chunks
+value.shadowDistance.32768.0=2048 Chunks
+value.shadowDistance.65536.0=4096 Chunks
+
+option.shadowMapResolution=Shadow Map Resolution
+option.sunPathRotation=Sun Path Rotation
+suffix.shadowMapResolution=²
+suffix.sunPathRotation=°
+
+option.PCF_SAMPLES=PCF Samples
+option.COLORED_SHADOWS=Colored Shadows
+
+option.SHADOW_BACKFACE_CULLING=Shadow Backface Culling
+option.SHADOW_DISTORTION_STRENGTH=Shadow Distortion Strength
+
+option.SCREEN_SPACE_SHADOWS=Screen-Space Shadows
+option.SCREEN_SPACE_SHADOWS_SAMPLES=Screen-Space Shadows Samples
+
+option.BLOCKLIGHT_TEMPERATURE=Blocklight Temperature
+suffix.BLOCKLIGHT_TEMPERATURE=K
+option.HANDHELD_LIGHTING=Handheld Lighting
+option.HELD_LIGHT_BRIGHTNESS=Held Light Brightness
+
+option.NIGHT_BRIGHTNESS=Night Brightness
+option.MINIMUM_AMBIENT_BRIGHTNESS=Minimum Ambient Brightness
+
+option.AO_ENABLED=AO
+option.AO_MULTI_BOUNCE=AO Multi-bounce
+
+option.SSAO_SAMPLES=SSAO Samples
+option.SSAO_STRENGTH=SSAO Strength
+
+option.GTAO_SLICES=GTAO Slices
+option.GTAO_DIRECTION_SAMPLES=GTAO Direction Samples
+option.GTAO_RADIUS=GTAO Radius
+
+option.RSM_ENABLED=Reflective Shadow Maps
+option.RSM_SAMPLES=RSM Samples
+option.RSM_RADIUS=RSM Radius
+option.RSM_BRIGHTNESS=RSM Brightness
+option.RSM_MAX_ACCUM_FRAMES=Max Accumulated Frames
+
+option.SSPT_ENABLED=Screen-Space Path Tracing
+option.SSPT_SPP=Samples Per Pixel
+option.SSPT_BOUNCES=SSPT Bounces
+option.SSPT_BLENDED_LIGHTMAP=SSPT Blended Lightmap
+option.SSPT_MAX_ACCUM_FRAMES=Max Accumulated Frames
+option.SSPT_RR_MIN_BOUNCES=SSPT RR Min Bounces
+
+option.SVGF_ENABLED=Spatio-Temporal Variance-Guided Filtering
+
+
+# Materials
+option.TEXTURE_FORMAT=PBR Texture Format
+value.TEXTURE_FORMAT.0=labPBR
+value.TEXTURE_FORMAT.1=SEUS
+value.TEXTURE_FORMAT.2=§c§k???
+
+option.NORMAL_MAPPING=Normal Mapping
+option.SPECULAR_MAPPING=Specular Mapping
+option.DEFAULT_DIELECTRIC_F0=Default Dielectric F0
+
+option.AUTO_GENERATED_NORMAL=Auto Generated Normal
+option.AGN_RESOLUTION=AGN Resolution
+option.AGN_STRENGTH=AGN Strength
+
+option.PARALLAX=Parallax Occlusion Mapping
+option.PARALLAX_SHADOW=Parallax Shadow
+option.PARALLAX_DEPTH_WRITE=Parallax Depth Write
+option.PARALLAX_BASED_NORMAL=Parallax Based Normal
+option.PARALLAX_DEPTH=Parallax Depth
+suffix.PARALLAX_DEPTH=m
+
+option.PARALLAX_SAMPLES=Parallax Samples
+option.PARALLAX_REFINEMENT=Parallax Refinement
+option.PARALLAX_REFINEMENT_STEPS=Parallax Refinement Steps
+
+option.EMISSIVE_MODE=Emissive Mode
+value.EMISSIVE_MODE.0=Hardcoded Only
+value.EMISSIVE_MODE.1=Hardcoded + PBR
+value.EMISSIVE_MODE.2=PBR Only
+option.EMISSIVE_BRIGHTNESS=Emissive Brightness
+option.EMISSIVE_CURVE=Emissive Curve
+
+option.SUBSURFACE_SCATTERING_MODE=Subsurface Scattering Mode
+value.SUBSURFACE_SCATTERING_MODE.0=Hardcoded Only
+value.SUBSURFACE_SCATTERING_MODE.1=Hardcoded + PBR
+value.SUBSURFACE_SCATTERING_MODE.2=PBR Only
+option.SUBSURFACE_SCATTERING_STRENGTH=Subsurface Scattering Strength
+option.SUBSURFACE_SCATTERING_BRIGHTNESS=Subsurface Scattering Brightness
+
+option.RAYTRACE_SAMPLES=Raytrace Samples
+option.RAYTRACE_REFINEMENT=Raytrace Refinement
+option.RAYTRACE_REFINEMENT_STEPS=Raytrace Refinement Steps
+option.REAL_SKY_REFLECTIONS=Real Sky Reflections
+
+option.SPECULAR_IMPORTANCE_SAMPLING_BIAS=Importance Sampling Bias
+
+option.ROUGH_REFLECTIONS=Rough Reflections
+option.ROUGH_REFLECTIONS_THRESHOLD=Rough Reflections Threshold
+option.REFLECTION_FILTER=Reflection Filter
+
+option.RAYTRACED_REFRACTION=Raytraced Refraction
+option.REFRACTION_STRENGTH=Refraction Strength
+
+
+# Post-Processing
+option.TAA_ENABLED=Temporal Anti-Aliasing
+option.TAA_CLOSEST_FRAGMENT=TAA Closest Fragment
+option.TAA_EI_CLIP=Ellipsoid Intersection Clip
+option.TAA_AGGRESSION=TAA Aggression
+option.TAA_MAX_ACCUM_FRAMES=Max Accumulated Frames
+option.TAA_SHARPEN=TAA Sharpen
+option.TAA_SHARPNESS=TAA Sharpness
+
+option.MOTION_BLUR=Motion Blur
+option.MOTION_BLUR_SAMPLES=Motion Blur Samples
+option.MOTION_BLUR_STRENGTH=Motion Blur Strength
+
+option.BLOOM_ENABLED=Bloom
+option.BLOOM_INTENSITY=Bloom Intensity
+option.BLOOM_BLUR_SAMPLES=Bloom Blur Samples
+option.BLOOMY_FOG=Bloomy Fog
+option.BLOOMY_FOG_INTENSITY=Bloomy Fog Intensity
+
+option.EXPOSURE_MODE=Exposure Mode
+value.EXPOSURE_MODE.MANUAL=Manual
+value.EXPOSURE_MODE.AUTO_BASIC=Auto Basic
+value.EXPOSURE_MODE.AUTO_HISTOGRAM=Auto Histogram
+
+option.EXPOSURE_SPEED_DOWN=Exposure Speed Down
+option.EXPOSURE_SPEED_UP=Exposure Speed Up
+option.AUTO_EV_BIAS=Auto EV Bais
+option.AUTO_EV_MAX=Auto EV Max
+option.AUTO_EV_MIN=Auto EV Min
+option.HISTOGRAM_BIN_COUNT=Histogram Bin Count
+option.HISTOGRAM_LOWER_BOUND=Histogram Lower Bound
+option.HISTOGRAM_UPPER_BOUND=Histogram Upper Bound
+option.MANUAL_EV=Manual EV
+
+option.PURKINJE_SHIFT=Purkinje Shift
+option.PURKINJE_SHIFT_STRENGTH=Purkinje Shift Strength
+
+option.VIGNETTE_ENABLED=Vignette
+option.VIGNETTE_STRENGTH=Vignette Strength
+option.VIGNETTE_ROUNDNESS=Vignette Roundness
+
+option.TONE_MAPPER=Tone-Mapper
+option.AGX_LOOK=AGX Look
+
+option.CAS_ENABLED=Contrast-Adaptive Sharpening
+option.CAS_STRENGTH=CAS Strength
+
+
+# Compatibility
+option.MOD_BLOCK_SUPPORT=Mod Block Support
+option.PHYSICS_OCEAN_SUPPORT=Physics Ocean Support
+option.FORCE_DISABLE_SUBGROUP_OPS=Force Disable Subgroup Ops
+
+option.WHITE_WORLD=White World
+option.DEBUG_BLOOM_TILES=DEBUG_BLOOM_TILES
+option.DEBUG_CLOUD_SHADOWS=DEBUG_CLOUD_SHADOWS
+option.DEBUG_GI=DEBUG_GI
+option.DEBUG_NORMALS=DEBUG_NORMALS
+option.DEBUG_RESHADING=DEBUG_RESHADING
+option.DEBUG_SKYVIEW=DEBUG_SKYVIEW
+option.DEBUG_SKY_COLOR=DEBUG_SKY_COLOR
