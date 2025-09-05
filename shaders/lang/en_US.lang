@@ -369,7 +369,16 @@ option.VIGNETTE_STRENGTH=Vignette Strength
 option.VIGNETTE_ROUNDNESS=Vignette Roundness
 
 option.TONE_MAPPER=Tone-Mapper
+value.TONE_MAPPER.AcademyFit=ACES Fit
+value.TONE_MAPPER.AcademyFull=ACES Full
+value.TONE_MAPPER.AgX_Minimal=AgX Fit
+value.TONE_MAPPER.AgX_Full=AgX Full
+
 option.AGX_LOOK=AGX Look
+value.AGX_LOOK.0=Default
+value.AGX_LOOK.1=Golden
+value.AGX_LOOK.2=Punchy
+value.AGX_LOOK.3=Custom
 
 option.CAS_ENABLED=Contrast-Adaptive Sharpening
 option.CAS_STRENGTH=CAS Strength
