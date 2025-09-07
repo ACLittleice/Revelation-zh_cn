@@ -112,26 +112,23 @@ float CloudHighDensity(in vec2 rayPos) {
 	float density = 0.0;
 
 	#ifdef CLOUD_CIRROCUMULUS
-	/* Cirrocumulus clouds */ if (localCoverage > 0.4) {
-		vec2 position = (rayPos - windOffset) * 1e-4 - curl * 0.75;
+	/* Cirrocumulus clouds */ if (localCoverage > 0.5) {
+		vec2 position = (rayPos - windOffset) * 1e-4 - curl - localCoverage;
 
-		float baseCoverage = texture(noisetex, position * 0.06).z;
-		baseCoverage = remap(texture(noisetex, position * 0.002).y, 1.0, baseCoverage);
+		float baseCoverage = smoothstep(0.8, 0.3, texture(noisetex, position * 0.05).z);
 
 		if (baseCoverage > cloudEpsilon) {
 			windOffset *= 5e-5;
 			position -= windOffset;
 
-			float cirrocumulus = 0.5 * texture(noisetex, position * vec2(0.5, 0.2)).z;
-			cirrocumulus += texture(noisetex, position - windOffset + cirrocumulus * 0.125).z;
-			cirrocumulus = saturate(cirrocumulus * 1.25 - 0.75);
+			float cirrocumulus = 0.35 * texture(noisetex, position * vec2(0.5, 0.2)).z;
+			cirrocumulus += 0.65 * texture(noisetex, position - windOffset + cirrocumulus * 0.125).z;
 
-			float coverage = saturate((baseCoverage + localCoverage) * (1.0 + CLOUD_CC_COVERAGE) - 1.1);
+			float coverage = baseCoverage * (0.6 + 0.6 * CLOUD_CC_COVERAGE);
+			coverage = saturate(coverage + saturate(localCoverage * 4.0 - 2.0) - 1.0);
+			cirrocumulus = curve(cirrocumulus) * coverage - 0.1;
 
-			cirrocumulus = mix(cirrocumulus * cirrocumulus, cirrocumulus, coverage);
-			cirrocumulus *= curve(coverage);
-
-			density += curve(cirrocumulus);
+			density += cube(cirrocumulus * 2.0);
 		}
 	}
 	#endif
