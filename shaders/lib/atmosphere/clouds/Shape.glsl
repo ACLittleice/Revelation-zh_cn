@@ -232,11 +232,12 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 		detailNoise = mix(detailNoise, 1.0 - detailNoise, saturate(heightFraction * 4.0));
 	}
 	#endif
-	float noiseComposite = remap(detailNoise / (coverage + 1.5), 0.9, baseNoise);
+	detailNoise *= 1.0 - dimensionalProfile * heightFraction;
+	float noiseComposite = saturate(baseNoise * 1.1 - detailNoise * 0.25);
 
 	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
 
-	float densityProfile = saturate(heightFraction * 2.0);
+	float densityProfile = saturate(heightFraction * 2.0 + 0.1);
 	return approxSqrt(cloudDensity) * densityProfile;
 }
 
@@ -287,11 +288,12 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 		// Transition from wispy shapes to billowy shapes over height
 		detailNoise = mix(detailNoise, 1.0 - detailNoise, saturate(heightFraction * 4.0));
 	#endif
-	float noiseComposite = remap(detailNoise / (coverage + 1.5), 0.9, baseNoise);
+	detailNoise *= 1.0 - dimensionalProfile * heightFraction;
+	float noiseComposite = saturate(baseNoise * 1.1 - detailNoise * 0.25);
 
 	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
 
-	float densityProfile = saturate(heightFraction * 2.0);
+	float densityProfile = saturate(heightFraction * 2.0 + 0.1);
 	return approxSqrt(cloudDensity) * densityProfile;
 }
 
