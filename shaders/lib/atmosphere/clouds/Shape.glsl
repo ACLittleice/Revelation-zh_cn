@@ -174,9 +174,9 @@ float CloudHighDensity(in vec2 rayPos) {
 #else
 	// Adapted from https://github.com/iamlivehaha/Project-VolumetricCloudRendering
 	float GetVerticalProfile(in float relativeHeight, in float cloudType) {
-		float stratus = saturate(relativeHeight * 10.0) * remap(0.2, 0.1, relativeHeight);
-		float cumulus = saturate(relativeHeight * 5.0) * remap(0.75, 0.2, relativeHeight);
-		float altocumulus = saturate(relativeHeight * 8.0) * remap(1.0, 0.65, relativeHeight);
+		float stratus = remap(0.2, 0.1, relativeHeight);
+		float cumulus = remap(0.75, 0.2, relativeHeight);
+		float altocumulus = remap(1.0, 0.65, relativeHeight);
 
 		float verticalProfile = mix(stratus, cumulus, saturate(cloudType * 2.0));
 		verticalProfile = mix(verticalProfile, altocumulus, saturate(cloudType * 2.0 - 1.0));
@@ -203,7 +203,7 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 
 	// Coveage profile
 	float coverage = cloudMap.x * (3.5 * CLOUD_CU_COVERAGE);
-	coverage = saturate(coverage + wetness * 0.5);
+	coverage += wetness * 0.5;
 	// coverage = pow(coverage, remap(heightFraction, 0.7, 0.8, 1.0, 1.0 - 0.5 * anvilBias));
 	if (coverage < 0.1) return 0.0;
 
@@ -231,19 +231,15 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 		detailNoise = texture(detailNoiseTex, position * 8.0 - windOffset * 1e-3).x;
 
 		// Transition from wispy shapes to billowy shapes over height
-		detailNoise = mix(detailNoise, 1.0 - detailNoise, saturate(heightFraction * 8.0));
-
-		// See [Schneider, 2023]
-		// detailNoise = abs(detailNoise * 2.0 - 1.0);
+		detailNoise = mix(detailNoise, 1.0 - detailNoise, saturate(heightFraction * 4.0));
 	}
 	#endif
-	float noiseComposite = remap(sqr(detailNoise) * 0.5, 1.0, baseNoise);
+	float noiseComposite = remap(detailNoise / (coverage + 1.0), 1.0, baseNoise);
 
 	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
-	cloudDensity = 1.0 - pow4(1.0 - cloudDensity);
 
 	float densityProfile = saturate(heightFraction * 2.0);
-	return cloudDensity * densityProfile;
+	return approxSqrt(cloudDensity) * densityProfile;
 }
 
 float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dimensionalProfile) {
@@ -265,7 +261,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 
 	// Coveage profile
 	float coverage = cloudMap.x * (3.5 * CLOUD_CU_COVERAGE);
-	coverage = saturate(coverage + wetness * 0.5);
+	coverage += wetness * 0.5;
 	// coverage = pow(coverage, remap(heightFraction, 0.7, 0.8, 1.0, 1.0 - 0.5 * anvilBias));
 	if (coverage < 0.1) return 0.0;
 
@@ -292,18 +288,14 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 		detailNoise = texture(detailNoiseTex, position * 8.0 - windOffset * 1e-3).x;
 
 		// Transition from wispy shapes to billowy shapes over height
-		detailNoise = mix(detailNoise, 1.0 - detailNoise, saturate(heightFraction * 8.0));
-
-		// See [Schneider, 2023]
-		// detailNoise = abs(detailNoise * 2.0 - 1.0);
+		detailNoise = mix(detailNoise, 1.0 - detailNoise, saturate(heightFraction * 4.0));
 	#endif
-	float noiseComposite = remap(sqr(detailNoise) * 0.5, 1.0, baseNoise);
+	float noiseComposite = remap(detailNoise / (coverage + 1.0), 1.0, baseNoise);
 
 	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
-	cloudDensity = 1.0 - pow4(1.0 - cloudDensity);
 
 	float densityProfile = saturate(heightFraction * 2.0);
-	return cloudDensity * densityProfile;
+	return approxSqrt(cloudDensity) * densityProfile;
 }
 
 #endif
