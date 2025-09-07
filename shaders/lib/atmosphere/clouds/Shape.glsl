@@ -202,7 +202,7 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 	vec2 cloudMap = texture(cloudMapTex, rayPos.xz * rcp(cloudMapCovDist)).xy;
 
 	// Coveage profile
-	float coverage = cloudMap.x * (3.5 * CLOUD_CU_COVERAGE);
+	float coverage = cloudMap.x * (3.0 * CLOUD_CU_COVERAGE);
 	coverage += wetness * 0.5;
 	// coverage = pow(coverage, remap(heightFraction, 0.7, 0.8, 1.0, 1.0 - 0.5 * anvilBias));
 	if (coverage < 0.1) return 0.0;
@@ -234,7 +234,7 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 		detailNoise = mix(detailNoise, 1.0 - detailNoise, saturate(heightFraction * 4.0));
 	}
 	#endif
-	float noiseComposite = remap(detailNoise / (coverage + 1.0), 1.0, baseNoise);
+	float noiseComposite = remap(detailNoise / (coverage + 2.0), 0.9, baseNoise);
 
 	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
 
@@ -260,7 +260,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	vec2 cloudMap = texture(cloudMapTex, rayPos.xz * rcp(cloudMapCovDist)).xy;
 
 	// Coveage profile
-	float coverage = cloudMap.x * (3.5 * CLOUD_CU_COVERAGE);
+	float coverage = cloudMap.x * (3.0 * CLOUD_CU_COVERAGE);
 	coverage += wetness * 0.5;
 	// coverage = pow(coverage, remap(heightFraction, 0.7, 0.8, 1.0, 1.0 - 0.5 * anvilBias));
 	if (coverage < 0.1) return 0.0;
@@ -290,7 +290,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 		// Transition from wispy shapes to billowy shapes over height
 		detailNoise = mix(detailNoise, 1.0 - detailNoise, saturate(heightFraction * 4.0));
 	#endif
-	float noiseComposite = remap(detailNoise / (coverage + 1.0), 1.0, baseNoise);
+	float noiseComposite = remap(detailNoise / (coverage + 2.0), 0.9, baseNoise);
 
 	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
 
