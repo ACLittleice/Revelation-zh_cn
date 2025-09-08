@@ -38,7 +38,8 @@ float CloudVolumeOpticalDepth(in vec3 rayPos, in vec3 rayDir, in float lightNois
 	for (uint i = 0u; i < steps; ++i, rayPos += rayStep.xyz) {
         rayStep *= 1.5;
 
-		float density = CloudVolumeDensity(rayPos + rayStep.xyz * lightNoise, opticalDepth < 0.25 * rayStep.w);
+		uint octaves = max(5u - i, 1u);
+		float density = CloudVolumeDensity(rayPos + rayStep.xyz * lightNoise, octaves);
         opticalDepth += density * rayStep.w;
     }
 
@@ -88,7 +89,7 @@ vec3 RenderCloudMid(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in floa
 		}
 
 		// Approximate sunlight multi-scattering
-		float scatterProbability = oms(exp2(-32.0 * density)) * 1.75;
+		float scatterProbability = oms(exp2(-24.0 * density)) * 1.5;
 		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases, scatterProbability);
 
 		float opticalDepthSky = density * (CLOUD_MID_THICKNESS * 0.5 * stratusExtinction * -rLOG2);
@@ -138,7 +139,7 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float lightNoise, in flo
 		}
 
 		// Approximate sunlight multi-scattering
-		float scatterProbability = oms(exp2(-32.0 * density)) * hPI;
+		float scatterProbability = oms(exp2(-32.0 * density));
 		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases, scatterProbability);
 
 		float opticalDepthSky = density * (CLOUD_HIGH_THICKNESS * 0.5 * cirrusExtinction * -rLOG2);
@@ -255,7 +256,8 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 					// Method from [Hillaire, 2016]
 					// Accumulate the weighted ray length
-					rayLengthWeighted += stepSize * float(i) * transmittance;
+					float stepLength = stepSize * float(i);
+					rayLengthWeighted += stepLength * transmittance;
 					raySumWeight += transmittance;
 
 					// if (cloudTest < cloudEpsilon) {
@@ -266,9 +268,12 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 					// 	continue;
 					// }
 
+					// Adaptive octave count
+					uint octaves = uint(max(2.0, 7.0 - stepLength * 5e-3));
+
 					// Compute sample cloud density
 					float heightFraction, dimensionalProfile;
-					float stepDensity = CloudVolumeDensity(rayPos, heightFraction, dimensionalProfile);
+					float stepDensity = CloudVolumeDensity(rayPos, octaves, heightFraction, dimensionalProfile);
 
 					if (stepDensity < cloudEpsilon) continue;
 
@@ -290,7 +295,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 					// float scatteredEnergy = msVolume;
 
 					// Approximate sunlight multi-scattering
-					float scatterProbability = (dimensionalProfile * saturate(heightFraction * 4.0) + stepDensity) * 2.0;
+					float scatterProbability = dimensionalProfile * saturate(heightFraction * 4.0) * 2.0 + stepDensity * PI;
 					float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases, scatterProbability);
 
 					#if CLOUD_CU_SKYLIGHT_SAMPLES > 0
