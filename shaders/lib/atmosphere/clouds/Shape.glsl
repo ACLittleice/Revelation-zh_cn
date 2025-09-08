@@ -188,8 +188,8 @@ float CloudHighDensity(in vec2 rayPos) {
 
 // Perlin-worley noise fBm
 float CloudNoiseOctaves(in vec3 pos, in uint octaves) {
-    float amplitude = 0.75;
-    float sum = 0.175 / float(octaves);
+    float amplitude = 0.8;
+    float sum = 0.2 / float(octaves);
     for (uint i = 0u; i < octaves; ++i, amplitude *= 0.5) {
         pos *= 2.75;
         sum += amplitude * texture(cloudNoiseTex, pos).x;
