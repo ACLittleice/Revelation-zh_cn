@@ -116,7 +116,7 @@ const float cloudHighRadius         = planetRadius + CLOUD_HIGH_ALTITUDE;
 
 const float cumulusScattering 		= 0.08;
 const float stratusScattering 		= 0.05;
-const float cirrusScattering 		= 0.02;
+const float cirrusScattering 		= 0.01;
 
 const float cumulusAbsorption 		= 0.0;
 const float stratusAbsorption 		= 0.0;

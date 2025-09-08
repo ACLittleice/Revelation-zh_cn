@@ -75,7 +75,8 @@ float CloudMidDensity(in vec2 rayPos) {
 	float localCoverage = GetSmoothNoise(rayPos * 3e-5 + 32.0);
 	localCoverage += texture(noisetex, rayPos * 7e-6).z;
 
-	/* Altostratus clouds */ if (localCoverage > 0.25) {
+	/* Altostratus clouds */
+	if (localCoverage > 0.25) {
 		// Curl noise to simulate wind, makes the positioning of the clouds more natural
 		vec2 curl = texture(noisetex, rayPos * 1e-5).xy * 1e-4;
 
@@ -112,11 +113,12 @@ float CloudHighDensity(in vec2 rayPos) {
 	float density = 0.0;
 
 	#ifdef CLOUD_CIRROCUMULUS
-	/* Cirrocumulus clouds */ if (localCoverage > 0.5) {
+	if (localCoverage > 0.5) {
+		/* Cirrocumulus clouds */
 		vec2 position = (rayPos - windOffset) * 1e-4 - curl - localCoverage;
 
-		float baseCoverage = texture(noisetex, position * 0.06).z;
-		baseCoverage = remap(texture(noisetex, position * 0.002).y, 1.0, baseCoverage);
+		float baseCoverage = saturate(texture(noisetex, position * 0.002).y * 2.0 - 0.3);
+		baseCoverage = remap(baseCoverage, 1.0, texture(noisetex, position * 0.06).z);
 
 		if (baseCoverage > cloudEpsilon) {
 			windOffset *= 5e-5;
@@ -128,14 +130,15 @@ float CloudHighDensity(in vec2 rayPos) {
 
 			float coverage = saturate((baseCoverage + localCoverage) * (1.0 + CLOUD_CC_COVERAGE) - 1.1);
 			cirrocumulus = mix(cirrocumulus * cirrocumulus, cirrocumulus, coverage);
-			cirrocumulus *= smoothstep(0.1, 0.9, coverage);
+			cirrocumulus *= sqr(saturate(coverage * 2.0));
 
-			density += sqr(cirrocumulus * 2.0);
+			density += cube(cirrocumulus * 2.5);
 		}
 	}
 	#endif
 	#ifdef CLOUD_CIRRUS
-	/* Cirrus clouds */ if (localCoverage < 0.6) {
+	else {
+		/* Cirrus clouds */
 		vec2 position = (rayPos - windOffset) * 4e-7 + curl * 5e-3;
 		windOffset *= 2e-7;
 
@@ -154,7 +157,7 @@ float CloudHighDensity(in vec2 rayPos) {
 			cirrus += oms(texture(noisetex, position).x) * weight;
 			weight *= 0.55;
 		}
-		cirrus -= saturate(localCoverage * 2.5 - 0.75);
+		cirrus -= saturate(localCoverage * 2.0 - 0.75);
 		cirrus = saturate(cirrus * (1.0 + CLOUD_CI_COVERAGE) - 1.5);
 
 		density += pow4(cirrus);
