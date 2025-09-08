@@ -124,13 +124,13 @@ float CloudHighDensity(in vec2 rayPos) {
 
 			float cirrocumulus = 0.5 * texture(noisetex, position * vec2(0.5, 0.2)).z;
 			cirrocumulus += texture(noisetex, position - windOffset + cirrocumulus * 0.125).z;
-			cirrocumulus = saturate(cirrocumulus * 1.25 - 0.75);
+			cirrocumulus = saturate(cirrocumulus - 0.55);
 
 			float coverage = saturate((baseCoverage + localCoverage) * (1.0 + CLOUD_CC_COVERAGE) - 1.1);
 			cirrocumulus = mix(cirrocumulus * cirrocumulus, cirrocumulus, coverage);
-			cirrocumulus *= curve(coverage);
+			cirrocumulus *= smoothstep(0.1, 0.9, coverage);
 
-			density += curve(cirrocumulus);
+			density += sqr(cirrocumulus * 2.0);
 		}
 	}
 	#endif
