@@ -46,20 +46,9 @@ float GetSmoothNoise(in vec2 coord) {
     return mix(mix(s0, s1, part.x), mix(s2, s3, part.x), part.y);
 }
 
-float Pseudo3DNoiseSmooth(in vec3 position) {
-	vec3 p = floor(position);
-	vec3 b = curve(position - p);
-
-	ivec2 texel = ivec2(p.xy + 97.0 * p.z);
-
-	vec2 s0 = texelFetch(noisetex, texel % 256, 0).xy;
-	vec2 s1 = texelFetch(noisetex, (texel + ivec2(1, 0)) % 256, 0).xy;
-	vec2 s2 = texelFetch(noisetex, (texel + ivec2(0, 1)) % 256, 0).xy;
-	vec2 s3 = texelFetch(noisetex, (texel + ivec2(1, 1)) % 256, 0).xy;
-
-	vec2 rg = mix(mix(s0, s1, b.x), mix(s2, s3, b.x), b.y);
-
-	return mix(rg.x, rg.y, b.z);
+// [Schneider, 2023]
+float ValueErosion(in float value, in float oldMin) {
+    return saturate((value - oldMin) / (1.0 - oldMin));
 }
 
 //================================================================================================//
@@ -227,13 +216,13 @@ float CloudVolumeDensity(in vec3 rayPos, in uint octaves) {
 	if (dimensionalProfile < cloudEpsilon) return 0.0;
 
 	vec3 position = (rayPos - windOffset * 0.5) * 1e-4;
-	float noiseComposite = CloudNoiseOctaves(position, octaves);
+	float noiseComposite = 1.0 - CloudNoiseOctaves(position, octaves);
 
-	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
+	float cloudDensity = ValueErosion(dimensionalProfile, noiseComposite);
 
 	// Density profile
 	cloudDensity *= heightFraction * (2.0 - heightFraction);
-	return mix(cloudDensity, approxSqrt(cloudDensity), heightFraction + 0.5);
+	return mix(cloudDensity, approxSqrt(cloudDensity), heightFraction);
 }
 
 float CloudVolumeDensity(in vec3 rayPos, in uint octaves, out float heightFraction, out float dimensionalProfile) {
@@ -266,13 +255,13 @@ float CloudVolumeDensity(in vec3 rayPos, in uint octaves, out float heightFracti
 	if (dimensionalProfile < cloudEpsilon) return 0.0;
 
 	vec3 position = (rayPos - windOffset * 0.5) * 1e-4;
-	float noiseComposite = CloudNoiseOctaves(position, octaves);
+	float noiseComposite = 1.0 - CloudNoiseOctaves(position, octaves);
 
-	float cloudDensity = saturate(noiseComposite + dimensionalProfile - 1.0);
+	float cloudDensity = ValueErosion(dimensionalProfile, noiseComposite);
 
 	// Density profile
 	cloudDensity *= heightFraction * (2.0 - heightFraction);
-	return mix(cloudDensity, approxSqrt(cloudDensity), heightFraction + 0.5);
+	return mix(cloudDensity, approxSqrt(cloudDensity), heightFraction);
 }
 
 #endif
