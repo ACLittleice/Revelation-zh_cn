@@ -38,7 +38,7 @@ float CloudVolumeOpticalDepth(in vec3 rayPos, in vec3 rayDir, in float lightNois
 	for (uint i = 0u; i < steps; ++i, rayPos += rayStep.xyz) {
         rayStep *= 1.5;
 
-		uint octaves = max(5u - i, 1u);
+		uint octaves = 4u - min(i, 3u);
 		float density = CloudVolumeDensity(rayPos + rayStep.xyz * lightNoise, octaves);
         opticalDepth += density * rayStep.w;
     }
@@ -221,14 +221,17 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 					uint raySteps = CLOUD_LOW_SAMPLES >> 1u;
 					// Reduce ray steps for vertical rays
 					raySteps = uint(float(raySteps) * oms(abs(mu) * 0.5));
+
+					// Adaptive octave count
+					uint octaves = uint(round(2.0 + abs(mu)));
 				#else
 					uint raySteps = CLOUD_LOW_SAMPLES;
 					// Reduce ray steps for vertical rays
 					raySteps = uint(float(raySteps) * mix(oms(abs(mu) * 0.5), 4.0, withinVolumeSmooth));
-				#endif
 
-				// Adaptive octave count
-				uint octaves = uint(3.0 + 3.0 * abs(mu) + noise.x);
+					// Adaptive octave count
+					uint octaves = uint(round(2.0 + 2.0 * abs(mu) + noise.x));
+				#endif
 
 				// From [Schneider, 2022]
 				// const float nearStepSize = 3.0;
