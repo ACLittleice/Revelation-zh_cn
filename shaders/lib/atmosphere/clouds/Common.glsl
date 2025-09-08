@@ -106,7 +106,7 @@ const float cloudSilverG 		    = 0.95;
 const float cloudSilverI 	        = 0.20;
 
 const float cumulusTopAltitude 		= CLOUD_CU_ALTITUDE + CLOUD_CU_THICKNESS;
-const float cumulusTopOffset        = 500.0;
+const float cumulusTopOffset        = 100.0;
 
 const float cumulusBottomRadius     = planetRadius + CLOUD_CU_ALTITUDE;
 const float cumulusTopRadius        = planetRadius + cumulusTopAltitude;
