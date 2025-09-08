@@ -71,7 +71,7 @@ float CalculateCloudShadows(in vec3 rayPos) {
 
 	// Raymarch along the light vector
 	for (uint i = 0u; i < steps; ++i, rayPos += rayStep) {
-		opticalDepth += CloudVolumeDensity(rayPos, false);
+		opticalDepth += CloudVolumeDensity(rayPos, 3u);
 		if (opticalDepth > float(steps) * 0.25) break;
 	}
 
