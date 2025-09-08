@@ -38,8 +38,7 @@ float CloudVolumeOpticalDepth(in vec3 rayPos, in vec3 rayDir, in float lightNois
 	for (uint i = 0u; i < steps; ++i, rayPos += rayStep.xyz) {
         rayStep *= 1.5;
 
-		uint octaves = max(5u - i, 1u);
-		float density = CloudVolumeDensity(rayPos + rayStep.xyz * lightNoise, octaves);
+		float density = CloudVolumeDensity(rayPos + rayStep.xyz * lightNoise, opticalDepth < 0.25 * rayStep.w);
         opticalDepth += density * rayStep.w;
     }
 
@@ -227,9 +226,6 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 					raySteps = uint(float(raySteps) * mix(oms(abs(mu) * 0.5), 4.0, withinVolumeSmooth));
 				#endif
 
-				// Adaptive octave count
-				uint octaves = uint(3.0 + 3.0 * abs(mu) + noise.x);
-
 				// From [Schneider, 2022]
 				// const float nearStepSize = 3.0;
 				// const float farStepSizeOffset = 60.0;
@@ -259,8 +255,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 					// Method from [Hillaire, 2016]
 					// Accumulate the weighted ray length
-					float stepLength = stepSize * float(i);
-					rayLengthWeighted += stepLength * transmittance;
+					rayLengthWeighted += stepSize * float(i) * transmittance;
 					raySumWeight += transmittance;
 
 					// if (cloudTest < cloudEpsilon) {
@@ -273,7 +268,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 					// Compute sample cloud density
 					float heightFraction, dimensionalProfile;
-					float stepDensity = CloudVolumeDensity(rayPos, octaves, heightFraction, dimensionalProfile);
+					float stepDensity = CloudVolumeDensity(rayPos, heightFraction, dimensionalProfile);
 
 					if (stepDensity < cloudEpsilon) continue;
 

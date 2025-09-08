@@ -135,7 +135,7 @@ const float cloudMinTransmittance   = 0.05;
 
 //================================================================================================//
 
-#if 0
+#if 1
 // Nubis method
 uniform sampler3D baseNoiseTex; // 3D perlin-worley & fBm worley noise
 uniform sampler3D detailNoiseTex; // 3D fBm worley noise
