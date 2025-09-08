@@ -227,6 +227,9 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 					raySteps = uint(float(raySteps) * mix(oms(abs(mu) * 0.5), 4.0, withinVolumeSmooth));
 				#endif
 
+				// Adaptive octave count
+				uint octaves = uint(3.0 + 3.0 * abs(mu) + noise.x);
+
 				// From [Schneider, 2022]
 				// const float nearStepSize = 3.0;
 				// const float farStepSizeOffset = 60.0;
@@ -267,9 +270,6 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 					// 	}
 					// 	continue;
 					// }
-
-					// Adaptive octave count
-					uint octaves = uint(max(2.0, 7.0 - stepLength * 5e-3));
 
 					// Compute sample cloud density
 					float heightFraction, dimensionalProfile;
