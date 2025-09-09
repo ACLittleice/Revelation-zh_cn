@@ -220,7 +220,7 @@ void main() {
 			cloudOut = textureBicubic(cloudOriginTex, currCoord);
 		} else {
 			vec4 prevData = textureCatmullRomFast(cloudReconstructTex, prevCoord, 0.5);
-			prevData = satU16f(prevData); // Fix black border artifacts
+			prevData.rgb = sRGBToYCoCg(satU16f(prevData.rgb));
 			frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
 
 			ivec2 currTexel = clamp(screenTexel / CLOUD_CBR_SCALE, ivec2(0), ivec2(viewSize) / CLOUD_CBR_SCALE - 1);
@@ -249,15 +249,13 @@ void main() {
 			// Checkerboard upscaling
 			ivec2 offset = cloudCbrOffset[frameCounter % cloudRenderArea];
 			if (screenTexel % CLOUD_CBR_SCALE == offset) {
-				// Accumulate enough frame for checkerboard pattern
-				float blendWeight = 1.0 - rcp(float(max(frameOut - cloudRenderArea, 1)));
-				float subpixelSharpen = sdot(fract(prevCoord * viewSize) * 2.0 - 1.0) * 0.5;
-				blendWeight *= 1.0 - subpixelSharpen * blendWeight;
-
-				cloudOut = mix(currData, prevData, blendWeight);
+				// Accumulate
+				cloudOut = mix(prevData, currData, rcp(float(max(frameOut - cloudRenderArea, 1))));
 			} else {
 				cloudOut = prevData;
 			}
 		}
+
+		cloudOut.rgb = YCoCgToSRGB(cloudOut.rgb);
 	}
 }

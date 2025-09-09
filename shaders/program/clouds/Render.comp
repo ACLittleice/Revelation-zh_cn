@@ -127,6 +127,10 @@ void main() {
 		#endif
 	}
 
+	#ifdef CLOUD_CBR_ENABLED
+		cloudOut.rgb = sRGBToYCoCg(cloudOut.rgb);
+	#endif
+
 	imageStore(cloudOriginImg, screenTexel, cloudOut);
 	imageStore(cloudDepthOriginImg, screenTexel, vec4(cloudDepth));
 }
