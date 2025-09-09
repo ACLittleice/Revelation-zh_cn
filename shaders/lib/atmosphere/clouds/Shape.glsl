@@ -240,7 +240,7 @@ float CloudVolumeDensity(in vec3 rayPos, in bool detail) {
 	#if !defined PASS_SKY_VIEW
 	if (detail) {
 		vec3 curlNoise = texture(curlNoiseTex, position.xz * 2.0).xyz;
-		position += curlNoise * 0.125 * oms(heightFraction);
+		position += curlNoise * 0.05 * oms(heightFraction);
 
 		// fBm worley noise for detail shape
 		detailNoise = texture(detailNoiseTex, position * 8.0 - windOffset * 1e-2).x;
@@ -296,7 +296,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	float detailNoise = 0.5;
 	#if !defined PASS_SKY_VIEW
 		vec3 curlNoise = texture(curlNoiseTex, position.xz * 2.0).xyz;
-		position += curlNoise * 0.125 * oms(heightFraction);
+		position += curlNoise * 0.05 * oms(heightFraction);
 
 		// fBm worley noise for detail shape
 		detailNoise = texture(detailNoiseTex, position * 8.0 - windOffset * 1e-2).x;
