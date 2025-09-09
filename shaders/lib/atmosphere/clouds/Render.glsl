@@ -226,18 +226,8 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 					raySteps = uint(float(raySteps) * mix(oms(abs(mu) * 0.5), 4.0, withinVolumeSmooth));
 				#endif
 
-				// From [Schneider, 2022]
-				// const float nearStepSize = 3.0;
-				// const float farStepSizeOffset = 60.0;
-				// const float stepAdjustmentDistance = 16384.0;
-
-				// float stepSize = nearStepSize + (farStepSizeOffset / stepAdjustmentDistance) * rayLength;
-
 				float stepSize = rayLength * rcp(float(raySteps));
-
-				float startLength = intersection.x + stepSize * noise.x;
-				vec3 rayPos = startLength * rayDir + cloudViewerPos;
-				vec3 rayStep = stepSize * rayDir;
+				float rayT = intersection.x + stepSize * noise.x;
 
 				float rayLengthWeighted = 0.0;
 				float raySumWeight = 0.0;
@@ -245,42 +235,20 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 				vec2 stepScattering = vec2(0.0);
 				float transmittance = 1.0;
 
-				// float cloudTest = 0.0;
-				// uint zeroDensityCounter = 0u;
-
 				// Raymarch through the cloud volume
-				for (uint i = 1u; i <= raySteps; ++i) {
-					// Advance to the next sample position
-					rayPos += rayStep;
+				for (uint i = 0u; i < raySteps; ++i, rayT += stepSize) {
+					vec3 rayPos = cloudViewerPos + rayDir * rayT;
 
 					// Method from [Hillaire, 2016]
 					// Accumulate the weighted ray length
-					rayLengthWeighted += stepSize * float(i) * transmittance;
+					rayLengthWeighted += rayT * transmittance;
 					raySumWeight += transmittance;
-
-					// if (cloudTest < cloudEpsilon) {
-					// 	cloudTest = CloudVolumeDensity(rayPos, false);
-					// 	if (cloudTest < cloudEpsilon) {
-					// 		rayPos += rayStep;
-					// 	}
-					// 	continue;
-					// }
 
 					// Compute sample cloud density
 					float heightFraction, dimensionalProfile;
 					float stepDensity = CloudVolumeDensity(rayPos, heightFraction, dimensionalProfile);
 
 					if (stepDensity < cloudEpsilon) continue;
-
-					// if (stepDensity < cloudEpsilon) {
-					// 	++zeroDensityCounter;
-					// }
-
-					// if (zeroDensityCounter > 5u) {
-					// 	cloudTest = 0.0;
-					// 	zeroDensityCounter = 0u;
-					// 	continue;
-					// }
 
 					// Compute the optical depth of sunlight through clouds
 					float opticalDepthSun = CloudVolumeOpticalDepth(rayPos, worldLightVector, noise.y, CLOUD_LOW_SUNLIGHT_SAMPLES) * -rLOG2;
@@ -338,7 +306,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 				if (transmittance < 1.0 - cloudEpsilon) {
 					integralScattering = stepScattering * cumulusAlbedo;
 					cloudTransmittance = transmittance;
-					cloudDepth = startLength + rayLengthWeighted / raySumWeight;
+					cloudDepth = rayLengthWeighted / raySumWeight;
 				}
 			}
 		}
