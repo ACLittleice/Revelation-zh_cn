@@ -254,12 +254,9 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 					float opticalDepthSun = CloudVolumeOpticalDepth(rayPos, worldLightVector, noise.y, CLOUD_LOW_SUNLIGHT_SAMPLES) * -rLOG2;
 
 					// Nubis Multiscatter Approximation
-					// float msVolume = remap(0.15, 0.85, dimensionalProfile);
-					// float scatteredEnergy = msVolume;
-
+					float msVolume = remap(0.1, 0.5, dimensionalProfile * saturate(heightFraction * 4.0)) * 2.0;
 					// Approximate sunlight multi-scattering
-					float scatterProbability = dimensionalProfile * saturate(heightFraction * 4.0) * 2.0 + stepDensity * PI;
-					float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases, scatterProbability);
+					float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases, msVolume);
 
 					#if CLOUD_CU_SKYLIGHT_SAMPLES > 0
 						// Compute the optical depth of skylight through clouds
