@@ -155,13 +155,11 @@ vec4 CalculateTAA(in vec2 screenCoord, in vec2 motionVector) {
 
     float frameIndex = texture(colortex1, prevCoord).a;
 
-    float alpha = min(++frameIndex, TAA_MAX_ACCUM_FRAMES);
-	alpha *= 1.0 - sdot(fract(prevCoord * viewSize) * 2.0 - 1.0) * 0.5;
+    float currLum = luminance(currData), prevLum = luminance(prevData);
+    float unbiasedDiff = abs(currLum - prevLum) / max(currLum, prevLum);
+	float lumWeight = 1.0 - saturate(unbiasedDiff) * 0.25;
 
-    // float lum0 = luminance(currData);
-    // float lum1 = luminance(prevData);
-    // float unbiasedDiff = abs(lum0 - lum1) / max(lum0, lum1);
-	// alpha *= 1.0 - saturate(unbiasedDiff) * 0.5;
+    float alpha = min(++frameIndex, TAA_MAX_ACCUM_FRAMES) * lumWeight;
 
     currData = mix(reinhard(prevData), reinhard(currData), rcp(alpha + 1.0));
     return vec4(invReinhard(currData), frameIndex);
@@ -184,12 +182,12 @@ void main() {
     #endif
 
     #ifdef MOTION_BLUR
-        motionVectorOut = depth < 0.56 ? motionVector * 0.2 : motionVector;
+        motionVectorOut = depth < 0.56 ? motionVector * 0.25 : motionVector;
     #endif
 
     #ifdef TAA_ENABLED
         temporalOut = CalculateTAA(screenCoord, motionVector);
     #else
-        temporalOut = vec4(loadSceneColor(screenTexel), 1.0/*  + texture(colortex1, screenCoord - motionVector).a */);
+        temporalOut = vec4(loadSceneColor(screenTexel), 1.0);
     #endif
 }
