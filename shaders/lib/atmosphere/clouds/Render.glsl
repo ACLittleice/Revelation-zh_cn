@@ -214,30 +214,21 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 			if (intersection.y > 0.0) {
 				float withinVolumeSmooth = remap(CLOUD_CU_THICKNESS + 32.0, CLOUD_CU_THICKNESS - 64.0, abs(r * 2.0 - (cumulusBottomRadius + cumulusTopRadius)));
 
-				float rayLength = clamp(intersection.y - intersection.x, 0.0, 1e5 - withinVolumeSmooth * 6e4);
+				float endLengh = min(intersection.y, 1e5 - withinVolumeSmooth * 6e4);
 
-				#if defined PASS_SKY_VIEW
-					uint raySteps = CLOUD_LOW_SAMPLES >> 1u;
-					// Reduce ray steps for vertical rays
-					raySteps = uint(float(raySteps) * oms(abs(mu) * 0.5));
-				#else
-					uint raySteps = CLOUD_LOW_SAMPLES;
-					// Reduce ray steps for vertical rays
-					raySteps = uint(float(raySteps) * mix(oms(abs(mu) * 0.5), 4.0, withinVolumeSmooth));
-				#endif
+				// #if defined PASS_SKY_VIEW
+				// 	uint raySteps = CLOUD_LOW_SAMPLES >> 1u;
+				// 	// Reduce ray steps for vertical rays
+				// 	raySteps = uint(float(raySteps) * oms(abs(mu) * 0.5));
+				// #else
+				// 	uint raySteps = CLOUD_LOW_SAMPLES;
+				// 	// Reduce ray steps for vertical rays
+				// 	raySteps = uint(float(raySteps) * mix(oms(abs(mu) * 0.5), 4.0, withinVolumeSmooth));
+				// #endif
 
-				// From [Schneider, 2022]
-				// const float nearStepSize = 3.0;
-				// const float farStepSizeOffset = 60.0;
-				// const float stepAdjustmentDistance = 16384.0;
-
-				// float stepSize = nearStepSize + (farStepSizeOffset / stepAdjustmentDistance) * rayLength;
-
-				float stepSize = rayLength * rcp(float(raySteps));
-
+				// float stepSize = rayLength * rcp(float(raySteps));
+				float stepSize = 128.0;
 				float startLength = intersection.x + stepSize * noise.x;
-				vec3 rayPos = startLength * rayDir + cloudViewerPos;
-				vec3 rayStep = stepSize * rayDir;
 
 				float rayLengthWeighted = 0.0;
 				float raySumWeight = 0.0;
@@ -245,87 +236,84 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 				vec2 stepScattering = vec2(0.0);
 				float transmittance = 1.0;
 
-				// float cloudTest = 0.0;
-				// uint zeroDensityCounter = 0u;
+				bool cloudTest = false;
+				uint zeroDensityCounter = 0u;
 
 				// Raymarch through the cloud volume
-				for (uint i = 1u; i <= raySteps; ++i) {
-					// Advance to the next sample position
-					rayPos += rayStep;
+				for (float rayT = startLength; rayT < endLengh; rayT += stepSize) {
+					vec3 rayPos = cloudViewerPos + rayDir * rayT;
 
 					// Method from [Hillaire, 2016]
 					// Accumulate the weighted ray length
-					rayLengthWeighted += stepSize * float(i) * transmittance;
+					rayLengthWeighted += rayT * transmittance;
 					raySumWeight += transmittance;
-
-					// if (cloudTest < cloudEpsilon) {
-					// 	cloudTest = CloudVolumeDensity(rayPos, false);
-					// 	if (cloudTest < cloudEpsilon) {
-					// 		rayPos += rayStep;
-					// 	}
-					// 	continue;
-					// }
 
 					// Compute sample cloud density
 					float heightFraction, dimensionalProfile;
 					float stepDensity = CloudVolumeDensity(rayPos, heightFraction, dimensionalProfile);
 
-					if (stepDensity < cloudEpsilon) continue;
+					// if (stepDensity < cloudEpsilon) continue;
 
-					// if (stepDensity < cloudEpsilon) {
-					// 	++zeroDensityCounter;
-					// }
+					if (stepDensity > cloudEpsilon) {
+						zeroDensityCounter = 0u;
+						if (!cloudTest) {
+							rayT -= stepSize;
+							cloudTest = true; // Start high-res marching
+							stepSize *= 0.25;
+							continue; // go back half a step
+						}
 
-					// if (zeroDensityCounter > 5u) {
-					// 	cloudTest = 0.0;
-					// 	zeroDensityCounter = 0u;
-					// 	continue;
-					// }
+						// Compute the optical depth of sunlight through clouds
+						float opticalDepthSun = CloudVolumeOpticalDepth(rayPos, worldLightVector, noise.y, CLOUD_LOW_SUNLIGHT_SAMPLES) * -rLOG2;
 
-					// Compute the optical depth of sunlight through clouds
-					float opticalDepthSun = CloudVolumeOpticalDepth(rayPos, worldLightVector, noise.y, CLOUD_LOW_SUNLIGHT_SAMPLES) * -rLOG2;
+						// Nubis Multiscatter Approximation
+						// float msVolume = remap(0.15, 0.85, dimensionalProfile);
+						// float scatteredEnergy = msVolume;
 
-					// Nubis Multiscatter Approximation
-					// float msVolume = remap(0.15, 0.85, dimensionalProfile);
-					// float scatteredEnergy = msVolume;
+						// Approximate sunlight multi-scattering
+						float scatterProbability = dimensionalProfile * saturate(heightFraction * 4.0) * 2.0 + stepDensity * PI;
+						float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases, scatterProbability);
 
-					// Approximate sunlight multi-scattering
-					float scatterProbability = dimensionalProfile * saturate(heightFraction * 4.0) * 2.0 + stepDensity * PI;
-					float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases, scatterProbability);
+						#if CLOUD_CU_SKYLIGHT_SAMPLES > 0
+							// Compute the optical depth of skylight through clouds
+							float opticalDepthSky = CloudVolumeOpticalDepth(rayPos, vec3(0.0, 1.0, 0.0), noise.y, CLOUD_LOW_SKYLIGHT_SAMPLES) * -rLOG2;
 
-					#if CLOUD_CU_SKYLIGHT_SAMPLES > 0
-						// Compute the optical depth of skylight through clouds
-						float opticalDepthSky = CloudVolumeOpticalDepth(rayPos, vec3(0.0, 1.0, 0.0), noise.y, CLOUD_LOW_SKYLIGHT_SAMPLES) * -rLOG2;
+							// See slide 85 of [Schneider, 2017]
+							// Original formula: Energy = max( exp( - density_along_light_ray ), (exp(-density_along_light_ray * 0.25) * 0.7) )
+							float scatteringSky = exp2(max(opticalDepthSky, opticalDepthSky * 0.25 - 0.5));
+						#else
+							// Nubis Ambient Scattering Approximation
+							float scatteringSky = approxSqrt(1.0 - dimensionalProfile);
+						#endif
 
-						// See slide 85 of [Schneider, 2017]
-						// Original formula: Energy = max( exp( - density_along_light_ray ), (exp(-density_along_light_ray * 0.25) * 0.7) )
-						float scatteringSky = exp2(max(opticalDepthSky, opticalDepthSky * 0.25 - 0.5));
-					#else
-						// Nubis Ambient Scattering Approximation
-						float scatteringSky = approxSqrt(1.0 - dimensionalProfile);
-					#endif
+						// Estimate the light optical depth of the ground from the cloud volume
+						float opticalDepthGround = stepDensity * heightFraction * (CLOUD_CU_THICKNESS * cumulusExtinction * -rLOG2);
+						float scatteringGround = exp2(max(opticalDepthGround, opticalDepthGround * 0.25 - 0.5)) * rPI;
 
-					// Estimate the light optical depth of the ground from the cloud volume
-					float opticalDepthGround = stepDensity * heightFraction * (CLOUD_CU_THICKNESS * cumulusExtinction * -rLOG2);
-					float scatteringGround = exp2(max(opticalDepthGround, opticalDepthGround * 0.25 - 0.5)) * rPI;
+						// Compute In-Scatter Probability
+						// See slide 92 of [Schneider, 2017]
+						// float depthProbability = 0.05 + pow(saturate(stepDensity * 8.0), remap(heightFraction, 0.3, 0.85, 0.5, 2.0));
+						// float verticalProbability = pow(remap(heightFraction, 0.07, 0.14, 0.1, 1.0), 0.75);
+						// float inScatterProbability = depthProbability * verticalProbability;
+						// scatteringSun *= inScatterProbability;
 
-					// Compute In-Scatter Probability
-					// See slide 92 of [Schneider, 2017]
-					// float depthProbability = 0.05 + pow(saturate(stepDensity * 8.0), remap(heightFraction, 0.3, 0.85, 0.5, 2.0));
-					// float verticalProbability = pow(remap(heightFraction, 0.07, 0.14, 0.1, 1.0), 0.75);
-					// float inScatterProbability = depthProbability * verticalProbability;
-					// scatteringSun *= inScatterProbability;
+						vec2 scattering = vec2(scatteringSun + scatteringGround * uniformPhase * worldLightVector.y,
+											scatteringSky + scatteringGround);
 
-					vec2 scattering = vec2(scatteringSun + scatteringGround * uniformPhase * worldLightVector.y,
-										   scatteringSky + scatteringGround);
+						float stepOpticalDepth = stepDensity * (cumulusExtinction * -rLOG2) * stepSize;
+						float stepTransmittance = exp2(stepOpticalDepth);
 
-					float stepOpticalDepth = stepDensity * (cumulusExtinction * -rLOG2) * stepSize;
-					float stepTransmittance = exp2(stepOpticalDepth);
-
-					// Energy-conserving analytical integration from [Hillaire, 2016]
-					float stepIntegral = transmittance * oms(stepTransmittance);
-					stepScattering += scattering * stepIntegral;
-					transmittance *= stepTransmittance;
+						// Energy-conserving analytical integration from [Hillaire, 2016]
+						float stepIntegral = transmittance * oms(stepTransmittance);
+						stepScattering += scattering * stepIntegral;
+						transmittance *= stepTransmittance;
+					} else if (cloudTest) {
+						zeroDensityCounter++;
+						if (zeroDensityCounter > 4u) {
+							cloudTest = false; // Revert to low-res marching
+							stepSize *= 4.0;
+						}
+					}
 
 					// Break if the cloud has reached the minimum transmittance
 					if (transmittance < cloudMinTransmittance) break;
@@ -338,7 +326,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 				if (transmittance < 1.0 - cloudEpsilon) {
 					integralScattering = stepScattering * cumulusAlbedo;
 					cloudTransmittance = transmittance;
-					cloudDepth = startLength + rayLengthWeighted / raySumWeight;
+					cloudDepth = rayLengthWeighted / raySumWeight;
 				}
 			}
 		}
