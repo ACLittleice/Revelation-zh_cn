@@ -144,7 +144,8 @@ uniform sampler3D cloudNoiseTex; // 3D perlin-worley noise
 #endif
 
 uniform sampler2D cloudMapTex;
-uniform sampler2D verticalLut;
+// uniform sampler2D verticalLut;
+uniform sampler2D curlNoiseTex;
 
 //================================================================================================//
 
