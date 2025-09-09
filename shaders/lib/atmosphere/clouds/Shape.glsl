@@ -88,6 +88,7 @@ float CloudMidDensity(in vec2 rayPos) {
 	}
 }
 
+#if 1
 float CloudHighDensity(in vec2 rayPos) {
 	// Wind field
 	const float windAngle = radians(30.0);
@@ -155,6 +156,31 @@ float CloudHighDensity(in vec2 rayPos) {
 
 	return density;
 }
+
+#else
+
+// Adapted from [Schneider, 2022]
+float CloudHighDensity(in vec2 rayPos) {
+	// Wind field
+	const float windAngle = radians(30.0);
+	const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_HIGH_WIND_SPEED;
+	vec2 windOffset = windVelocity * worldTimeCounter;
+
+	vec2 position = (rayPos - windOffset) * 1e-4;
+
+	float coverage = saturate(texture(noisetex, position * 0.002).y * 2.0 - 0.25);
+	coverage = remap(coverage, 1.0, texture(noisetex, position * 0.05).z);
+	float cloudType = saturate(texture(noisetex, position * 2e-4).z * 2.0 - 0.5);
+
+	vec3 cirroCloud = texture(cirroClouds, position * 0.5).xyz;
+
+	float density = remap(cloudType, 0.5, 1.0, remap(cloudType, 0.0, 0.5, cirroCloud.r, cirroCloud.g), cirroCloud.b);
+	density = pow(density, 2.0 - coverage * 1.75);
+	density *= saturate(2.0 * cube(coverage));
+
+	return sqr(4.0 * density);
+}
+#endif
 
 //================================================================================================//
 
