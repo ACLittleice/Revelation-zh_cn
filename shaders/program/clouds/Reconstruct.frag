@@ -249,8 +249,13 @@ void main() {
 			// Checkerboard upscaling
 			ivec2 offset = cloudCbrOffset[frameCounter % cloudRenderArea];
 			if (screenTexel % CLOUD_CBR_SCALE == offset) {
+				float currLum = currData.x, prevLum = prevData.x;
+				float unbiasedDiff = abs(currLum - prevLum) / max(currLum, prevLum);
+				float lumWeight = 1.0 - saturate(unbiasedDiff) * 0.5;
+				float alpha = max0(float(frameOut - cloudRenderArea)) * lumWeight;
+
 				// Accumulate
-				cloudOut = mix(prevData, currData, rcp(float(max(frameOut - cloudRenderArea, 1))));
+				cloudOut = mix(prevData, currData, rcp(alpha + 1.0));
 			} else {
 				cloudOut = prevData;
 			}
