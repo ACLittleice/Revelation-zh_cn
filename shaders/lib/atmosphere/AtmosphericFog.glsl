@@ -69,11 +69,11 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither) {
 	vec3 shadowPos = shadowStart + shadowStep * dither;
 
 	#ifdef VF_CLOUD_SHADOWS
-		const float projectionScale = rcp(CLOUD_SHADOW_DISTANCE) * 0.5;
+		const vec2 projectionScale = diagonal2(cloudShadowProj);
 
 		shadowViewStart.xy *= projectionScale;
 		shadowViewStep.xy *= projectionScale;
-		vec2 cloudShadowPos = shadowViewStart.xy + shadowViewStep.xy * dither + 0.5;
+		vec2 cloudShadowPos = shadowViewStart.xy + shadowViewStep.xy * dither;
 	#endif
 
 	float LdotV = dot(worldLightVector, worldDir);
@@ -127,15 +127,12 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither) {
 				sampleShadow = step(shadowScreenPos.z, texelFetch(shadowtex1, shadowTexel, 0).x);
 			}
 		#endif
-    #endif
 
 		#ifdef VF_CLOUD_SHADOWS
 			cloudShadowPos += shadowViewStep.xy;
-
-			// vec2 cloudShadowCoord = DistortCloudShadowPos(cloudShadowPos);
-			float cloudShadow = texture(cloudShadowTex, cloudShadowPos).x;
-			sampleShadow *= cloudShadow * cloudShadow;
+			sampleShadow *= texture(cloudShadowTex, DistortCloudShadowPos(cloudShadowPos)).x;
 		#endif
+    #endif
 
 		vec3 opticalDepth = fogExtinctionCoeff * stepFogmass;
 		vec3 stepTransmittance = fastExp(-opticalDepth);

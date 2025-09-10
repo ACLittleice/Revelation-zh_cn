@@ -95,7 +95,7 @@ vec3 CalculateWaterCaustics(in vec3 worldPos, in float waterDepth, in float dith
 		caustics += saturate(1.0 - 512.0 * sdot(worldPos - refractedPos));
 	}
 
-	return caustics * exp2(-rLOG2 * waterDepth * waterExtinction);
+	return caustics * exp2(-rLOG2 * waterExtinction * waterDepth);
 }
 
 vec3 PercentageCloserFilter(in vec3 shadowScreenPos, in vec3 worldPos, in float dither, in float penumbraScale) {

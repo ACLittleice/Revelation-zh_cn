@@ -1,3 +1,3 @@
 #version 450 core
 
-#include "/program/prepare/CloudSM.comp"
+#include "/program/prepare/GenCloudShadow.comp"

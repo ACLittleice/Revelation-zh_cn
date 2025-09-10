@@ -29,24 +29,44 @@
 
 //================================================================================================//
 
-vec3 CloudShadowToWorldPos(in vec2 rayPos) {
-	rayPos = rayPos * 2.0 - 1.0;
+const float cloudShadowDistortion = 0.75;
 
-	// Scale
-	rayPos *= CLOUD_SHADOW_DISTANCE;
+const mat4 cloudShadowProj = mat4(
+	1.0 / CLOUD_SHADOW_DISTANCE, 0.0, 0.0, 0.0,
+	0.0, 1.0 / CLOUD_SHADOW_DISTANCE, 0.0, 0.0,
+	0.0, 0.0, -1.0 / CLOUD_SHADOW_DISTANCE, 0.0,
+	0.0, 0.0, 0.0, 1.0
+);
 
-	// Shadow view space to world space
-	return mat3(shadowModelViewInverse) * vec3(rayPos, 0.0);
+const mat4 cloudShadowProjInv = inverse(cloudShadowProj);
+
+vec3 SetupCloudShadowPos(in vec2 coord) {
+	// To NDC space
+	vec3 shadowPos = vec3(coord * 2.0 - 1.0, 1.0);
+	// Distortion
+	shadowPos.xy *= oms(cloudShadowDistortion) / oms(length(shadowPos.xy) * cloudShadowDistortion);
+	// To view space
+	shadowPos = projMAD(cloudShadowProjInv, shadowPos);
+	// To world space
+	return transMAD(shadowModelViewInverse, shadowPos);
 }
 
-vec2 WorldToCloudShadowPos(in vec3 rayPos) {
-	// World space to shadow view space
-	rayPos = mat3(shadowModelView) * rayPos;
+vec3 WorldToCloudShadowScreenPos(in vec3 worldPos) {
+	// To view space
+	vec3 shadowPos = transMAD(shadowModelView, worldPos);
+	// To NDC space
+	shadowPos = projMAD(cloudShadowProj, shadowPos);
+	// Distortion
+	shadowPos.xy *= rcp(length(shadowPos.xy) * cloudShadowDistortion + oms(cloudShadowDistortion));
+	// To screen space
+	return shadowPos * 0.5 + 0.5;
+}
 
-	// Scale
-	rayPos.xy *= rcp(CLOUD_SHADOW_DISTANCE);
-
-	return rayPos.xy * 0.5 + 0.5;
+vec2 DistortCloudShadowPos(in vec2 shadowPos) {
+	// Distortion
+	shadowPos *= rcp(length(shadowPos) * cloudShadowDistortion + oms(cloudShadowDistortion));
+	// To screen space
+	return shadowPos * 0.5 + 0.5;
 }
 
 //================================================================================================//
@@ -75,7 +95,7 @@ float CalculateCloudShadows(in vec3 rayPos) {
 		if (opticalDepth > float(steps) * 0.25) break;
 	}
 
-	float cloudShadow = exp2(-(cumulusExtinction * rLOG2) * opticalDepth * stepLength);
+	float cloudShadow = exp2(-rLOG2 * cumulusExtinction * opticalDepth * stepLength);
 
 	float timeFade = remap(0.05, 0.1, worldLightVector.y);
 	return oms(timeFade) + cloudShadow * timeFade;
