@@ -30,6 +30,10 @@ uniform sampler2D cloudDepthOriginTex;
 
 #include "/lib/universal/Uniform.glsl"
 
+//======// SSBO //================================================================================//
+
+#include "/lib/universal/SSBO.glsl"
+
 //======// Function //============================================================================//
 
 #include "/lib/universal/Transform.glsl"
@@ -174,7 +178,7 @@ vec3 ReprojectClouds(in vec2 coord, in float radius) {
 		const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_HIGH_WIND_SPEED;
 		motionVector.xz -= windVelocity;
 	}
-	motionVector *= frameTime * float(doDaylightCycle);
+	motionVector *= worldTime - global.prevWorldTime;
 	motionVector += cameraPosition - previousCameraPosition;
 
 	cloudPos += motionVector; // To previous frame's world space
@@ -263,4 +267,6 @@ void main() {
 
 		cloudOut.rgb = YCoCgToSRGB(cloudOut.rgb);
 	}
+
+	global.prevWorldTime = worldTime;
 }
