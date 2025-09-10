@@ -254,7 +254,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 					float opticalDepthSun = CloudVolumeOpticalDepth(rayPos, worldLightVector, noise.y, CLOUD_LOW_SUNLIGHT_SAMPLES) * -rLOG2;
 
 					// Nubis Multiscatter Approximation
-					float msVolume = remap(0.1, 0.5, dimensionalProfile * saturate(heightFraction * 4.0)) * 1.75;
+					float msVolume = remap(0.2, 0.7, dimensionalProfile * saturate(heightFraction * 4.0) + stepDensity) * 1.75;
 					// Approximate sunlight multi-scattering
 					float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phases, msVolume);
 
