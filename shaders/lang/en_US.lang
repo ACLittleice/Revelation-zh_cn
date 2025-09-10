@@ -230,7 +230,8 @@ option.sunPathRotation=Sun Path Rotation
 suffix.shadowMapResolution=²
 suffix.sunPathRotation=°
 
-option.PCF_SAMPLES=PCF Samples
+option.PCSS_SEARCH_SAMPLES=PCSS Search Samples
+option.PCSS_FILTER_SAMPLES=PCSS Filter Samples
 option.COLORED_SHADOWS=Colored Shadows
 
 option.SHADOW_BACKFACE_CULLING=Shadow Backface Culling

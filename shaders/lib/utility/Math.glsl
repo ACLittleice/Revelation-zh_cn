@@ -227,6 +227,11 @@ vec3 rotate(in vec3 v, in vec3 a, in vec3 b) {
 	return v * cosTheta + cross(k, v) * sinTheta + k * dot(k, v) * oms(cosTheta);
 }
 
+vec2 sampleVogelDisk(in uint idx, in uint num, in float phi) {
+    float r = approxSqrt((float(idx) + 0.5) / float(num));
+    return cossin(idx * goldenAngle + phi) * r;
+}
+
 vec3 fastRefract(in vec3 dir, in vec3 normal, in float eta) {
     float NdotD = dot(normal, dir);
     float k = 1.0 - eta * eta * oms(NdotD * NdotD);

@@ -181,7 +181,7 @@ void main() {
 		vec3 shadowScreenPos = WorldToShadowScreenSpace(worldPos + normalOffset, distortionFactor);
 
 		if (saturate(shadowScreenPos) == shadowScreenPos) {
-			float blockerSearch = BlockerSearch(shadowScreenPos, dither, 0.25 * distortionFactor);
+			float blockerSearch = BlockerSearch(shadowScreenPos, dither, 0.5 * distortionFactor);
 			shadowScreenPos.z -= (worldDistSquared * 1e-9 + 3e-6) * (1.0 + dither) / distortionFactor * shadowDistance;
 
 			vec3 shadow = PercentageCloserFilter(shadowScreenPos, worldPos, dither, blockerSearch.x * distortionFactor) * saturate(lightmap.y * 1e8);
