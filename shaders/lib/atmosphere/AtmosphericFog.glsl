@@ -7,31 +7,28 @@ uniform float biomeSandstorm;
 uniform float biomeSnowstorm;
 
 // x: Mie y: Rayleigh
-const vec2 falloffScale = -1.0 / vec2(12.0, 36.0);
+const vec2 falloffScale = -1.0 / vec2(8.0, 32.0);
 const float realShadowMapRes = float(shadowMapResolution) * MC_SHADOW_QUALITY;
 
-#if VF_NOISE_QUALITY == 0
-	/* Low */
-	vec2 CalculateFogDensity(in vec3 rayPos) {
-		return exp2(abs(VF_HEIGHT - rayPos.y) * falloffScale + vec2((biomeSandstorm + biomeSnowstorm) * 2.0, 0.0));
-	}
-#elif VF_NOISE_QUALITY == 1
-	/* Medium */
-	vec2 CalculateFogDensity(in vec3 rayPos) {
-		vec2 density = exp2(abs(VF_HEIGHT - rayPos.y) * falloffScale + vec2((biomeSandstorm + biomeSnowstorm) * 2.0, 0.0));
+vec2 CalculateFogDensity(in vec3 rayPos) {
+	vec2 density = exp2(abs(VF_HEIGHT - rayPos.y) * falloffScale);
 
-		vec3 windOffset = vec3(0.07, 0.04, 0.05) * worldTimeCounter;
+#if VF_NOISE_QUALITY == LOW
+	rayPos.xz -= vec2(1.0, 0.75) * worldTimeCounter;
 
-		rayPos *= 0.05;
-		rayPos -= windOffset;
-		float noise = Calculate3DNoise(rayPos) * 3.0;
-		noise -= Calculate3DNoise(rayPos * 4.0 - windOffset);
+	float noise = texture(noisetex, rayPos.xz * 0.002).z;
+#elif VF_NOISE_QUALITY == MEDIUM
+	vec3 windOffset = vec3(0.07, 0.04, 0.05) * worldTimeCounter;
 
-		density.x *= saturate(noise * 8.0 - 6.0) * (1.5 + biomeSandstorm + biomeSnowstorm);
-
-		return density;
-	}
+	rayPos *= 0.03;
+	rayPos -= windOffset;
+	float noise = Calculate3DNoise(rayPos) * 2.5;
+	noise -= Calculate3DNoise(rayPos * 4.0 - windOffset);
 #endif
+
+	density.x *= sqr(noise) * (2.0 + biomeSandstorm + biomeSnowstorm);
+	return density;
+}
 
 #ifndef CLOUD_SHADOWS
 	#undef VF_CLOUD_SHADOWS

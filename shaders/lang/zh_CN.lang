@@ -158,7 +158,10 @@ suffix.VF_HEIGHT=m
 option.VF_RAYLEIGH_DENSITY=瑞利散射雾密度
 option.VF_MIE_DENSITY=米氏散射雾密度
 option.VF_MIE_DENSITY_RAIN_MULT=米氏散射雾密度-雨天增益
-option.VF_NOISE_QUALITY=体积雾噪声
+option.VF_NOISE_QUALITY=体积雾噪声质量
+value.VF_NOISE_QUALITY.LOW=低
+value.VF_NOISE_QUALITY.MEDIUM=中
+value.VF_NOISE_QUALITY.HIGH=高
 option.VF_TIME_FADE=时段过渡
 option.COLORED_VOLUMETRIC_FOG=彩色阴影
 

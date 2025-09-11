@@ -159,6 +159,9 @@ option.VF_RAYLEIGH_DENSITY=Volumetric Fog Rayleigh Density
 option.VF_MIE_DENSITY=Volumetric Fog Mie Density
 option.VF_MIE_DENSITY_RAIN_MULT=Volumetric Fog Mie Density Rain Multiplier
 option.VF_NOISE_QUALITY=Volumetric Fog Noise Quality
+value.VF_NOISE_QUALITY.LOW=Low
+value.VF_NOISE_QUALITY.MEDIUM=Medium
+value.VF_NOISE_QUALITY.HIGH=High
 option.VF_TIME_FADE=Volumetric Fog Time Fade
 option.COLORED_VOLUMETRIC_FOG=Colored Volumetric Fog
 
