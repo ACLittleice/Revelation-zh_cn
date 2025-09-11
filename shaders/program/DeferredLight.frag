@@ -21,14 +21,11 @@
 //======// Output //==============================================================================//
 
 /* RENDERTARGETS: 0 */
-layout (location = 0) out vec3 sceneOut;
-
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-/* RENDERTARGETS: 0,8 */
-layout (location = 1) out vec2 specularOut;
-#endif
+out vec3 sceneOut;
 
 //======// Uniform //=============================================================================//
+
+writeonly uniform image2D colorimg8;
 
 uniform sampler3D atmosCombinedLut;
 uniform sampler2D cloudOriginTex;
@@ -160,7 +157,7 @@ void main() {
 			#endif
 
 			Material material = GetMaterialData(specularTex);
-			specularOut = specularTex.rg;
+			imageStore(colorimg8, screenTexel, specularTex);
 		#else
 			Material material = Material(1.0, 0.0, 0.0, false, false);
 		#endif

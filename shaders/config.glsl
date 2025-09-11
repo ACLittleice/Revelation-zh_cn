@@ -18,7 +18,7 @@
 	const int 	colortex5Format 			= R11F_G11F_B10F;
 	const int 	colortex6Format 			= RGBA8;
 	const int 	colortex7Format 			= RGBA16UI;
-	const int 	colortex8Format 			= RGB16;
+	const int 	colortex8Format 			= RGBA16;
 	const int 	colortex9Format 			= RGBA16F;
 	const int 	colortex10Format 			= R8;
 	const int 	colortex11Format 			= RGBA32UI;
