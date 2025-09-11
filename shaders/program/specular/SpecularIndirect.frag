@@ -57,33 +57,33 @@ void main() {
 	uvec4 gbufferData0 = loadGbufferData0(screenTexel);
 	uint materialID = gbufferData0.y;
 
-	if (screenPos.z < 1.0 + float(materialID)) {
-		Material material = GetMaterialData(loadGbufferData1(screenTexel).xy);
+	if (screenPos.z > 1.0 - EPS + float(materialID)) discard;
 
-		// Specular reflections
-		if (material.specularMask) {
-			vec3 viewPos = ScreenToViewSpace(screenPos);
+	Material material = GetMaterialData(loadGbufferData1(screenTexel).xy);
 
-			#if defined DISTANT_HORIZONS
-				bool dhTerrainMask = screenPos.z > 1.0 - EPS;
-				if (dhTerrainMask) {
-					screenPos.z = loadDepth0DH(screenTexel);
-					viewPos = ScreenToViewSpaceDH(screenPos);
-				}
-			#endif
+	// Specular reflections
+	if (material.specularMask) {
+		vec3 viewPos = ScreenToViewSpace(screenPos);
 
-			vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
-			vec3 worldDir = normalize(worldPos);
-			worldPos += gbufferModelViewInverse[3].xyz;
+		#if defined DISTANT_HORIZONS
+			bool dhTerrainMask = screenPos.z > 1.0 - EPS;
+			if (dhTerrainMask) {
+				screenPos.z = loadDepth0DH(screenTexel);
+				viewPos = ScreenToViewSpaceDH(screenPos);
+			}
+		#endif
 
-			vec3 worldNormal = FetchWorldNormal(gbufferData0);
+		vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
+		vec3 worldDir = normalize(worldPos);
+		worldPos += gbufferModelViewInverse[3].xyz;
 
-			vec2 lightmap = Unpack2x8U(gbufferData0.x);
-			lightmap.y = remap(0.3, 0.7, lightmap.y);
+		vec3 worldNormal = FetchWorldNormal(gbufferData0);
 
-			float dither = BlueNoiseTemporal(screenTexel);
-			reflectionOut = CalculateSpecularReflections(material, worldNormal, screenPos, worldDir, viewPos, lightmap.y, dither);
-		}
+		vec2 lightmap = Unpack2x8U(gbufferData0.x);
+		lightmap.y = remap(0.3, 0.7, lightmap.y);
+
+		float dither = BlueNoiseTemporal(screenTexel);
+		reflectionOut = CalculateSpecularReflections(material, worldNormal, screenPos, worldDir, viewPos, lightmap.y, dither);
 	}
 #else
 	// Clear buffer
