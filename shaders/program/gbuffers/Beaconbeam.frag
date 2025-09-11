@@ -11,7 +11,7 @@ layout (location = 1) out uvec4 gbufferOut0;
 
 #if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
 /* RENDERTARGETS: 6,7,8 */
-layout (location = 2) out vec2 gbufferOut1;
+layout (location = 2) out vec4 gbufferOut1;
 #endif
 
 //======// Uniform //=============================================================================//
@@ -51,10 +51,8 @@ void main() {
 	gbufferOut0.y = 20u;
 
 	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(flatNormal));
-	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-		vec4 specularTex = texture(specular, texCoord);
 
-		gbufferOut1.x = Packup2x8(specularTex.rg);
-		gbufferOut1.y = Packup2x8(specularTex.ba);
+	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+		gbufferOut1 = texture(specular, texCoord);
 	#endif
 }

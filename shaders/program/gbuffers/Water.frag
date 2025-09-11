@@ -8,7 +8,7 @@
 /* RENDERTARGETS: 1,7,8 */
 layout (location = 0) out vec4 lightingOut;
 layout (location = 1) out uvec3 gbufferOut0;
-layout (location = 2) out vec2 gbufferOut1;
+layout (location = 2) out vec4 gbufferOut1;
 
 //======// Uniform //=============================================================================//
 
@@ -126,7 +126,7 @@ void main() {
 
 			worldNormal = wave.normal;
 			#ifndef RAYTRACED_REFRACTION
-				gbufferOut1 = worldNormal.xy * 0.5 + 0.5;
+				gbufferOut1.xy = worldNormal.xy * 0.5 + 0.5;
 			#endif
 		#else
 			vec3 minecraftPos = worldPos + cameraPosition;
@@ -138,7 +138,7 @@ void main() {
 			#endif
 
 			#ifndef RAYTRACED_REFRACTION
-				gbufferOut1 = worldNormal.xy * 0.5 + 0.5;
+				gbufferOut1.xy = worldNormal.xy * 0.5 + 0.5;
 			#endif
 			worldNormal = tbnMatrix * worldNormal;
 		#endif
@@ -164,8 +164,7 @@ void main() {
 		#endif
 		gbufferOut0.z = Packup2x8U(OctEncodeUnorm(worldNormal));
 
-		gbufferOut1.x = Packup2x8(albedo.rg);
-		gbufferOut1.y = Packup2x8(albedo.ba);
+		gbufferOut1 = albedo;
 	}
 
 	//==// Translucent lighting //================================================================//

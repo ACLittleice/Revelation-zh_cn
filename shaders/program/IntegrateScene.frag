@@ -19,14 +19,9 @@
 
 //======// Output //==============================================================================//
 
-#ifdef DEPTH_OF_FIELD
-/* RENDERTARGETS: 4,8 */
-#else
 /* RENDERTARGETS: 0,8 */
-#endif
-
 layout (location = 0) out vec3 sceneOut;
-layout (location = 1) out float bloomyFogTrans;
+layout (location = 1) out float bloomyFogMask;
 
 //======// Uniform //=============================================================================//
 
@@ -162,8 +157,7 @@ void main() {
 			sceneOut += blendedData.rgb;
 		} else if (materialID == 2u) { // Glass
 			// Glass absorption
-			vec4 translucents = vec4(Unpack2x8(gbufferData1.x), Unpack2x8(gbufferData1.y));
-			sceneOut *= exp2(5.0 * (translucents.rgb - 1.0) * approxSqrt(approxSqrt(translucents.a)));
+			sceneOut *= exp2(5.0 * (gbufferData1.rgb - 1.0) * approxSqrt(approxSqrt(gbufferData1.a)));
 
 			// Specular lighting of glass
 			vec4 blendedData = texelFetch(colortex1, screenTexel, 0);
@@ -204,15 +198,15 @@ void main() {
 		#endif
 	}
 
-	// Initialize bloomyFogTrans
-	bloomyFogTrans = 1.0;
+	// Initialize bloomyFogMask
+	bloomyFogMask = 1.0;
 
 	// Volumetric fog
 	#ifdef VOLUMETRIC_FOG
 		if (isEyeInWater == 0) {
 			mat2x3 volFogData = VolumetricFogSpatialUpscale(screenTexel >> 1, -viewPos.z);
 			sceneOut = ApplyFog(sceneOut, volFogData);
-			bloomyFogTrans = mean(volFogData[1]);
+			bloomyFogMask = mean(volFogData[1]);
 		}
 	#endif
 
@@ -224,7 +218,7 @@ void main() {
 			mat2x3 waterFog = AnalyticWaterFog(eyeSkylightSmooth, viewDistance, LdotV);
 		#endif
 		sceneOut = ApplyFog(sceneOut, waterFog);
-		bloomyFogTrans = mean(waterFog[1]);
+		bloomyFogMask = mean(waterFog[1]);
 	}
 
 	// Rainbows
@@ -236,7 +230,7 @@ void main() {
 	#endif
 
 	// Vanilla fog
-	RenderVanillaFog(sceneOut, bloomyFogTrans, viewDistance);
+	RenderVanillaFog(sceneOut, bloomyFogMask, viewDistance);
 
 	#if DEBUG_NORMALS == 1
 		sceneOut = worldNormal * 0.5 + 0.5;

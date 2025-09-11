@@ -18,7 +18,7 @@
 	const int 	colortex5Format 			= R11F_G11F_B10F;
 	const int 	colortex6Format 			= RGBA8;
 	const int 	colortex7Format 			= RGBA16UI;
-	const int 	colortex8Format 			= RGBA16;
+	const int 	colortex8Format 			= RGBA8;
 	const int 	colortex9Format 			= RGBA16F;
 	const int 	colortex10Format 			= R8;
 	const int 	colortex11Format 			= RGBA32UI;
@@ -70,7 +70,7 @@
 	|	colortex5	|   r11f_g11f_b10f  |	256, 256   	|	Sky-View LUT
 	|	colortex6	|   rgba8           |	Full res  	|	Solid albedo, rain alpha
 	|	colortex7	|   rgba16ui        |	Full res  	|	Gbuffer data 0
-	|	colortex8	|   rgb16           |	Full res  	|	Gbuffer data 1 -> Bloomy fog mask
+	|	colortex8	|   rgba8           |	Full res  	|	Gbuffer data 1 -> Bloomy fog mask
 	|	colortex9	|   rgba16f     	|	Full res	|	Cloud history
 	|	colortex10	|   r8              |	512, 512   	|	Cloud shadow map
 	|	colortex11	|   rgba32ui        |	Half res  	|	Volumetric fog, linear depth

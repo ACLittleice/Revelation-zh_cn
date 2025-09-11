@@ -144,8 +144,7 @@ void main() {
 		vec2 lightmap = Unpack2x8U(gbufferData0.x);
 
 		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-			vec2 specularData = loadGbufferData1(screenTexel).xy;
-			vec4 specularTex = vec4(Unpack2x8(specularData.x), Unpack2x8(specularData.y));
+			vec4 specularTex = loadGbufferData1(screenTexel);
 
 			// Compute rain puddles
 			#ifdef RAIN_PUDDLES
@@ -280,8 +279,10 @@ void main() {
 				#endif
 
 				// Apply parallax shadows
-				#if defined PARALLAX && defined PARALLAX_SHADOW && !defined PARALLAX_DEPTH_WRITE
-					shadow *= oms(loadGbufferData1(screenTexel).z);
+				#ifdef PARALLAX_SHADOW
+					#if defined PARALLAX && !defined PARALLAX_DEPTH_WRITE
+						shadow *= oms(loadSceneColor(screenTexel).x);
+					#endif
 				#endif
 
 				vec3 halfway = normalize(worldLightVector - worldDir);
