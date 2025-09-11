@@ -54,10 +54,7 @@ void main() {
 	vec2 screenCoord = gl_FragCoord.xy * viewPixelSize;
 	vec3 screenPos = vec3(screenCoord, FetchDepthFix(screenTexel));
 
-	uvec4 gbufferData0 = loadGbufferData0(screenTexel);
-	uint materialID = gbufferData0.y;
-
-	if (screenPos.z > 1.0 - EPS + float(materialID)) discard;
+	if (screenPos.z > 1.0 - EPS) discard;
 
 	Material material = GetMaterialData(loadGbufferData1(screenTexel).xy);
 
@@ -77,6 +74,7 @@ void main() {
 		vec3 worldDir = normalize(worldPos);
 		worldPos += gbufferModelViewInverse[3].xyz;
 
+		uvec4 gbufferData0 = loadGbufferData0(screenTexel);
 		vec3 worldNormal = FetchWorldNormal(gbufferData0);
 
 		vec2 lightmap = Unpack2x8U(gbufferData0.x);
