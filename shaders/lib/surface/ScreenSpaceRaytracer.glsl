@@ -8,7 +8,7 @@
 
 //================================================================================================//
 
-#if defined PASS_DEFERRED_LIGHTING
+#if defined PASS_SPECULAR_LIGHTING
 #define loadDepthMacro loadDepth0
 #define loadDepthMacroDH loadDepth0DH
 #else

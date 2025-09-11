@@ -20,13 +20,12 @@
 
 //======// Output //==============================================================================//
 
-/* RENDERTARGETS: 0,1 */
+/* RENDERTARGETS: 0 */
 layout (location = 0) out vec3 sceneOut;
-layout (location = 1) out vec4 reflectionOut;
 
 #if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-/* RENDERTARGETS: 0,1,8 */
-layout (location = 2) out vec2 specularOut;
+/* RENDERTARGETS: 0,8 */
+layout (location = 1) out vec2 specularOut;
 #endif
 
 //======// Uniform //=============================================================================//
@@ -72,10 +71,6 @@ uniform sampler2D cloudOriginTex;
 #endif
 
 #include "/lib/SpatialUpscale.glsl"
-
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-	#include "/lib/surface/Reflection.glsl"
-#endif
 
 #ifdef RAIN_PUDDLES
 	#include "/lib/surface/RainPuddle.glsl"
@@ -385,27 +380,12 @@ void main() {
 		// Minimal ambient light
 		sceneOut += (worldNormal.y * 0.4 + 0.6) * max(MINIMUM_AMBIENT_BRIGHTNESS, 5e-3 * nightVision) * ao;
 
-		// Specular reflections
-		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-			if (material.specularMask) {
-				lightmap.y = remap(0.3, 0.7, lightmap.y);
-
-				reflectionOut = CalculateSpecularReflections(material, worldNormal, screenPos, worldDir, viewPos, lightmap.y, dither);
-
-				// Metallic diffuse elimination
-				#if TEXTURE_FORMAT == 0
-					material.metalness = step(229.5 / 255.0, material.metalness);
-				#endif
-
-				material.metalness *= 0.2 * lightmap.y + 0.8;
-				sceneOut *= oms(material.metalness);
-			} else
-		#endif
-		// Clear buffer
-		reflectionOut = vec4(0.0);
-
 		// Apply albedo
 		sceneOut *= albedo;
+
+		// Metallic diffuse elimination
+		material.metalness *= 0.2 * lightmap.y + 0.8;
+		sceneOut *= oms(material.metalness);
 
 		// Specular highlights
 		sceneOut += specularHighlight;

@@ -2,4 +2,4 @@
 
 #define SPECULAR_FILTER_SIZE 16.0
 
-#include "/program/SpecularFilter.comp"
+#include "/program/specular/SpecularFilter.comp"
