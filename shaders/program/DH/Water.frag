@@ -169,7 +169,7 @@ void main() {
 	#endif
 
 	// Sunlight
-	vec3 sunlightMult = cloudShadow * global.light.directIlluminance;
+	vec3 sunlightMult = cloudShadow * saturate(lightmap.y * 1e6) * global.light.directIlluminance;
 	float NdotL = dot(worldNormal, worldLightVector);
 
 	// Direct specular lighting
@@ -184,19 +184,19 @@ void main() {
 			float blockerSearch = BlockerSearch(shadowScreenPos, dither, 0.5 * distortionFactor);
 			shadowScreenPos.z -= (worldDistSquared * 1e-9 + 3e-6) * (1.0 + dither) / distortionFactor * shadowDistance;
 
-			vec3 shadow = PercentageCloserFilter(shadowScreenPos, worldPos, dither, blockerSearch.x * distortionFactor) * saturate(lightmap.y * 1e8);
+			vec3 shadow = PercentageCloserFilter(shadowScreenPos, worldPos, dither, 0.5 * blockerSearch * distortionFactor);
 
-			if (dot(shadow, vec3(1.0)) > 1e-6) {
+			if (dot(shadow, vec3(1.0)) > EPS) {
 				float LdotV = dot(worldLightVector, -worldDir);
-				float NdotV = abs(dot(worldNormal, -worldDir));
-				float halfwayNorm = inversesqrt(2.0 * LdotV + 2.0);
-				float NdotH = saturate((NdotL + NdotV) * halfwayNorm);
-				float LdotH = LdotV * halfwayNorm + halfwayNorm;
+				float NdotV = abs(dot(worldNormal, worldDir));
+				vec3 halfway = normalize(worldLightVector - worldDir);
+				float NdotH = dot(worldNormal, halfway);
+				float LdotH = dot(worldLightVector, halfway);
 
 				shadow *= sunlightMult;
 
 				float f0 = F0FromIOR(materialID == 3u ? WATER_REFRACT_IOR : GLASS_REFRACT_IOR);
-				lightingOut.rgb += shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, TRANSLUCENT_ROUGHNESS, vec3(f0));
+				lightingOut.rgb += saturate(shadow) * SpecularGGX(LdotH, NdotV, NdotL, NdotH, TRANSLUCENT_ROUGHNESS, vec3(f0));
 			}
 		}
 	}
