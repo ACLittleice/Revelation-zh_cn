@@ -6,7 +6,7 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-	Pass: Compute indirect lighting
+	Pass: Compute diffuse indirect lighting
 
 --------------------------------------------------------------------------------
 */
@@ -25,6 +25,10 @@ const vec2 workGroupsRender = vec2(0.5, 0.5);
 writeonly restrict uniform image2D colorimg3;
 
 #include "/lib/universal/Uniform.glsl"
+
+//======// SSBO //================================================================================//
+
+#include "/lib/universal/SSBO.glsl"
 
 //======// Function //============================================================================//
 

@@ -5,7 +5,7 @@
 #define SSPT_BOUNCES INF // [INF]
 
 #define SSPT_RR_MIN_BOUNCES 1 // [1 2 3 4 5 6 7 8 9 10 11 12 14 16 18 20 22 24]
-#define SSPT_BLENDED_LIGHTMAP 0.0 // [0.0 0.01 0.02 0.05 0.07 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.6 0.7 0.8 0.9 1.0]
+#define SSPT_BLENDED_LIGHTMAP 0.5 // [0.0 0.01 0.02 0.05 0.07 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.6 0.7 0.8 0.9 1.0]
 
 //================================================================================================//
 
@@ -51,7 +51,6 @@ struct TracingData {
 	vec3 rayPos;
     vec3 rayDir;
     vec3 viewNormal;
-    vec3 worldNormal;
 	vec3 contribution;
 };
 
@@ -59,8 +58,7 @@ vec3 CalculateSSPT(in vec3 screenPos, in vec3 viewPos, in vec3 worldNormal, in v
 	lightmap.x = CalculateBlocklightFalloff(lightmap.x) * SSPT_BLENDED_LIGHTMAP;
 	lightmap.y *= lightmap.y * lightmap.y;
 
-	mat3 gbufferModelView = mat3(gbufferModelView);
-    vec3 viewNormal = gbufferModelView * worldNormal;
+    vec3 viewNormal = mat3(gbufferModelView) * worldNormal;
 
     NoiseGenerator noiseGenerator = initNoiseGenerator(gl_GlobalInvocationID.xy, uint(frameCounter));
 
@@ -72,18 +70,12 @@ vec3 CalculateSSPT(in vec3 screenPos, in vec3 viewPos, in vec3 worldNormal, in v
 
 	vec3 sum = vec3(0.0);
 
-	#if SSPT_BOUNCES > 1
-	// Multiple bounce tracing.
-
     for (uint spp = 0u; spp < SSPT_SPP; ++spp) {
 		// Initialize tracing data.
-		TracingData target = TracingData(screenPos, vec3(0.0), viewNormal, worldNormal, vec3(1.0));
+		TracingData target = TracingData(screenPos, vec3(0.0), viewNormal, vec3(1.0));
 
 		for (uint bounce = 1u; bounce <= SSPT_BOUNCES; ++bounce) {
-			vec3 sampleDir = SampleCosineHemisphere(target.worldNormal, nextVec2(noiseGenerator));
-
-			target.rayDir = normalize(gbufferModelView * sampleDir);
-			if (dot(viewNormal, target.rayDir) < EPS) continue;
+			target.rayDir = SampleCosineHemisphere(viewNormal, nextVec2(noiseGenerator));
 
 			float dither = nextFloat(noiseGenerator);
 			vec3 targetViewPos = ScreenToViewSpaceRaw(target.rayPos) + target.viewNormal * 1e-2;
@@ -93,16 +85,19 @@ vec3 CalculateSSPT(in vec3 screenPos, in vec3 viewPos, in vec3 worldNormal, in v
 				ivec2 targetTexel = ivec2(target.rayPos.xy);
 				vec3 sampleRadiance = texelFetch(colortex4, targetTexel >> 1, 0).rgb;
 
-				target.worldNormal = FetchWorldNormal(loadGbufferData0(targetTexel));
-				target.viewNormal = gbufferModelView * target.worldNormal;;
+				target.viewNormal = mat3(gbufferModelView) * FetchWorldNormal(targetTexel);
 
 				sum += sampleRadiance * target.contribution;
 
 				target.contribution *= loadAlbedo(targetTexel);
 				target.rayPos.xy *= viewPixelSize;
-			} else if (dot(lightmap, vec2(1.0)) > 1e-5) {
-				vec3 skyRadiance = texture(skyViewTex, FromSkyViewLutParams(sampleDir) + vec2(0.0, 0.5)).rgb;
-				sum += (skyRadiance * lightmap.y + lightmap.x) * target.contribution;
+			} else if (dot(lightmap, vec2(1.0)) > EPS) {
+				// vec3 rayDirWorld = mat3(gbufferModelViewInverse) * target.rayDir;
+				// vec3 skyRadiance = texture(skyViewTex, FromSkyViewLutParams(rayDirWorld) + vec2(0.0, 0.5)).rgb;
+
+				float occulusion = saturate(dot(target.viewNormal, target.rayDir));
+				vec3 skyRadiance = FromSphericalHarmonics(global.light.skySH, worldNormal);
+				sum += (skyRadiance * lightmap.y + lightmap.x) * occulusion * target.contribution;
 				break;
 			}
 
@@ -114,28 +109,6 @@ vec3 CalculateSSPT(in vec3 screenPos, in vec3 viewPos, in vec3 worldNormal, in v
 			}
 		}
 	}
-
-	#else
-	// Single bounce tracing.
-
-	for (uint spp = 0u; spp < SSPT_SPP; ++spp) {
-			vec3 sampleDir = SampleCosineHemisphere(worldNormal, nextVec2(noiseGenerator));
-
-			vec3 rayDir = normalize(gbufferModelView * sampleDir);
-			if (dot(viewNormal, rayDir) < EPS) continue;
-
-			vec3 hitPos = SampleRaytrace(viewPos + viewNormal * 1e-2, rayDir, nextFloat(noiseGenerator), screenPos);
-
-			if (hitPos.z < screenDepthMax) {
-				vec3 sampleRadiance = texelFetch(colortex4, ivec2(hitPos.xy * 0.5), 0).rgb;
-
-				sum += sampleRadiance;
-			} else if (dot(lightmap, vec2(1.0)) > 1e-5) {
-				vec3 skyRadiance = texture(skyViewTex, FromSkyViewLutParams(sampleDir) + vec2(0.0, 0.5)).rgb;
-				sum += skyRadiance * lightmap.y + lightmap.x;
-			}
-		}
-	#endif
 
 	return sum * rcp(float(SSPT_SPP));
 }

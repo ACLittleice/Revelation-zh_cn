@@ -59,8 +59,8 @@ uniform sampler2D cloudOriginTex;
 	#include "/lib/atmosphere/clouds/Shadows.glsl"
 #endif
 
-#include "/lib/lighting/Shadows.glsl"
 #include "/lib/lighting/Common.glsl"
+#include "/lib/lighting/Shadows.glsl"
 
 #if AO_ENABLED > 0 && !defined SSPT_ENABLED
 	#include "/lib/lighting/SSAO.glsl"

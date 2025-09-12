@@ -1,5 +1,5 @@
 #version 450 core
 
-#define ATROUS_FILTER_SIZE 2
+#define ATROUS_FILTER_SIZE 32
 
 #include "/program/SSPT/EAWF.comp"
