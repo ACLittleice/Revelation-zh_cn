@@ -18,10 +18,10 @@ float horizonWeight(vec3 projNormal, vec3 pos) {
     return sqrt(1.0 - cosH * cosH);
 }
 
-vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 viewNormal) {
+vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal) {
 	const uint sliceCount = 2u;
-	const uint sampleCount = 16u;
-	const float sampleRadius = 8.0;
+	const uint sampleCount = 8u;
+	const float sampleRadius = 4.0;
 	const float hitThickness = 2.0;
 
 	const float rSliceCount = 1.0 / float(sliceCount);
@@ -32,6 +32,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 viewNormal) {
     vec2 dither = Halton23(noiseGenerator.currentNum);
 
     vec3 viewDir = normalize(-viewPos);
+    vec3 viewNormal = mat3(gbufferModelView) * worldNormal;
 
     float visibility = 0.0;
     vec3 irradiance = vec3(0.0);
@@ -68,7 +69,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 viewNormal) {
 					vec3 sampleNormal = mat3(gbufferModelView) * FetchWorldNormal(loadGbufferData0(sampleTexel));
                     // uint mipLevel = min((currentSample + 1u) >> 2u, 4u);
 					vec3 sampleRadiance = texelFetch(colortex4, sampleTexel >> 1, 0).rgb;
-					irradiance += float(sampleOccludedBit) * 
+					irradiance += float(sampleOccludedBit) *
 						saturate(dot(viewNormal, sampleDirFront)) *
 						saturate(dot(sampleNormal, -sampleDirFront)) *
 						sampleRadiance;
