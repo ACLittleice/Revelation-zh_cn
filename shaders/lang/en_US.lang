@@ -273,9 +273,9 @@ option.RSM_MAX_ACCUM_FRAMES=Max Accumulated Frames
 option.SSPT_ENABLED=Screen-Space Path Tracing
 option.SSPT_SPP=Samples Per Pixel
 option.SSPT_BOUNCES=SSPT Bounces
+option.SSPT_RT_STEPS=SSPT Raytracing Steps
 option.SSPT_BLENDED_LIGHTMAP=SSPT Blended Lightmap
 option.SSPT_MAX_ACCUM_FRAMES=Max Accumulated Frames
-option.SSPT_RR_MIN_BOUNCES=SSPT RR Min Bounces
 
 option.SVGF_ENABLED=Spatio-Temporal Variance-Guided Filtering
 

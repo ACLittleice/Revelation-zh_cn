@@ -273,9 +273,9 @@ option.RSM_MAX_ACCUM_FRAMES=最大累积帧数
 option.SSPT_ENABLED=屏幕空间路径追踪(SSPT)
 option.SSPT_SPP=每像素采样数
 option.SSPT_BOUNCES=光线反弹次数
+option.SSPT_RT_STEPS=追踪步进次数
 option.SSPT_BLENDED_LIGHTMAP=Lightmap混合
 option.SSPT_MAX_ACCUM_FRAMES=最大累积帧数
-option.SSPT_RR_MIN_BOUNCES=俄罗斯轮盘赌(RR)起始反弹次数
 
 option.SVGF_ENABLED=时空方差导向过滤(SVGF)
 
