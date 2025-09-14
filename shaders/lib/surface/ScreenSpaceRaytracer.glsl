@@ -16,7 +16,6 @@
 #define loadDepthMacroDH loadDepth1DH
 #endif
 
-#if !defined PASS_DH_WATER
 bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in uint steps, inout vec3 rayPos) {
 	if (viewDir.z >= maxEps(-viewPos.z)) return false;
 
@@ -85,61 +84,3 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
 
     return hit;
 }
-#else
-bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in uint steps, inout vec3 rayPos) {
-	if (viewDir.z >= maxEps(-viewPos.z)) return false;
-
-    float rSteps = 1.0 / float(steps);
-
-    vec3 endPos = ViewToScreenSpaceDH(viewDir + viewPos);
-    vec3 rayDir = normalize(endPos - rayPos);
-    float stepWeight = 1.0 / rayDir.z;
-
-    float stepLength = minOf((fastSign(rayDir) - rayPos) / rayDir) * rSteps;
-
-    rayDir.xy *= viewSize;
-    rayPos.xy *= viewSize;
-
-    vec3 rayStep = rayDir * stepLength;
-    rayPos += rayStep * dither;
-
-	float diffTolerance = max(0.25 * oms(rayPos.z), -2.0 * rayStep.z);
-
-	bool hit = false;
-
-    for (uint i = 0u; i < steps; ++i, rayPos += rayStep) {
-        if (clamp(rayPos.xy, vec2(0.0), viewSize) != rayPos.xy) break;
-
-        #ifndef REAL_SKY_REFLECTIONS
-            if (rayPos.z > 1.0 - EPS) break;
-        #endif
-
-        float sampleDepth = loadDepthMacroDH(ivec2(rayPos.xy));
-		float difference = rayPos.z - sampleDepth;
-
-        if (clamp(difference, 0.0, diffTolerance) == difference) {
-            hit = true;
-            break;
-        }
-
-        #ifdef RAYTRACE_ADAPTIVE_STEP
-            rayStep = rayDir * clamp((sampleDepth - rayPos.z) * stepWeight, diffTolerance * rSteps, rSteps);
-        #endif
-    }
-
-    // Refine hit position (binary search)
-    #ifdef RAYTRACE_REFINEMENT
-	if (hit) {
-        for (uint i = 0u; i < RAYTRACE_REFINEMENT_STEPS; ++i) {
-            rayStep *= 0.5;
-
-            float sampleDepth = loadDepthMacroDH(ivec2(rayPos.xy));
-
-            rayPos += rayStep * (step(rayPos.z, sampleDepth) * 2.0 - 1.0);
-        }
-    }
-    #endif
-
-    return hit;
-}
-#endif
