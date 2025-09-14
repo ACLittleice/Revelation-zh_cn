@@ -9,26 +9,24 @@ vec2 CalculateRefractedCoord(in bool waterMask, in vec3 viewPos, in vec3 viewNor
 		rayPos.xy = saturate(rayPos.xy * viewPixelSize);
 
 		float refractedDepth = loadDepth1(uvToTexel(rayPos.xy));
-		return mix(screenPos.xy, rayPos.xy, step(screenPos.z, refractedDepth));
-	} else {
-		return screenPos.xy;
+		return mix(refractedCoord, rayPos.xy, step(refractedDepth, screenPos.z));
 	}
+	return screenPos.xy;
 }
 
 #else
 
 vec2 CalculateRefractedCoord(in bool waterMask, in vec3 viewPos, in vec3 viewNormal, in vec3 screenPos, in float transparentDepth) {
-	vec2 refractedCoord;
-		vec3 refractedDir = fastRefract(normalize(viewPos), viewNormal, mix(1.0 / GLASS_REFRACT_IOR, 1.0 / WATER_REFRACT_IOR, waterMask));
-		refractedDir *= min(transparentDepth, 32.0) * (REFRACTION_STRENGTH * 0.25);
+	vec3 refractedDir = fastRefract(normalize(viewPos), viewNormal, mix(1.0 / GLASS_REFRACT_IOR, 1.0 / WATER_REFRACT_IOR, waterMask));
+	refractedDir *= min(transparentDepth, 32.0) * (REFRACTION_STRENGTH * 0.25);
 
-		refractedCoord = ViewToScreenSpace(viewPos + refractedDir).xy;
-		vec2 edgeFade = saturate(abs(refractedCoord * 2.0 - 1.0) * 4.0 - 3.0);
-		refractedCoord = mix(refractedCoord, screenPos.xy, curve(edgeFade));
+	vec2 refractedCoord = ViewToScreenSpace(viewPos + refractedDir).xy;
+	vec2 edgeFade = saturate(abs(refractedCoord * 2.0 - 1.0) * 4.0 - 3.0);
+	refractedCoord = mix(refractedCoord, screenPos.xy, curve(edgeFade));
 
 	refractedCoord = saturate(refractedCoord);
 	float refractedDepth = loadDepth1(uvToTexel(refractedCoord));
-	return mix(screenPos.xy, refractedCoord, step(screenPos.z, refractedDepth));
+	return mix(refractedCoord, screenPos.xy, step(refractedDepth, screenPos.z));
 }
 
 #endif
