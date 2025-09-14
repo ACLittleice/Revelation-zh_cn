@@ -6,7 +6,7 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-	Pass:
+	Pass: Compute translucent specular lighting & water fog
 
 --------------------------------------------------------------------------------
 */
@@ -56,23 +56,21 @@ writeonly uniform image2D colorimg1; // Specular lighting output
 #include "/lib/surface/ScreenSpaceRaytracer.glsl"
 
 vec4 CalculateSpecularReflections(in vec3 screenPos, in vec3 viewPos, in vec3 worldNormal, in vec3 worldDir, in float dither, in float skylight, in bool waterMask) {
-	skylight = remap(0.3, 0.7, cube(skylight));
-
 	float NdotV = abs(dot(worldNormal, worldDir));
 	vec3 rayDir = worldDir + worldNormal * NdotV * 2.0;
 
 	if (dot(worldNormal, rayDir) < EPS) return vec4(0.0);
-
-	float ior = waterMask ? isEyeInWater == 1 ? 1.0 / WATER_REFRACT_IOR : WATER_REFRACT_IOR : GLASS_REFRACT_IOR;
 
 	vec3 reflection = vec3(0.0);
 	if (skylight > 1e-3 && (isEyeInWater == 0 || !waterMask)) {
 		vec2 skyViewCoord = FromSkyViewLutParams(rayDir) + vec2(0.0, 0.5);
 		vec3 skyRadiance = textureBicubic(skyViewTex, skyViewCoord).rgb;
 
+		skylight = remap(0.3, 0.7, cube(skylight));
 		reflection = skyRadiance * skylight;
 	}
 
+	float ior = waterMask ? isEyeInWater == 1 ? 1.0 / WATER_REFRACT_IOR : WATER_REFRACT_IOR : GLASS_REFRACT_IOR;
 	float fresnel = FresnelDielectricN(NdotV, ior);
 	uint raySteps = uint(RAYTRACE_SAMPLES * (fresnel * 0.5 + 0.5));
 
