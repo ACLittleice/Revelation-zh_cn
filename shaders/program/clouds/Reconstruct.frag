@@ -19,9 +19,9 @@
 
 //======// Output //==============================================================================//
 
-/* RENDERTARGETS: 9,12 */
+/* RENDERTARGETS: 9,13 */
 layout (location = 0) out vec4 cloudOut;
-layout (location = 1) out float frameOut;
+layout (location = 1) out uint frameOut;
 
 //======// Uniform //=============================================================================//
 
@@ -191,7 +191,7 @@ vec3 ReprojectClouds(in vec2 coord, in float radius) {
 //======// Main //================================================================================//
 void main() {
 	cloudOut = vec4(0.0, 0.0, 0.0, 1.0);
-	frameOut = 0.0;
+	frameOut = 0u;
 
     ivec2 screenTexel = ivec2(gl_FragCoord.xy);
 	float depth = loadDepth2(screenTexel);
@@ -200,7 +200,7 @@ void main() {
 	#endif
 
 	if (depth > 1.0 - EPS) {
-		frameOut = 1.0;
+		frameOut = 1u;
 
 		vec2 screenCoord = gl_FragCoord.xy * viewPixelSize;
 
@@ -210,13 +210,13 @@ void main() {
 		float cloudDepth = minOf(textureGather(cloudDepthOriginTex, currCoord, 0));
 
 		vec2 prevCoord = ReprojectClouds(screenCoord, cloudDepth).xy;
-		float frameIndex = texture(colortex12, prevCoord).x * CLOUD_MAX_ACCUM_FRAMES;
+		uint frameIndex = texture(colortex13, prevCoord).x;
 
 		bool disocclusion = worldTimeChanged;
 		// Offscreen invalidation
 		disocclusion = disocclusion || saturate(prevCoord) != prevCoord;
 		// Previous land invalidation
-		disocclusion = disocclusion || frameIndex < 0.5;
+		disocclusion = disocclusion || frameIndex < 1u;
 		// Fov change invalidation
 		// disocclusion = disocclusion || (gbufferProjection[0].x - gbufferPreviousProjection[0].x) > 0.25;
 
@@ -225,7 +225,7 @@ void main() {
 		} else {
 			vec4 prevData = textureCatmullRomFast(cloudReconstructTex, prevCoord, 0.5);
 			prevData.rgb = sRGBToYCoCg(satU16f(prevData.rgb));
-			frameOut = min(frameIndex + 1.0, CLOUD_MAX_ACCUM_FRAMES);
+			frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
 
 			ivec2 currTexel = clamp(screenTexel / CLOUD_CBR_SCALE, ivec2(0), ivec2(viewSize) / CLOUD_CBR_SCALE - 1);
 			vec4 currData = texelFetch(cloudOriginTex, currTexel, 0);
@@ -256,7 +256,7 @@ void main() {
 				float currLum = currData.x, prevLum = prevData.x;
 				float unbiasedDiff = abs(currLum - prevLum) / max(currLum, prevLum);
 				float lumWeight = 1.0 - saturate(unbiasedDiff) * 0.5;
-				float alpha = max0(frameOut - float(cloudRenderArea)) * lumWeight;
+				float alpha = max0(float(frameOut - cloudRenderArea)) * lumWeight;
 
 				// Accumulate
 				cloudOut = mix(prevData, currData, rcp(alpha + 1.0));
@@ -266,7 +266,6 @@ void main() {
 		}
 
 		cloudOut.rgb = YCoCgToSRGB(cloudOut.rgb);
-		frameOut *= 1.0 / CLOUD_MAX_ACCUM_FRAMES;
 	}
 
 	global.prevWorldTime = worldTime;
