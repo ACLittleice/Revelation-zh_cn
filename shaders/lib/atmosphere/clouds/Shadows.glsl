@@ -85,7 +85,7 @@ float CalculateCloudShadows(in vec3 rayPos) {
 	vec3 rayStep = worldLightVector * stepLength;
 
 	rayPos += worldLightVector * intersection.x;
-	rayPos += rayStep * InterleavedGradientNoiseTemporal(gl_GlobalInvocationID.xy);
+	// rayPos += rayStep * InterleavedGradientNoiseTemporal(gl_GlobalInvocationID.xy);
 
 	float opticalDepth = 0.0;
 
