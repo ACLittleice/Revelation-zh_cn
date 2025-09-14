@@ -54,10 +54,6 @@ uniform sampler3D atmosCombinedLut;
 #include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/PrecomputedAtmosphericScattering.glsl"
 
-#ifdef AURORA
-	#include "/lib/atmosphere/Aurora.glsl"
-#endif
-
 #include "/lib/atmosphere/clouds/Render.glsl"
 
 vec3 ScreenToViewVectorRaw(in vec2 screenCoord) {

@@ -51,10 +51,6 @@ uniform sampler2D cloudOriginTex;
 #include "/lib/atmosphere/PrecomputedAtmosphericScattering.glsl"
 #include "/lib/atmosphere/Celestial.glsl"
 
-#ifdef AURORA
-	#include "/lib/atmosphere/Aurora.glsl"
-#endif
-
 #ifdef CLOUD_SHADOWS
 	#include "/lib/atmosphere/clouds/Shadows.glsl"
 #endif
@@ -310,9 +306,6 @@ void main() {
 			if (lightmap.y > EPS) {
 				// Skylight
 				vec3 skylight = lightningShading;
-				#ifdef AURORA
-					skylight += auroraShading * 8.0;
-				#endif
 				skylight *= 0.02 * (worldNormal.y * 0.5 + 0.5);
 
 				// Spherical harmonics skylight

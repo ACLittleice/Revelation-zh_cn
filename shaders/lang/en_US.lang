@@ -66,9 +66,6 @@ suffix.ATMOSPHERE_BOTTOM_ALTITUDE=m
 option.ATMOSPHERE_TOP_ALTITUDE=Atmosphere Top Altitude
 suffix.ATMOSPHERE_TOP_ALTITUDE=m
 
-option.AURORA=Aurora
-option.AURORA_STRENGTH=Aurora Strength
-
 option.SUN_RADIUS_MULT=Sun Radius Multiplier
 
 option.STARS_COVERAGE=Stars Coverage

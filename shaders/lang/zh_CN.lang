@@ -66,9 +66,6 @@ suffix.ATMOSPHERE_BOTTOM_ALTITUDE=m
 option.ATMOSPHERE_TOP_ALTITUDE=大气顶部高度
 suffix.ATMOSPHERE_TOP_ALTITUDE=m
 
-option.AURORA=极光
-option.AURORA_STRENGTH=极光强度
-
 option.SUN_RADIUS_MULT=太阳半径乘数
 
 option.STARS_COVERAGE=星星覆盖率

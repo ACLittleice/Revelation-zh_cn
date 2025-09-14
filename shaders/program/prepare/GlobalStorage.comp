@@ -56,10 +56,6 @@ void main() {
 	// Irradiance to illuminance
 	global.light.directIlluminance = SUN_SPECTRAL_RADIANCE_TO_LUMINANCE * (sunIrradiance + moonIrradiance);
 
+	// Lightning shading
 	global.light.skyIlluminance += lightningShading * 0.05;
-	#ifdef AURORA
-		float auroraAmount = smoothstep(0.0, 0.2, -worldSunVector.y) * AURORA_STRENGTH;
-		vec3 auroraShading = vec3(0.0, 0.005, 0.0025) * auroraAmount;
-		global.light.skyIlluminance += auroraShading;
-	#endif
 }

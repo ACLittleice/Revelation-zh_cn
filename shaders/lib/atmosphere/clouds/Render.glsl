@@ -381,9 +381,6 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 		vec3 directIlluminance = SUN_SPECTRAL_RADIANCE_TO_LUMINANCE * (sunIrradiance + moonIrradiance);
 
 		skyIlluminance += lightningShading * 0.05;
-		#ifdef AURORA
-			skyIlluminance += auroraShading;
-		#endif
 
 		// Direct + Indirect
 		cloudScattering  = integralScattering.x * oms(wetness * 0.5) * directIlluminance;
@@ -399,10 +396,6 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 			cloudScattering += scatterAP * oms(cloudTransmittance);
 		#endif
 	}
-
-	#ifdef AURORA
-		if (auroraAmount > 1e-2) cloudScattering += NightAurora(rayDir) * cloudTransmittance;
-	#endif
 
     return vec4(cloudScattering, cloudTransmittance);
 }
