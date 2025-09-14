@@ -89,10 +89,11 @@ void main() {
 	float transparentDepth = distance(viewPos, viewPos1);
 
 	ivec2 refractedTexel = screenTexel;
+	bool glassMask = materialID == 2u;
 	bool waterMask = materialID == 3u;
 
 	// Process refraction
-	if (materialID == 2u || waterMask) {
+	if (glassMask || waterMask) {
 		vec3 viewNormal = mat3(gbufferModelView) * FetchWorldNormal(gbufferData0.w);
 
 		#ifdef RAYTRACED_REFRACTION
@@ -127,17 +128,15 @@ void main() {
 			Material material = GetMaterialData(gbufferData1.xy);
 		#endif
 
-		if (waterMask) { // Water
-			// Specular lighting of water
+		if (glassMask || waterMask) {
+			// Apply specular lighting
 			vec4 blendedData = texelFetch(colortex1, screenTexel, 0);
-			sceneOut = mix(sceneOut, blendedData.rgb, blendedData.a);
-		} else if (materialID == 2u) { // Glass
-			// Glass absorption
-			sceneOut *= exp2(5.0 * (gbufferData1.rgb - 1.0) * approxSqrt(approxSqrt(gbufferData1.a)));
+			sceneOut += blendedData.rgb - sceneOut * blendedData.a;
 
-			// Specular lighting of glass
-			vec4 blendedData = texelFetch(colortex1, screenTexel, 0);
-			sceneOut = mix(sceneOut, blendedData.rgb, blendedData.a);
+			// Glass absorption
+			if (glassMask) {
+				sceneOut *= exp2(5.0 * (gbufferData1.rgb - 1.0) * approxSqrt(approxSqrt(gbufferData1.a)));
+			}
 		}
 		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
 			else if (material.specularMask) {

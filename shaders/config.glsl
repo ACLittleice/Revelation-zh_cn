@@ -22,7 +22,7 @@
 	const int 	colortex9Format 			= RGBA16F;
 	const int 	colortex10Format 			= R8;
 	const int 	colortex11Format 			= RGBA32UI;
-	const int 	colortex12Format 			= R16;
+	const int 	colortex12Format 			= RG16;
 	const int 	colortex13Format 			= R8I;
 	const int 	colortex14Format 			= RG16;
 //  const int 	colortex15Format 			= ;
@@ -74,7 +74,7 @@
 	|	colortex9	|   rgba16f     	|	Full res	|	Cloud history
 	|	colortex10	|   r8              |	512, 512   	|	Cloud shadow map
 	|	colortex11	|   rgba32ui        |	Half res  	|	Volumetric fog, linear depth
-	|	colortex12	|   r16          	|	Full res	|	Water data -> Bloomy fog mask
+	|	colortex12	|   rg16          	|	Full res	|	Water data -> Bloomy fog mask
 	|	colortex13	|   r8i	        	|	Full res  	|	Cloud frame index
 	|	colortex14	|   rg16            |	Full res	|	Variance history
 	|	colortex15	|   	           	|				|	Unused

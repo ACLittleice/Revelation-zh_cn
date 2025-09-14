@@ -81,7 +81,7 @@ vec4 CalculateSpecularReflections(in vec3 screenPos, in vec3 viewPos, in vec3 wo
 		reflection += (texture(colortex4, screenPos.xy * 0.5).rgb - reflection) * saturate(edgeFade);
 	}
 
-	return satU16f(vec4(reflection, fresnel));
+	return satU16f(vec4(reflection * fresnel, fresnel));
 }
 
 //======// Main //================================================================================//
@@ -164,6 +164,22 @@ void main() {
 				specularOut.rgb += shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, TRANSLUCENT_ROUGHNESS, vec3(f0));
 			}
 		}
+	}
+
+	// Skybox reflection for occluded water
+	if (waterMask && gbufferData0.y == 2u) {
+		worldNormal = OctDecodeUnorm(Unpack2x8(texelFetch(colortex12, screenTexel, 0).y));
+
+		float NdotV = abs(dot(worldNormal, worldDir));
+		vec3 rayDir = worldDir + worldNormal * NdotV * 2.0;
+
+		vec2 skyViewCoord = FromSkyViewLutParams(rayDir) + vec2(0.0, 0.5);
+		vec3 skyRadiance = textureBicubic(skyViewTex, skyViewCoord).rgb;
+
+		vec3 waterSpecular = skyRadiance * remap(0.3, 0.7, cube(waterData.y));
+		float fresnel = FresnelDielectricN(NdotV, WATER_REFRACT_IOR);
+
+		specularOut.rgb += waterSpecular * fresnel * oms(specularOut.a);
 	}
 
 	imageStore(colorimg1, screenTexel, specularOut);
