@@ -88,8 +88,6 @@ void main() {
 	float viewDistance = length(viewPos);
 	float transparentDepth = distance(viewPos, sViewPos);
 
-	vec4 gbufferData1 = loadGbufferData1(screenTexel);
-
 	vec2 refractedCoord = screenCoord;
 	ivec2 refractedTexel = screenTexel;
 	bool waterMask = materialID == 3u;
@@ -100,7 +98,7 @@ void main() {
 		#ifdef RAYTRACED_REFRACTION
 			refractedCoord = CalculateRefractedCoord(waterMask, viewPos, viewNormal, screenPos);
 		#else
-			refractedCoord = CalculateRefractedCoord(waterMask, viewPos, viewNormal, screenPos, gbufferData1, transparentDepth);
+			refractedCoord = CalculateRefractedCoord(waterMask, viewPos, viewNormal, screenPos, transparentDepth);
 		#endif
 		refractedTexel = uvToTexel(refractedCoord);
 
@@ -133,6 +131,8 @@ void main() {
 	if (depth < 1.0 || waterMask) {
 		worldPos += gbufferModelViewInverse[3].xyz;
 		float skyLightmap = Unpack2x8UY(gbufferData0.x);
+
+		vec4 gbufferData1 = loadGbufferData1(screenTexel);
 
 		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
 			Material material = GetMaterialData(gbufferData1.xy);

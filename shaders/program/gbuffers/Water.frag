@@ -125,9 +125,6 @@ void main() {
 			WavePixelData wave = physics_wavePixel(physics_localPosition.xz, physics_localWaviness, physics_iterationsNormal, physics_gameTime);
 
 			worldNormal = wave.normal;
-			#ifndef RAYTRACED_REFRACTION
-				gbufferOut1.xy = worldNormal.xy * 0.5 + 0.5;
-			#endif
 		#else
 			vec3 minecraftPos = worldPos + cameraPosition;
 			vec2 tangentPos = ((minecraftPos * vec3(1.0, 0.15, 1.0)) * tbnMatrix).xy;
@@ -137,14 +134,7 @@ void main() {
 				worldNormal = CalculateWaterNormal(tangentPos);
 			#endif
 
-			#ifndef RAYTRACED_REFRACTION
-				gbufferOut1.xy = worldNormal.xy * 0.5 + 0.5;
-			#endif
 			worldNormal = tbnMatrix * worldNormal;
-		#endif
-
-		#ifdef RAYTRACED_REFRACTION
-			gbufferOut0.z = Packup2x8U(OctEncodeUnorm(worldNormal));
 		#endif
 
 		// Water normal clamp
@@ -162,10 +152,10 @@ void main() {
 		#else
 			worldNormal = tbnMatrix[2];
 		#endif
-		gbufferOut0.z = Packup2x8U(OctEncodeUnorm(worldNormal));
-
 		gbufferOut1 = albedo;
 	}
+
+	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(worldNormal));
 
 	//==// Translucent lighting //================================================================//
 

@@ -118,9 +118,6 @@ void main() {
 			WavePixelData wave = physics_wavePixel(physics_localPosition.xz, physics_localWaviness, physics_iterationsNormal, physics_gameTime);
 
 			worldNormal = wave.normal;
-			#ifndef RAYTRACED_REFRACTION
-				gbufferOut1.xy = worldNormal.xy * 0.5 + 0.5;
-			#endif
 		#else
 			mat3 tbnMatrix = ConstructTBN(flatNormal);
 
@@ -132,26 +129,17 @@ void main() {
 				worldNormal = CalculateWaterNormal(tangentPos);
 			#endif
 
-			#ifndef RAYTRACED_REFRACTION
-				gbufferOut1.xy = worldNormal.xy * 0.5 + 0.5;
-			#endif
 			worldNormal = tbnMatrix * worldNormal;
-		#endif
-
-		#ifdef RAYTRACED_REFRACTION
-			gbufferOut0.z = Packup2x8U(OctEncodeUnorm(worldNormal));
 		#endif
 
 		// Water normal clamp
 		worldNormal = normalize(worldNormal + flatNormal * inversesqrt(4.0 * abs(dot(flatNormal, worldDir)) + 1e-2));
 	} else {
-		vec4 albedo = vertColor;
-
+		gbufferOut1 = vertColor;
 		worldNormal = flatNormal;
-		gbufferOut0.z = Packup2x8U(OctEncodeUnorm(worldNormal));
-
-		gbufferOut1 = albedo;
 	}
+
+	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(worldNormal));
 
 	//==// Translucent lighting //================================================================//
 
