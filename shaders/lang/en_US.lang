@@ -184,7 +184,6 @@ option.WATER_ABSORPTION_B=Water Absorption §1Blue
 option.WATER_FOG_DENSITY=Water Fog Density
 option.WATER_REFRACT_IOR=Water Refract IOR
 
-option.TRANSLUCENT_REFLECTION_BLEND=Translucent Reflection Blend
 option.TRANSLUCENT_ROUGHNESS=Translucent Roughness
 option.GLASS_REFRACT_IOR=Glass Refract IOR
 

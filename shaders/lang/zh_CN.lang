@@ -184,7 +184,6 @@ option.WATER_ABSORPTION_B=水体吸收系数-§1蓝
 option.WATER_FOG_DENSITY=水雾密度
 option.WATER_REFRACT_IOR=水体折射率
 
-option.TRANSLUCENT_REFLECTION_BLEND=半透明反射混合
 option.TRANSLUCENT_ROUGHNESS=半透明粗糙度
 option.GLASS_REFRACT_IOR=玻璃折射率
 

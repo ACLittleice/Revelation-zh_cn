@@ -52,7 +52,7 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
 
         float sampleDepth = loadDepthMacro(ivec2(rayPos.xy));
         #if defined DISTANT_HORIZONS
-            if (sampleDepth > 0.999999) sampleDepth = ViewToScreenDepth(ScreenToViewDepthDH(loadDepthMacroDH(ivec2(rayPos.xy))));
+            if (sampleDepth > 1.0 - EPS) sampleDepth = ViewToScreenDepth(ScreenToViewDepthDH(loadDepthMacroDH(ivec2(rayPos.xy))));
         #endif
 
 		float difference = rayPos.z - sampleDepth;
@@ -75,7 +75,7 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
 
             float sampleDepth = loadDepthMacro(ivec2(rayPos.xy));
             #if defined DISTANT_HORIZONS
-                if (sampleDepth > 0.999999) sampleDepth = ViewToScreenDepth(ScreenToViewDepthDH(loadDepthMacroDH(ivec2(rayPos.xy))));
+                if (sampleDepth > 1.0 - EPS) sampleDepth = ViewToScreenDepth(ScreenToViewDepthDH(loadDepthMacroDH(ivec2(rayPos.xy))));
             #endif
 
             rayPos += rayStep * (step(rayPos.z, sampleDepth) * 2.0 - 1.0);
@@ -111,7 +111,7 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
         if (clamp(rayPos.xy, vec2(0.0), viewSize) != rayPos.xy) break;
 
         #ifndef REAL_SKY_REFLECTIONS
-            if (rayPos.z > 0.999999) break;
+            if (rayPos.z > 1.0 - EPS) break;
         #endif
 
         float sampleDepth = loadDepthMacroDH(ivec2(rayPos.xy));

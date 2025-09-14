@@ -95,7 +95,7 @@ void main() {
 
 	float depthMax = loadDepth2(cloudTexel);
 	#if defined DISTANT_HORIZONS
-		if (depthMax > 0.999999) depthMax = loadDepth0DH(cloudTexel);
+		if (depthMax > 1.0 - EPS) depthMax = loadDepth0DH(cloudTexel);
 	#endif
 
 	#ifdef CLOUD_CBR_ENABLED

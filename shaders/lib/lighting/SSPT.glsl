@@ -31,7 +31,7 @@ vec3 SampleRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in vec3 r
 			float sampleDepthLinear = ScreenToViewDepth(sampleDepth);
 			float traceDepthLinear = ScreenToViewDepth(rayPos.z);
 			#if defined DISTANT_HORIZONS
-				if (sampleDepth > 0.999999) sampleDepthLinear = ScreenToViewDepthDH(loadDepth0DH(ivec2(rayPos.xy)));
+				if (sampleDepth > 1.0 - EPS) sampleDepthLinear = ScreenToViewDepthDH(loadDepth0DH(ivec2(rayPos.xy)));
 			#endif
 
 			if (traceDepthLinear - sampleDepthLinear > 0.2 * traceDepthLinear) return vec3(rayPos.xy, sampleDepth);

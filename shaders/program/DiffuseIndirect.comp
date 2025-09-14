@@ -67,7 +67,7 @@ void main() {
 	float depth = GetClosestDepth(currentTexel);
 	// float depth = loadDepth0(currentTexel);
 	#if defined DISTANT_HORIZONS
-		bool dhTerrainMask = depth > 0.999999;
+		bool dhTerrainMask = depth > 1.0 - EPS;
 		if (dhTerrainMask) depth = loadDepth0DH(currentTexel);
 	#endif
 

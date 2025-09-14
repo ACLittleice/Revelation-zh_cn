@@ -87,11 +87,7 @@ const ivec2 skyViewRes = ivec2(256, 128);
 
 	#define GLASS_REFRACT_IOR 1.5 // [0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5.0 7.0 10.0 15.0]
 
-	// #define TRANSLUCENT_REFLECTION_BLEND // Enables translucent reflection blending
 	#define TRANSLUCENT_ROUGHNESS 0.005 // Roughness of translucents. [0.0 0.0005 0.001 0.002 0.003 0.004 0.005 0.006 0.007 0.008 0.009 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
-
-	#ifdef TRANSLUCENT_REFLECTION_BLEND
-	#endif
 
 	const vec3 waterAbsorption = vec3(WATER_ABSORPTION_R, WATER_ABSORPTION_G, WATER_ABSORPTION_B) * WATER_FOG_DENSITY;
 	const vec3 waterScattering = vec3(0.015) * WATER_FOG_DENSITY;

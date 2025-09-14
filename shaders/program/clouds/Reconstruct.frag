@@ -196,7 +196,7 @@ void main() {
     ivec2 screenTexel = ivec2(gl_FragCoord.xy);
 	float depth = loadDepth2(screenTexel);
 	#if defined DISTANT_HORIZONS
-		if (depth > 0.999999) depth = loadDepth0DH(screenTexel);
+		if (depth > 1.0 - EPS) depth = loadDepth0DH(screenTexel);
 	#endif
 
 	if (depth > 1.0 - EPS) {

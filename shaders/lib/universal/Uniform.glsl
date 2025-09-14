@@ -11,6 +11,7 @@ uniform usampler2D colortex7;
 uniform sampler2D colortex8;
 uniform sampler2D colortex9;
 uniform sampler2D colortex10;
+uniform sampler2D colortex12;
 uniform usampler2D colortex13;
 uniform sampler2D colortex14;
 uniform sampler2D colortex15;
@@ -18,6 +19,8 @@ uniform sampler2D colortex15;
 uniform sampler2D depthtex0;
 uniform sampler2D depthtex1;
 uniform sampler2D depthtex2;
+
+uniform sampler2D waterDepthTex;
 
 uniform sampler3D stbnVec1Tex;
 uniform sampler3D stbnVec2Tex;
