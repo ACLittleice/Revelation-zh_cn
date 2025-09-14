@@ -85,8 +85,12 @@ void main() {
 		}
 	#endif
 
-	float viewDistance = length(viewPos);
+	float viewPosDot = sdot(viewPos);
+	float viewDistance = inversesqrt(viewPosDot); // Inverse distance
 	float transparentDepth = distance(viewPos, sViewPos);
+
+	float LdotV = dot(viewLightVector, viewPos) * viewDistance;
+	viewDistance *= viewPosDot; // Real distance
 
 	vec2 refractedCoord = screenCoord;
 	ivec2 refractedTexel = screenTexel;
@@ -125,8 +129,6 @@ void main() {
 
 	vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
 	vec3 worldDir = normalize(worldPos);
-
-	float LdotV = dot(worldLightVector, worldDir);
 
 	if (depth < 1.0 || waterMask) {
 		worldPos += gbufferModelViewInverse[3].xyz;
