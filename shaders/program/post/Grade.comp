@@ -40,7 +40,7 @@ uniform sampler2D colortex0; // Motion blur output
 uniform sampler2D colortex1; // TAA output
 uniform sampler2D colortex4; // Bloom tiles
 uniform sampler2D colortex6; // Rain alpha
-uniform sampler2D colortex8; // Bloomy fog mask
+uniform sampler2D colortex12; // Bloomy fog mask
 
 uniform sampler2D skyViewTex;
 
@@ -92,7 +92,7 @@ void CombineBloomAndFog(inout vec3 scene, in ivec2 texel, in float exposure) {
 	scene = mix(scene, bloomData, bloomIntensity);
 
 	#ifdef BLOOMY_FOG
-		float mask = texelFetch(colortex8, texel, 0).x;
+		float mask = texelFetch(colortex12, texel, 0).x;
 		scene = mix(bloomData, scene, mix(1.0, saturate(mask), BLOOMY_FOG_INTENSITY));
 	#endif
 

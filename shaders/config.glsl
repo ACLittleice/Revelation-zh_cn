@@ -70,11 +70,11 @@
 	|	colortex5	|   r11f_g11f_b10f  |	256, 256   	|	Sky-View LUT
 	|	colortex6	|   rgba8           |	Full res  	|	Solid albedo, rain alpha
 	|	colortex7	|   rgba16ui        |	Full res  	|	Gbuffer data 0
-	|	colortex8	|   rgba8           |	Full res  	|	Gbuffer data 1 -> Bloomy fog mask
+	|	colortex8	|   rgba8           |	Full res  	|	Gbuffer data 1
 	|	colortex9	|   rgba16f     	|	Full res	|	Cloud history
 	|	colortex10	|   r8              |	512, 512   	|	Cloud shadow map
 	|	colortex11	|   rgba32ui        |	Half res  	|	Volumetric fog, linear depth
-	|	colortex12	|   r16          	|	Full res	|	Water data
+	|	colortex12	|   r16          	|	Full res	|	Water data -> Bloomy fog mask
 	|	colortex13	|   r8i	        	|	Full res  	|	Cloud frame index
 	|	colortex14	|   rg16            |	Full res	|	Variance history
 	|	colortex15	|   	           	|				|	Unused

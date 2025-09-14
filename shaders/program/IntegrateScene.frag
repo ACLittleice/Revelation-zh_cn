@@ -19,7 +19,7 @@
 
 //======// Output //==============================================================================//
 
-/* RENDERTARGETS: 0,8 */
+/* RENDERTARGETS: 0,12 */
 layout (location = 0) out vec3 sceneOut;
 layout (location = 1) out float bloomyFogMask;
 
