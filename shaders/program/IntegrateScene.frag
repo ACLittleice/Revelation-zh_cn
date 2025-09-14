@@ -85,12 +85,8 @@ void main() {
 		}
 	#endif
 
-	float viewPosDot = sdot(viewPos);
-	float viewDistance = inversesqrt(viewPosDot); // Inverse distance
+	float viewDistance = length(viewPos);
 	float transparentDepth = distance(viewPos, sViewPos);
-
-	float LdotV = dot(viewLightVector, viewPos) * viewDistance;
-	viewDistance *= viewPosDot; // Real distance
 
 	vec2 refractedCoord = screenCoord;
 	ivec2 refractedTexel = screenTexel;
@@ -98,10 +94,13 @@ void main() {
 
 	// Process refraction
 	if (materialID == 2u || waterMask) {
-		vec3 viewNormal = mat3(gbufferModelView) * OctDecodeUnorm(Unpack2x8U(gbufferData0.z));
+		vec3 viewNormal = mat3(gbufferModelView) * FetchWorldNormal(gbufferData0.w);
+
 		#ifdef RAYTRACED_REFRACTION
 			refractedCoord = CalculateRefractedCoord(waterMask, viewPos, viewNormal, screenPos);
 		#else
+			vec3 viewFlatNormal = mat3(gbufferModelView) * FetchFlatNormal(gbufferData0);
+			viewNormal -= float(waterMask) * viewFlatNormal; // Fix water refraction artifacts
 			refractedCoord = CalculateRefractedCoord(waterMask, viewPos, viewNormal, screenPos, transparentDepth);
 		#endif
 		refractedTexel = uvToTexel(refractedCoord);
@@ -129,6 +128,7 @@ void main() {
 
 	vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
 	vec3 worldDir = normalize(worldPos);
+	float LdotV = dot(worldLightVector, worldDir);
 
 	if (depth < 1.0 || waterMask) {
 		worldPos += gbufferModelViewInverse[3].xyz;

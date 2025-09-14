@@ -232,10 +232,11 @@ vec2 sampleVogelDisk(in uint idx, in uint num, in float phi) {
     return cossin(idx * goldenAngle + phi) * r;
 }
 
-vec3 fastRefract(in vec3 dir, in vec3 normal, in float eta) {
-    float NdotD = dot(normal, dir);
-    float k = 1.0 - eta * eta * oms(NdotD * NdotD);
-    if (k < 0.0) return vec3(0.0);
+// https://developer.download.nvidia.cn/cg/refract.html
+vec3 refract(in vec3 i, in vec3 n, in float eta) {
+    float cosi = -dot(i, n);
+    float cost2 = 1.0 - eta * eta * oms(cosi * cosi);
+    if (cost2 < 0.0) return vec3(0.0);
 
-    return dir * eta - normal * (sqrt(k) + NdotD * eta);
+    return eta * i + (eta * cosi - sqrt(abs(cost2))) * n;
 }

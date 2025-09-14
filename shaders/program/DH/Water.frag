@@ -9,7 +9,7 @@
 
 /* RENDERTARGETS: 1,7,8 */
 layout (location = 0) out vec4 lightingOut;
-layout (location = 1) out uvec3 gbufferOut0;
+layout (location = 1) out uvec4 gbufferOut0;
 layout (location = 2) out vec4 gbufferOut1;
 
 //======// Uniform //=============================================================================//
@@ -134,12 +134,14 @@ void main() {
 
 		// Water normal clamp
 		worldNormal = normalize(worldNormal + flatNormal * inversesqrt(4.0 * abs(dot(flatNormal, worldDir)) + 1e-2));
+
+		gbufferOut0.z = Packup2x8U(OctEncodeUnorm(flatNormal));
 	} else {
 		gbufferOut1 = vertColor;
 		worldNormal = flatNormal;
 	}
 
-	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(worldNormal));
+	gbufferOut0.w = Packup2x8U(OctEncodeUnorm(worldNormal));
 
 	//==// Translucent lighting //================================================================//
 

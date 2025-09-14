@@ -25,7 +25,7 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 	#include "/lib/water/WaterWave.glsl"
 	vec3 CalculateWaterCaustics(in vec3 shadowScreenPos, in float waterDepth) {
 		vec3 waveNormal = OctDecodeUnorm(texture(shadowcolor1, shadowScreenPos.xy).xy);
-		vec3 refractDir = fastRefract(vec3(0.0, 1.0, 0.0), waveNormal, 1.0 / WATER_REFRACT_IOR);
+		vec3 refractDir = refract(vec3(0.0, 1.0, 0.0), waveNormal, 1.0 / WATER_REFRACT_IOR);
 
 		vec3 projectPos = vec3(0.0, 1.0, 0.0) - refractDir * rcp(refractDir.y);
 		return saturate(1.0 - 64.0 * sdot(projectPos)) * exp2(-rLOG2 * waterExtinction * max(waterDepth, 4.0));
@@ -56,7 +56,7 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 		vec3 shadowPos = shadowStart + shadowStep * dither;
 
 		vec3 stepTransmittance = exp2(-rLOG2 * waterExtinction * stepLength);
-		// vec3 lightVector = fastRefract(worldLightVector, vec3(0.0, -1.0, 0.0), 1.0 / WATER_REFRACT_IOR);
+		// vec3 lightVector = refract(worldLightVector, vec3(0.0, -1.0, 0.0), 1.0 / WATER_REFRACT_IOR);
 		vec3 transmittance = vec3(1.0);
 
 		vec3 scatteringSun = vec3(0.0);

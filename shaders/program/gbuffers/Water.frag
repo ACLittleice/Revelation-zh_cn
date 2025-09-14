@@ -7,7 +7,7 @@
 
 /* RENDERTARGETS: 1,7,8 */
 layout (location = 0) out vec4 lightingOut;
-layout (location = 1) out uvec3 gbufferOut0;
+layout (location = 1) out uvec4 gbufferOut0;
 layout (location = 2) out vec4 gbufferOut1;
 
 //======// Uniform //=============================================================================//
@@ -139,6 +139,8 @@ void main() {
 
 		// Water normal clamp
 		worldNormal = normalize(worldNormal + tbnMatrix[2] * inversesqrt(4.0 * abs(dot(tbnMatrix[2], worldDir)) + 1e-2));
+
+		gbufferOut0.z = Packup2x8U(OctEncodeUnorm(tbnMatrix[2]));
 	} else {
 		vec4 albedo = texture(tex, texCoord) * vertColor;
 
@@ -155,7 +157,7 @@ void main() {
 		gbufferOut1 = albedo;
 	}
 
-	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(worldNormal));
+	gbufferOut0.w = Packup2x8U(OctEncodeUnorm(worldNormal));
 
 	//==// Translucent lighting //================================================================//
 
