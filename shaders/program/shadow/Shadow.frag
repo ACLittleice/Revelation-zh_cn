@@ -30,7 +30,7 @@ in vec2 texCoord;
 #endif
 
 // in vec3 viewPos;
-in vec3 vectorData; // Minecraf position in water, vertColor in other materials
+in vec3 vectorData; // Minecraft position in water, vertColor in other materials
 
 flat in uint isWater;
 
@@ -51,7 +51,7 @@ void main() {
 	if (isWater == 1u) {
 		vec3 waveNormal = CalculateWaterNormal(vectorData.xz - vectorData.y);
 		shadowcolor1Out.xy = OctEncodeUnorm(waveNormal.xzy);
-		shadowcolor1Out.w = vectorData.y * rcp(512.0) + 0.25;
+		shadowcolor1Out.w = 1.0;
 	} else {
 		vec4 albedo = texture(tex, texCoord);
 		if (albedo.a < 0.1) discard;
@@ -66,6 +66,7 @@ void main() {
 		#ifdef RSM_ENABLED
 			shadowcolor1Out.xy = OctEncodeUnorm(flatNormal);
 		#endif
+		shadowcolor1Out.w = 0.0;
 	}
 
 	#ifdef RSM_ENABLED

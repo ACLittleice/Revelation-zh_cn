@@ -12,7 +12,6 @@ out vec2 lightmap;
 flat out uint materialID;
 
 out vec3 worldPos;
-out vec3 viewPos;
 
 //======// Attribute //===========================================================================//
 
@@ -57,9 +56,9 @@ void main() {
 		vec4 finalPosition = vec4(gl_Vertex.x, gl_Vertex.y + physics_waveHeight(gl_Vertex.xz, PHYSICS_ITERATIONS_OFFSET, physics_localWaviness, physics_gameTime), gl_Vertex.z, gl_Vertex.w);
 		// pass this to the fragment shader to fetch the texture there for per fragment normals
 		physics_localPosition = finalPosition.xyz;
-		viewPos = transMAD(gl_ModelViewMatrix, finalPosition.xyz);
+		vec3 viewPos = transMAD(gl_ModelViewMatrix, finalPosition.xyz);
 	#else
-		viewPos = transMAD(gl_ModelViewMatrix, gl_Vertex.xyz);
+		vec3 viewPos = transMAD(gl_ModelViewMatrix, gl_Vertex.xyz);
 	#endif
 	worldPos = transMAD(gbufferModelViewInverse, viewPos);
 

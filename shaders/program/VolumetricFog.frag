@@ -67,7 +67,7 @@ void main() {
 
 	vec3 viewPos = ScreenToViewSpace(screenPos);
 	#if defined DISTANT_HORIZONS
-		if (screenPos.z > 0.999999) {
+		if (screenPos.z > 1.0 - EPS) {
 			screenPos.z = loadDepth0DH(screenTexel);
 			viewPos = ScreenToViewSpaceDH(screenPos);
 		}

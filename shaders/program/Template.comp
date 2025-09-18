@@ -42,6 +42,6 @@ uniform sampler2D sampler2;
 //======// Main //================================================================================//
 void main() {
 	ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
-    vec2 texCoord = texelToUv(gl_GlobalInvocationID.xy);
+    vec2 texCoord = texelToUv(texel);
 	imageStore(colorimg0, texel, vec4(imageLoad(colorimg1, texel).rgb, 1.0));
 }

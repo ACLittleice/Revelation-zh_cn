@@ -1,5 +1,6 @@
 
-#define PCF_SAMPLES 16 // [4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 48 64]
+#define PCSS_SEARCH_SAMPLES 8 // [4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 48 64]
+#define PCSS_FILTER_SAMPLES 16 // [4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 48 64]
 
 const float shadowDistanceRenderMul = 1.0; // [-1.0 1.0]
 const float realShadowMapRes = float(shadowMapResolution) * MC_SHADOW_QUALITY;
@@ -31,109 +32,97 @@ uniform sampler2D shadowcolor0;
 uniform sampler2D shadowcolor1;
 
 float BlockerSearch(in vec3 shadowScreenPos, in float dither, in float searchScale) {
-	float searchDepth = 0.0;
+	float blockerDepth = 0.0;
 	float sumWeight = 0.0;
 
 	vec2 searchRadius = searchScale * diagonal2(shadowProjection);
 
-	// dither = TentFilter(dither);
-	vec2 dir = cossin(dither * TAU) * searchRadius;
-	const vec2 angleStep = cossin(TAU * 0.125);
-	const mat2 rot = mat2(angleStep, -angleStep.y, angleStep.x);
-
-	for (uint i = 0u; i < 8u; ++i, dir *= rot) {
-		float radius = (float(i) + dither) * 0.125;
-		vec2 sampleCoord = shadowScreenPos.xy + dir * radius;
+	for (uint i = 0u; i < PCSS_SEARCH_SAMPLES; ++i) {
+		vec2 sampleCoord = shadowScreenPos.xy + sampleVogelDisk(i, PCSS_SEARCH_SAMPLES, dither) * searchRadius;
 
 		float sampleDepth = texelFetch(shadowtex0, ivec2(sampleCoord * realShadowMapRes), 0).x;
 		float weight = step(sampleDepth, shadowScreenPos.z);
 
-		searchDepth += sampleDepth * weight;
+		blockerDepth += sampleDepth * weight;
 		sumWeight += weight;
 	}
 
-	searchDepth *= 1.0 / sumWeight;
-	searchDepth = clamp(2.0 * (shadowScreenPos.z - searchDepth) / searchDepth, 0.025, 0.25);
+	blockerDepth *= 1.0 / sumWeight;
+	blockerDepth = clamp(2.0 * (shadowScreenPos.z - blockerDepth) / blockerDepth, 0.025, 0.25);
 
-	return searchDepth;
+	return blockerDepth;
 }
 
 vec2 BlockerSearchSSS(in vec3 shadowScreenPos, in float dither, in float searchScale) {
-	float searchDepth = 0.0;
+	float blockerDepth = 0.0;
 	float sumWeight = 0.0;
 	float sssDepth = 0.0;
 
 	vec2 searchRadius = searchScale * diagonal2(shadowProjection);
 
-	// dither = TentFilter(dither);
-	vec2 dir = cossin(dither * TAU) * searchRadius;
-	const vec2 angleStep = cossin(TAU * 0.125);
-	const mat2 rot = mat2(angleStep, -angleStep.y, angleStep.x);
-
-	for (uint i = 0u; i < 8u; ++i, dir *= rot) {
-		float radius = (float(i) + dither) * 0.125;
-		vec2 sampleCoord = shadowScreenPos.xy + dir * radius;
+	for (uint i = 0u; i < PCSS_SEARCH_SAMPLES; ++i) {
+		vec2 sampleCoord = shadowScreenPos.xy + sampleVogelDisk(i, PCSS_SEARCH_SAMPLES, dither) * searchRadius;
 
 		float sampleDepth = texelFetch(shadowtex0, ivec2(sampleCoord * realShadowMapRes), 0).x;
 		float weight = step(sampleDepth, shadowScreenPos.z);
 
 		sssDepth += max0(shadowScreenPos.z - sampleDepth);
-		searchDepth += sampleDepth * weight;
+		blockerDepth += sampleDepth * weight;
 		sumWeight += weight;
 	}
 
-	searchDepth *= 1.0 / sumWeight;
-	searchDepth = clamp(2.0 * (shadowScreenPos.z - searchDepth) / searchDepth, 0.025, 0.25);
+	blockerDepth *= 1.0 / sumWeight;
+	blockerDepth = clamp(2.0 * (shadowScreenPos.z - blockerDepth) / blockerDepth, 0.025, 0.25);
 
-	return vec2(searchDepth, sssDepth * shadowProjectionInverse[2].z);
+	return vec2(blockerDepth, sssDepth * rcp(float(PCSS_SEARCH_SAMPLES)) * shadowProjectionInverse[2].z);
 }
 
 vec3 CalculateWaterCaustics(in vec3 worldPos, in float waterDepth, in float dither) {
 	vec3 surfacePos = worldPos + vec3(0.0, 1.0, 0.0);
 
 	float caustics = 0.0;
-	for (uint i = 0u; i < 16u; ++i) {
+	for (int i = 0; i < 16; ++i) {
 		vec3 samplePos = surfacePos;
-		vec2 rand = fract(R2(i) + dither);
+		vec2 rand = R2(i, vec2(dither)); // TODO: denoise
 		samplePos.xz += sincos(rand.x * TAU) * approxSqrt(rand.y) * 0.15;
 
 		vec2 sampleCoord = WorldToShadowScreenSpace(samplePos - vec3(0.0, 1.0, 0.0)).xy;
 		vec3 waveNormal = OctDecodeUnorm(texture(shadowcolor1, sampleCoord).xy);
 
-		vec3 refractDir = fastRefract(vec3(0.0, 1.0, 0.0), waveNormal, 1.0 / WATER_REFRACT_IOR);
+		vec3 refractDir = refract(vec3(0.0, 1.0, 0.0), waveNormal, 1.0 / WATER_REFRACT_IOR);
 		vec3 refractedPos = samplePos - refractDir * rcp(refractDir.y);
 
 		caustics += saturate(1.0 - 512.0 * sdot(worldPos - refractedPos));
 	}
 
-	return caustics * exp2(-rLOG2 * WATER_FOG_DENSITY * waterDepth * waterExtinction);
+	return caustics * exp2(-rLOG2 * waterExtinction * waterDepth);
 }
 
 vec3 PercentageCloserFilter(in vec3 shadowScreenPos, in vec3 worldPos, in float dither, in float penumbraScale) {
-	const float rSteps = 1.0 / float(PCF_SAMPLES);
+	const float rSteps = 1.0 / float(PCSS_FILTER_SAMPLES);
 
 	vec2 penumbraRadius = penumbraScale * diagonal2(shadowProjection);
 
-	vec2 dir = cossin(dither * TAU) * penumbraRadius;
-	const vec2 angleStep = cossin(TAU * rSteps);
-	const mat2 rot = mat2(angleStep, -angleStep.y, angleStep.x);
-
 	vec3 result = vec3(0.0);
-	vec2 causticData = vec2(0.0);
+	vec2 waterData = vec2(0.0);
 
-	for (uint i = 0u; i < PCF_SAMPLES; ++i, dir *= rot) {
-		float radius = (float(i) + dither) * rSteps;
-		vec2 sampleCoord = shadowScreenPos.xy + dir * radius * inversesqrt(radius);
+	for (uint i = 0u; i < PCSS_FILTER_SAMPLES; ++i) {
+		vec2 offset = sampleVogelDisk(i, PCSS_FILTER_SAMPLES, dither) * penumbraRadius;
+		vec2 sampleCoord = shadowScreenPos.xy + offset;
 
 		float sampleDepth1 = textureLod(shadowtex1, vec3(sampleCoord, shadowScreenPos.z), 0).x;
 
 	#ifdef COLORED_SHADOWS
 		ivec2 sampleTexel = ivec2(sampleCoord * realShadowMapRes);
-		float sampleDepth0 = step(shadowScreenPos.z, texelFetch(shadowtex0, sampleTexel, 0).x);
-		if (sampleDepth0 != sampleDepth1) {
-			float waterDepth = texelFetch(shadowcolor1, sampleTexel, 0).w;
-			if (waterDepth > EPS) causticData += vec2(waterDepth, 1.0);
-			else result += pow4(texelFetch(shadowcolor0, sampleTexel, 0).rgb) * sampleDepth1;
+		float sampleDepth0 = texelFetch(shadowtex0, sampleTexel, 0).x;
+
+		if (step(shadowScreenPos.z, sampleDepth0) != sampleDepth1) {
+			float waterMask = texelFetch(shadowcolor1, sampleTexel, 0).w;
+			if (waterMask > EPS) {
+				waterData += vec2(sampleDepth0 - shadowScreenPos.z, 1.0);
+			} else {
+				result += pow4(texelFetch(shadowcolor0, sampleTexel, 0).rgb) * sampleDepth1;
+			}
 		} else
 	#endif
 		result += sampleDepth1;
@@ -142,12 +131,12 @@ vec3 PercentageCloserFilter(in vec3 shadowScreenPos, in vec3 worldPos, in float 
 	result *= rSteps;
 
 	#ifdef WATER_CAUSTICS
-		if (causticData.y > EPS) {
-			causticData.x /= causticData.y;
+		if (waterData.y > EPS) {
+			waterData.x /= waterData.y;
 
-			float waterDepth = max0(causticData.x * 512.0 - 128.0 - worldPos.y - eyeAltitude);
+			float waterDepth = waterData.x * shadowProjectionInverse[2].z * 5.0;
 			vec3 caustics = CalculateWaterCaustics(worldPos, waterDepth, dither);
-			result += causticData.y * rSteps * (caustics - result);
+			result += waterData.y * rSteps * (caustics - result);
 		}
 	#endif
 

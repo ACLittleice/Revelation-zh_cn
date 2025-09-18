@@ -5,16 +5,14 @@
 
 //======// Output //==============================================================================//
 
-/* RENDERTARGETS: 6,7 */
+/* RENDERTARGETS: 6,7,8 */
 layout (location = 0) out vec4 albedoOut;
 layout (location = 1) out uvec4 gbufferOut0;
+layout (location = 2) out vec4 gbufferOut1;
 
 #if defined PARALLAX && defined PARALLAX_SHADOW && !defined PARALLAX_DEPTH_WRITE
-/* RENDERTARGETS: 6,7,8 */
-layout (location = 2) out vec3 gbufferOut1;
-#elif defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-/* RENDERTARGETS: 6,7,8 */
-layout (location = 2) out vec2 gbufferOut1;
+/* RENDERTARGETS: 6,7,8,0 */
+layout (location = 3) out float parallaxShadowOut;
 #endif
 
 //======// Input //===============================================================================//
@@ -128,12 +126,12 @@ void main() {
 
 			DecodeNormalTex(normalTex.xyz);
 
-			if (offsetCoord.z < 0.999 && parallaxFade > 1e-5) {
+			if (offsetCoord.z < 0.999 && parallaxFade > EPS) {
 				#ifdef PARALLAX_DEPTH_WRITE
 					gl_FragDepth = ViewToScreenDepth(ScreenToViewDepth(gl_FragDepth) - oms(offsetCoord.z) * PARALLAX_DEPTH);
 				#elif defined PARALLAX_SHADOW
 					if (dot(tbnMatrix[2], worldLightVector) > 1e-3) {
-						gbufferOut1.z = CalculateParallaxShadow(worldLightVector * tbnMatrix, offsetCoord, dither) * parallaxFade;
+						parallaxShadowOut = CalculateParallaxShadow(worldLightVector * tbnMatrix, offsetCoord, dither) * parallaxFade;
 					}
 				#endif
 				#ifdef PARALLAX_BASED_NORMAL
@@ -183,12 +181,9 @@ void main() {
 
 	gbufferOut0.x = PackupDithered2x8U(lightmap, dither);
 	gbufferOut0.y = materialID;
-
 	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(flatNormal));
-	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-		vec4 specularTex = ReadTexture(specular);
 
-		gbufferOut1.x = Packup2x8(specularTex.rg);
-		gbufferOut1.y = Packup2x8(specularTex.ba);
+	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+		gbufferOut1 = ReadTexture(specular);
 	#endif
 }

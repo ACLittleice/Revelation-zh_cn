@@ -129,12 +129,12 @@ void main() {
 	float frameCurve = curve(saturate(frameIndex * rcp(16.0)));
 
 	float variance = CalculateVariance(ivec2(gl_LocalInvocationID.xy + padRadius));
-	const float invSigmaL = 0.25 * float(ATROUS_FILTER_SIZE);
-	float variancePhi = -invSigmaL * inversesqrt(variance + EPS);
+	const float invSigmaL = 4.0 * log2(float(ATROUS_FILTER_SIZE));
+	float variancePhi = -invSigmaL / (variance + EPS);
 	variancePhi *= frameCurve;
 
-	const float sigmaZ = -2.0 * inversesqrt(float(ATROUS_FILTER_SIZE));
-	const float sigmaN = 48.0;
+	float sigmaZ = -4.0 * inversesqrt(float(ATROUS_FILTER_SIZE)) * frameCurve;
+	float sigmaN = 48.0 * frameCurve;
 
     vec3 worldNormal = OctDecodeSnorm(normalDepthData.xy);
 
@@ -155,15 +155,15 @@ void main() {
 		// wL = exp(−|L0 − L1| / (σLvar + ε))
 		float logWeightL = abs(sampleLuma - centerLuma) * variancePhi;
 
-		float weight = exp2(logWeightN + logWeightZ + logWeightL);
+		float weight = saturate(exp2(logWeightN + logWeightZ + logWeightL));
 
-		sampleColVar.a *= weight; // Variance squaring
+		// sampleColVar.a *= weight; // Variance squaring
 		filteredColVar += sampleColVar * weight;
 		sumWeight += weight;
 	}
 
 	sumWeight = rcp(sumWeight);
 	filteredColVar *= sumWeight;
-	filteredColVar.a *= sumWeight; // Variance squaring
+	// filteredColVar.a *= sumWeight; // Variance squaring
 	imageStore(colorimg3, texel, filteredColVar);
 }

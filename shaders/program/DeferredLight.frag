@@ -20,16 +20,12 @@
 
 //======// Output //==============================================================================//
 
-/* RENDERTARGETS: 0,1 */
-layout (location = 0) out vec3 sceneOut;
-layout (location = 1) out vec4 reflectionOut;
-
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-/* RENDERTARGETS: 0,1,8 */
-layout (location = 2) out vec2 specularOut;
-#endif
+/* RENDERTARGETS: 0 */
+out vec3 sceneOut;
 
 //======// Uniform //=============================================================================//
+
+writeonly uniform image2D colorimg8;
 
 uniform sampler3D atmosCombinedLut;
 uniform sampler2D cloudOriginTex;
@@ -55,16 +51,12 @@ uniform sampler2D cloudOriginTex;
 #include "/lib/atmosphere/PrecomputedAtmosphericScattering.glsl"
 #include "/lib/atmosphere/Celestial.glsl"
 
-#ifdef AURORA
-	#include "/lib/atmosphere/Aurora.glsl"
-#endif
-
 #ifdef CLOUD_SHADOWS
 	#include "/lib/atmosphere/clouds/Shadows.glsl"
 #endif
 
-#include "/lib/lighting/Shadows.glsl"
 #include "/lib/lighting/Common.glsl"
+#include "/lib/lighting/Shadows.glsl"
 
 #if AO_ENABLED > 0 && !defined SSPT_ENABLED
 	#include "/lib/lighting/SSAO.glsl"
@@ -72,10 +64,6 @@ uniform sampler2D cloudOriginTex;
 #endif
 
 #include "/lib/SpatialUpscale.glsl"
-
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-	#include "/lib/surface/Reflection.glsl"
-#endif
 
 #ifdef RAIN_PUDDLES
 	#include "/lib/surface/RainPuddle.glsl"
@@ -152,8 +140,7 @@ void main() {
 		vec2 lightmap = Unpack2x8U(gbufferData0.x);
 
 		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-			vec2 specularData = loadGbufferData1(screenTexel).xy;
-			vec4 specularTex = vec4(Unpack2x8(specularData.x), Unpack2x8(specularData.y));
+			vec4 specularTex = loadGbufferData1(screenTexel);
 
 			// Compute rain puddles
 			#ifdef RAIN_PUDDLES
@@ -165,7 +152,7 @@ void main() {
 			#endif
 
 			Material material = GetMaterialData(specularTex);
-			specularOut = specularTex.rg;
+			imageStore(colorimg8, screenTexel, specularTex);
 		#else
 			Material material = Material(1.0, 0.0, 0.0, false, false);
 		#endif
@@ -219,7 +206,7 @@ void main() {
 		// Cloud shadows
 		#ifdef CLOUD_SHADOWS
 			// float cloudShadow = CalculateCloudShadows(worldPos);
-			vec2 cloudShadowCoord = WorldToCloudShadowPos(worldPos) + (dither * 2.0 - 1.0) / textureSize(cloudShadowTex, 0);
+			vec2 cloudShadowCoord = WorldToCloudShadowScreenPos(worldPos).xy + (dither * 2.0 - 1.0) / textureSize(cloudShadowTex, 0);
 			float cloudShadow = textureBicubic(cloudShadowTex, saturate(cloudShadowCoord)).x;
 		#else
 			float cloudShadow = 1.0 - wetness * 0.96;
@@ -256,14 +243,14 @@ void main() {
 					vec2 blockerSearch;
 					// Sub-surface scattering
 					if (doSss) {
-						blockerSearch = BlockerSearchSSS(shadowScreenPos, dither, 0.25 * (1.0 + sssAmount) * distortionFactor);
+						blockerSearch = BlockerSearchSSS(shadowScreenPos, dither, 0.5 * distortionFactor);
 						vec3 subsurfaceScattering = CalculateSubsurfaceScattering(albedo, sssAmount, blockerSearch.y, LdotV);
 
 						// Formula from https://www.alanzucconi.com/2017/08/30/fast-subsurface-scattering-1/
 						// float bssrdf = sqr(saturate(dot(worldDir, worldLightVector + 0.2 * worldNormal))) * 4.0;
 						sceneOut += subsurfaceScattering * sunlightMult * ao;
 					} else {
-						blockerSearch.x = BlockerSearch(shadowScreenPos, dither, 0.25 * distortionFactor);
+						blockerSearch.x = BlockerSearch(shadowScreenPos, dither, 0.5 * distortionFactor);
 					}
 
 					// Shadows
@@ -288,8 +275,10 @@ void main() {
 				#endif
 
 				// Apply parallax shadows
-				#if defined PARALLAX && defined PARALLAX_SHADOW && !defined PARALLAX_DEPTH_WRITE
-					shadow *= oms(loadGbufferData1(screenTexel).z);
+				#ifdef PARALLAX_SHADOW
+					#if defined PARALLAX && !defined PARALLAX_DEPTH_WRITE
+						shadow *= oms(loadSceneColor(screenTexel).x);
+					#endif
 				#endif
 
 				vec3 halfway = normalize(worldLightVector - worldDir);
@@ -317,9 +306,6 @@ void main() {
 			if (lightmap.y > EPS) {
 				// Skylight
 				vec3 skylight = lightningShading;
-				#ifdef AURORA
-					skylight += auroraShading * 8.0;
-				#endif
 				skylight *= 0.02 * (worldNormal.y * 0.5 + 0.5);
 
 				// Spherical harmonics skylight
@@ -385,27 +371,12 @@ void main() {
 		// Minimal ambient light
 		sceneOut += (worldNormal.y * 0.4 + 0.6) * max(MINIMUM_AMBIENT_BRIGHTNESS, 5e-3 * nightVision) * ao;
 
-		// Specular reflections
-		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-			if (material.specularMask) {
-				lightmap.y = remap(0.3, 0.7, lightmap.y);
-
-				reflectionOut = CalculateSpecularReflections(material, worldNormal, screenPos, worldDir, viewPos, lightmap.y, dither);
-
-				// Metallic diffuse elimination
-				#if TEXTURE_FORMAT == 0
-					material.metalness = step(229.5 / 255.0, material.metalness);
-				#endif
-
-				material.metalness *= 0.2 * lightmap.y + 0.8;
-				sceneOut *= oms(material.metalness);
-			} else
-		#endif
-		// Clear buffer
-		reflectionOut = vec4(0.0);
-
 		// Apply albedo
 		sceneOut *= albedo;
+
+		// Metallic diffuse elimination
+		material.metalness *= 0.2 * lightmap.y + 0.8;
+		sceneOut *= oms(material.metalness);
 
 		// Specular highlights
 		sceneOut += specularHighlight;

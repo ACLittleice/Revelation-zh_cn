@@ -1,7 +1,7 @@
 //================================================================================================//
 
 mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) {
-	float fogDensity = WATER_FOG_DENSITY * max(waterDepth, 1.0);
+	float fogDensity = max(waterDepth, 1.0);
 
 	vec3 transmittance = exp2(-rLOG2 * waterExtinction * fogDensity);
 
@@ -25,10 +25,10 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 	#include "/lib/water/WaterWave.glsl"
 	vec3 CalculateWaterCaustics(in vec3 shadowScreenPos, in float waterDepth) {
 		vec3 waveNormal = OctDecodeUnorm(texture(shadowcolor1, shadowScreenPos.xy).xy);
-		vec3 refractDir = fastRefract(vec3(0.0, 1.0, 0.0), waveNormal, 1.0 / WATER_REFRACT_IOR);
+		vec3 refractDir = refract(vec3(0.0, 1.0, 0.0), waveNormal, 1.0 / WATER_REFRACT_IOR);
 
 		vec3 projectPos = vec3(0.0, 1.0, 0.0) - refractDir * rcp(refractDir.y);
-		return saturate(1.0 - 64.0 * sdot(projectPos)) * exp2(-rLOG2 * UW_VF_DENSITY * waterExtinction * max(waterDepth, 4.0));
+		return saturate(1.0 - 64.0 * sdot(projectPos)) * exp2(-rLOG2 * waterExtinction * max(waterDepth, 4.0));
 	}
 
 	mat2x3 RaymarchWaterFog(in vec3 worldPos, in float dither) {
@@ -42,7 +42,7 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 
 		float rSteps = 1.0 / float(steps);
 
-		float stepLength = min(rayLength, 48.0) * rSteps * UW_VF_DENSITY;
+		float stepLength = min(rayLength, 48.0) * rSteps;
 
 		vec3 rayStart = gbufferModelViewInverse[3].xyz,
 			 rayStep  = worldDir * stepLength;
@@ -56,7 +56,7 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 		vec3 shadowPos = shadowStart + shadowStep * dither;
 
 		vec3 stepTransmittance = exp2(-rLOG2 * waterExtinction * stepLength);
-		// vec3 lightVector = fastRefract(worldLightVector, vec3(0.0, -1.0, 0.0), 1.0 / WATER_REFRACT_IOR);
+		// vec3 lightVector = refract(worldLightVector, vec3(0.0, -1.0, 0.0), 1.0 / WATER_REFRACT_IOR);
 		vec3 transmittance = vec3(1.0);
 
 		vec3 scatteringSun = vec3(0.0);
@@ -70,18 +70,14 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 			if (saturate(shadowScreenPos) != shadowScreenPos) continue;
 
 			ivec2 shadowTexel = ivec2(shadowScreenPos.xy * realShadowMapRes);
+			vec3 sampleSunlight = vec3(step(shadowScreenPos.z, texelFetch(shadowtex1, shadowTexel, 0).x));
 
-			float sampleDepth0 = step(shadowScreenPos.z, texelFetch(shadowtex0, shadowTexel, 0).x);
-			vec3 sampleSunlight = vec3(1.0);
-
-			if (sampleDepth0 < 1.0) {
-				sampleSunlight = step(shadowScreenPos.z, texelFetch(shadowtex1, shadowTexel, 0).xxx);
-
-				if (sampleSunlight.x != sampleDepth0) {
-					float waterDepth = max0(texelFetch(shadowcolor1, shadowTexel, 0).w * 512.0 - 128.0 - shadowPos.y - eyeAltitude);
-					if (waterDepth > EPS) {
-						sampleSunlight = CalculateWaterCaustics(shadowScreenPos, waterDepth);
-					}
+			float sampleDepth0 = texelFetch(shadowtex0, shadowTexel, 0).x;
+			if (sampleSunlight.x != step(shadowScreenPos.z, sampleDepth0)) {
+				float waterMask = texelFetch(shadowcolor1, shadowTexel, 0).w;
+				if (waterMask > EPS) {
+					float waterDepth = (sampleDepth0 - shadowScreenPos.z) * shadowProjectionInverse[2].z * 5.0;
+					sampleSunlight = CalculateWaterCaustics(shadowScreenPos, waterDepth);
 				}
 			}
 
@@ -99,7 +95,7 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 		scatteringSun *= oms(wetnessCustom * 0.8) * phase * directIlluminance;
 		vec3 scatteringSky = uniformPhase * skyIlluminance;
 
-		transmittance = exp2(-rLOG2 * waterExtinction * UW_VF_DENSITY * rayLength);
+		transmittance = exp2(-rLOG2 * waterExtinction * rayLength);
 		vec3 scattering = scatteringSun * oms(stepTransmittance) + scatteringSky * oms(transmittance);
 		scattering *= waterScattering / waterExtinction;
 

@@ -54,10 +54,6 @@ uniform sampler3D atmosCombinedLut;
 #include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/PrecomputedAtmosphericScattering.glsl"
 
-#ifdef AURORA
-	#include "/lib/atmosphere/Aurora.glsl"
-#endif
-
 #include "/lib/atmosphere/clouds/Render.glsl"
 
 vec3 ScreenToViewVectorRaw(in vec2 screenCoord) {
@@ -99,7 +95,7 @@ void main() {
 
 	float depthMax = loadDepth2(cloudTexel);
 	#if defined DISTANT_HORIZONS
-		if (depthMax > 0.999999) depthMax = loadDepth0DH(cloudTexel);
+		if (depthMax > 1.0 - EPS) depthMax = loadDepth0DH(cloudTexel);
 	#endif
 
 	#ifdef CLOUD_CBR_ENABLED
@@ -126,6 +122,10 @@ void main() {
 			#endif
 		#endif
 	}
+
+	#ifdef CLOUD_CBR_ENABLED
+		cloudOut.rgb = sRGBToYCoCg(cloudOut.rgb);
+	#endif
 
 	imageStore(cloudOriginImg, screenTexel, cloudOut);
 	imageStore(cloudDepthOriginImg, screenTexel, vec4(cloudDepth));

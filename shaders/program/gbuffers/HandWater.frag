@@ -7,7 +7,7 @@
 
 /* RENDERTARGETS: 7,8 */
 layout (location = 0) out uvec4 gbufferOut0;
-layout (location = 1) out vec2 gbufferOut1;
+layout (location = 1) out vec4 gbufferOut1;
 
 //======// Input //===============================================================================//
 
@@ -55,6 +55,5 @@ void main() {
 		gbufferOut0.w = Packup2x8U(OctEncodeUnorm(tbnMatrix * normalTex));
 	#endif
 
-    gbufferOut1.x = Packup2x8(albedo.rg);
-    gbufferOut1.y = Packup2x8(albedo.ba);
+    gbufferOut1 = albedo;
 }

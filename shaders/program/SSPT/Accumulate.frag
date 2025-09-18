@@ -90,7 +90,7 @@ void TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal) {
             if (clamp(sampleTexel, ivec2(0), texelEnd) == sampleTexel) {
                 vec3 sampleAux = texelFetch(colortex2, sampleTexel + offsetToBR, 0).rgb;
 
-                if (abs((currViewDistance - sampleAux.z) - cameraVelocity) < 0.1 * abs(currViewDistance)) {
+                if (abs((currViewDistance - sampleAux.z) - cameraVelocity) < 0.1 * currViewDistance) {
                     float weight = bilinearWeight[i];
                     weight *= pow8(saturate(dot(OctDecodeSnorm(sampleAux.xy), worldNormal)));
 
@@ -120,7 +120,8 @@ void TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal) {
             indirectCurrent.rgb = indirectHistory.rgb = mix(prevDiffuse.rgb, indirectCurrent.rgb, alpha);
 
             varianceMoments.x *= varianceMoments.x;
-            indirectCurrent.a = max0(varianceMoments.y - varianceMoments.x);
+            indirectCurrent.a = maxEps(varianceMoments.y - varianceMoments.x);
+            indirectCurrent.a *= inversesqrt(indirectCurrent.a);
             return;
         }
     }
@@ -145,6 +146,10 @@ float GetClosestDepth(in ivec2 texel) {
 void main() {
     vec2 currentCoord = gl_FragCoord.xy * viewPixelSize * 2.0;
 
+    indirectCurrent = vec4(vec3(0.0), 1e6);
+    indirectHistory = vec4(0.0);
+    varianceMoments = vec2(0.0);
+
     if (currentCoord.y < 1.0) {
         ivec2 screenTexel = ivec2(gl_FragCoord.xy);
 
@@ -156,16 +161,11 @@ void main() {
                 if (dhTerrainMask) depth = loadDepth0DH(currentTexel);
             #endif
 
-            indirectCurrent = indirectHistory = vec4(vec3(0.0), 1.0);
-            varianceMoments = vec2(0.0);
-
-            if (depth > (1.0 - EPS)) {
-                discard;
-                return;
+            if (depth < 1.0) {
+                vec3 screenPos = vec3(currentCoord, depth);
+                vec3 worldNormal = FetchWorldNormal(currentTexel);
+                TemporalFilter(screenTexel, screenPos, worldNormal);
             }
-            vec3 screenPos = vec3(currentCoord, depth);
-            vec3 worldNormal = FetchWorldNormal(currentTexel);
-            TemporalFilter(screenTexel, screenPos, worldNormal);
         } else {
             ivec2 currentTexel = (screenTexel << 1) - ivec2(viewWidth, 0);
             float depth = loadDepth0(currentTexel);
@@ -174,19 +174,17 @@ void main() {
                 if (dhTerrainMask) depth = loadDepth0DH(currentTexel);
             #endif
 
-            if (depth > (1.0 - EPS)) {
-                discard;
-                return;
-            }
-            vec3 worldNormal = FetchWorldNormal(currentTexel);
-            vec3 screenPos = vec3(currentCoord - vec2(1.0, 0.0), depth);
-            vec3 viewPos = ScreenToViewSpace(screenPos);
-            #if defined DISTANT_HORIZONS
-                if (dhTerrainMask) viewPos = ScreenToViewSpaceDH(screenPos);
-            #endif
-            float viewDistance = length(viewPos);
+            if (depth < 1.0) {
+                vec3 worldNormal = FetchWorldNormal(currentTexel);
+                vec3 screenPos = vec3(currentCoord - vec2(1.0, 0.0), depth);
+                vec3 viewPos = ScreenToViewSpace(screenPos);
+                #if defined DISTANT_HORIZONS
+                    if (dhTerrainMask) viewPos = ScreenToViewSpaceDH(screenPos);
+                #endif
+                float viewDistance = length(viewPos);
 
-            indirectHistory = vec4(OctEncodeSnorm(worldNormal), viewDistance, 0.0);
+                indirectHistory = vec4(OctEncodeSnorm(worldNormal), viewDistance, 0.0);
+            }
         }
     }
 }

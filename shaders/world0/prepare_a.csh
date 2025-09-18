@@ -1,3 +1,3 @@
 #version 450 core
 
-#include "/program/prepare/SkyView.comp"
+#include "/program/prepare/GenSkyView.comp"

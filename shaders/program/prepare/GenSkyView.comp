@@ -42,24 +42,17 @@ uniform sampler3D atmosCombinedLut;
 #include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/PrecomputedAtmosphericScattering.glsl"
 
-#ifdef AURORA
-	#include "/lib/atmosphere/Aurora.glsl"
-#endif
-
 #include "/lib/atmosphere/clouds/Render.glsl"
 #include "/lib/atmosphere/AtmosphericFog.glsl"
 
 //======// Main //================================================================================//
 void main() {
 	ivec2 viewTexel = ivec2(gl_GlobalInvocationID.xy);
-
-	// Read previous frame data
-	vec3 skyViewPrev = texelFetch(skyViewTex, viewTexel, 0).rgb;
-	bool frameUpdate = skyViewPrev.x < EPS || worldTimeChanged;
+	bool frameUpdate = global.exposure.value < EPS || worldTimeChanged;
 
     // Checkerboard render
-	ivec2 offset = checkerboardOffset4x4[frameCounter % 16];
-	if (viewTexel % 4 == offset || frameUpdate) {
+	ivec2 offset = checkerboardOffset2x2[frameCounter % 4];
+	if (viewTexel % 2 == offset || frameUpdate) {
 		// Render sky and transmittance view LUTs
 		vec2 viewCoord = (vec2(gl_GlobalInvocationID.xy) + 0.5) * rcp(skyViewRes);
 		vec3 worldDir = ToSkyViewLutParams(viewCoord);
@@ -67,6 +60,7 @@ void main() {
 
 		// Accumulate
 		float accumFactor = frameUpdate ? 1.0 : 0.25;
+		vec3 skyViewPrev = texelFetch(skyViewTex, viewTexel, 0).rgb;
 		skyViewOut = mix(skyViewPrev, skyViewOut, accumFactor);
 
 		// Raw sky-view LUT

@@ -54,8 +54,8 @@ float lobeWeight(in vec3 cNormal, in vec3 sNormal, in float cRoughness, in float
 }
 
 vec4 SpecularFilter(in ivec2 texel, in vec4 specularData, in float roughness, in vec3 worldNormal, in vec3 worldDir, in float filterSize, in vec2 randOffset) {
-    float offsetScale = filterSize * saturate(20.0 * roughness);
-    offsetScale *= saturate(0.25 + specularData.a * 0.5);
+    float offsetScale = filterSize * saturate(16.0 * roughness);
+    offsetScale *= min(0.25 + specularData.a * 0.25, 2.0);
 
     // Calculate kernel basis
     vec3 reflectedDir = reflect(-worldDir, worldNormal);

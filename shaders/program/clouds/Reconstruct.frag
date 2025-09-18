@@ -30,6 +30,10 @@ uniform sampler2D cloudDepthOriginTex;
 
 #include "/lib/universal/Uniform.glsl"
 
+//======// SSBO //================================================================================//
+
+#include "/lib/universal/SSBO.glsl"
+
 //======// Function //============================================================================//
 
 #include "/lib/universal/Transform.glsl"
@@ -174,7 +178,7 @@ vec3 ReprojectClouds(in vec2 coord, in float radius) {
 		const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_HIGH_WIND_SPEED;
 		motionVector.xz -= windVelocity;
 	}
-	motionVector *= frameTime * float(doDaylightCycle);
+	motionVector *= worldTime - global.prevWorldTime;
 	motionVector += cameraPosition - previousCameraPosition;
 
 	cloudPos += motionVector; // To previous frame's world space
@@ -192,7 +196,7 @@ void main() {
     ivec2 screenTexel = ivec2(gl_FragCoord.xy);
 	float depth = loadDepth2(screenTexel);
 	#if defined DISTANT_HORIZONS
-		if (depth > 0.999999) depth = loadDepth0DH(screenTexel);
+		if (depth > 1.0 - EPS) depth = loadDepth0DH(screenTexel);
 	#endif
 
 	if (depth > 1.0 - EPS) {
@@ -220,7 +224,7 @@ void main() {
 			cloudOut = textureBicubic(cloudOriginTex, currCoord);
 		} else {
 			vec4 prevData = textureCatmullRomFast(cloudReconstructTex, prevCoord, 0.5);
-			prevData = satU16f(prevData); // Fix black border artifacts
+			prevData.rgb = sRGBToYCoCg(satU16f(prevData.rgb));
 			frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
 
 			ivec2 currTexel = clamp(screenTexel / CLOUD_CBR_SCALE, ivec2(0), ivec2(viewSize) / CLOUD_CBR_SCALE - 1);
@@ -249,15 +253,20 @@ void main() {
 			// Checkerboard upscaling
 			ivec2 offset = cloudCbrOffset[frameCounter % cloudRenderArea];
 			if (screenTexel % CLOUD_CBR_SCALE == offset) {
-				// Accumulate enough frame for checkerboard pattern
-				float blendWeight = 1.0 - rcp(float(max(frameOut - cloudRenderArea, 1)));
-				float subpixelSharpen = sdot(fract(prevCoord * viewSize) * 2.0 - 1.0) * 0.5;
-				blendWeight *= 1.0 - subpixelSharpen * blendWeight;
+				float currLum = currData.x, prevLum = prevData.x;
+				float unbiasedDiff = abs(currLum - prevLum) / max(currLum, prevLum);
+				float lumWeight = 1.0 - saturate(unbiasedDiff) * 0.5;
+				float alpha = max0(float(frameOut - cloudRenderArea)) * lumWeight;
 
-				cloudOut = mix(currData, prevData, blendWeight);
+				// Accumulate
+				cloudOut = mix(prevData, currData, rcp(alpha + 1.0));
 			} else {
 				cloudOut = prevData;
 			}
 		}
+
+		cloudOut.rgb = YCoCgToSRGB(cloudOut.rgb);
 	}
+
+	global.prevWorldTime = worldTime;
 }

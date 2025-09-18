@@ -81,14 +81,13 @@ vec4 textureBicubicLod(in sampler2D tex, in vec2 coord, in int lod) {
 
 vec4 textureSmooth(in sampler2D tex, in vec2 coord) {
 	vec2 res = vec2(textureSize(tex, 0));
-	vec2 pixelSize = 1.0 / res;
 
 	coord = coord * res - 0.5;
 
     vec2 p = floor(coord);
-    vec2 f = coord - p;
+    vec2 f = curve(coord - p);
 
-	p *= pixelSize;
+	p *= rcp(res);
     vec4 sample0 = texture(tex, p);
     vec4 sample1 = textureOffset(tex, p, ivec2(1, 0));
     vec4 sample2 = textureOffset(tex, p, ivec2(0, 1));

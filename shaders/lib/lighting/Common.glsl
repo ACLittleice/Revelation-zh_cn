@@ -4,7 +4,7 @@
 //================================================================================================//
 
 vec3 CalculateSubsurfaceScattering(in vec3 albedo, in float sssAmount, in float sssDepth, in float LdotV) {
-	vec3 coeff = oms(0.75 * albedo) * (8.0 / sssAmount);
+	vec3 coeff = oms(0.75 * albedo) * (64.0 / sssAmount);
 
 	float phase = HenyeyGreensteinPhase(-LdotV, 0.65) * 0.25 + uniformPhase * 0.75;
 	vec3 subsurfaceScattering = exp2(coeff * sssDepth) * phase * sssAmount;
@@ -15,7 +15,7 @@ vec3 CalculateSubsurfaceScattering(in vec3 albedo, in float sssAmount, in float 
 float CalculateApproxBouncedLight(in vec3 normal) {
 	float bounce = saturate(dot(worldLightVector, vec3(0.01, 0.03, 0.01)));
 
-	return approxSqrt(bounce * oms(0.8 * normal.y)) * (0.5 * rPI);
+	return approxSqrt(bounce * oms(0.75 * normal.y)) * uniformPhase;
 }
 
 //================================================================================================//
@@ -38,7 +38,7 @@ vec4 HardCodeEmissive(in uint materialID, in vec3 albedo, in vec3 worldPos, in v
             return vec4(blocklightColor * (4.0 * float(albedo.r > 0.6 || albedo.r > albedo.g * 2.0)), 0.2);
         // Fire
         case 7u: case 22u:
-            return vec4(blocklightColor * (2.0 * cube(albedoLuminance)), 0.1);
+            return vec4(blocklightColor * (2.0 * albedoLuminance), 0.1);
         // Glowstone like
         case 23u:
             return vec4(blocklightColor * (3.0 * cube(albedoLuminance)), 0.1);

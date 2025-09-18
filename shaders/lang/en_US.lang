@@ -59,12 +59,12 @@ option.AUTHOR.comment=Copyright (C) 2024 HaringPro. Apache License 2.0
 # Atmospherics
 option.PLANET_GROUND=Planet Ground
 option.VIEWER_BASE_ALTITUDE=Viewer Base Altitude
+suffix.VIEWER_BASE_ALTITUDE=m
 
 option.ATMOSPHERE_BOTTOM_ALTITUDE=Atmosphere Bottom Altitude
+suffix.ATMOSPHERE_BOTTOM_ALTITUDE=m
 option.ATMOSPHERE_TOP_ALTITUDE=Atmosphere Top Altitude
-
-option.AURORA=Aurora
-option.AURORA_STRENGTH=Aurora Strength
+suffix.ATMOSPHERE_TOP_ALTITUDE=m
 
 option.SUN_RADIUS_MULT=Sun Radius Multiplier
 
@@ -156,11 +156,13 @@ option.VF_RAYLEIGH_DENSITY=Volumetric Fog Rayleigh Density
 option.VF_MIE_DENSITY=Volumetric Fog Mie Density
 option.VF_MIE_DENSITY_RAIN_MULT=Volumetric Fog Mie Density Rain Multiplier
 option.VF_NOISE_QUALITY=Volumetric Fog Noise Quality
+value.VF_NOISE_QUALITY.LOW=Low
+value.VF_NOISE_QUALITY.MEDIUM=Medium
+value.VF_NOISE_QUALITY.HIGH=High
 option.VF_TIME_FADE=Volumetric Fog Time Fade
 option.COLORED_VOLUMETRIC_FOG=Colored Volumetric Fog
 
 option.UW_VOLUMETRIC_FOG=Underwater Volumetric Fog
-option.UW_VF_DENSITY=Underwater Volumetric Fog Density
 option.UW_VF_MAX_SAMPLES=Underwater Volumetric Fog Max Samples
 
 option.BORDER_FOG=Border Fog
@@ -176,13 +178,12 @@ option.WATER_PARALLAX=Water Parallax
 option.WATER_CAUSTICS=Water Caustics
 option.WATER_WAVE_HEIGHT=Water Wave Height
 option.WATER_WAVE_SPEED=Water Wave Speed
-option.WATER_ABSORPTION_R=Water Absorption R
-option.WATER_ABSORPTION_G=Water Absorption G
-option.WATER_ABSORPTION_B=Water Absorption B
+option.WATER_ABSORPTION_R=Water Absorption §4Red
+option.WATER_ABSORPTION_G=Water Absorption §2Green
+option.WATER_ABSORPTION_B=Water Absorption §1Blue
 option.WATER_FOG_DENSITY=Water Fog Density
 option.WATER_REFRACT_IOR=Water Refract IOR
 
-option.TRANSLUCENT_REFLECTION_BLEND=Translucent Reflection Blend
 option.TRANSLUCENT_ROUGHNESS=Translucent Roughness
 option.GLASS_REFRACT_IOR=Glass Refract IOR
 
@@ -194,9 +195,9 @@ option.RAIN_VISIBILITY=Rain/Snow Visibility
 option.RAIN_SCALE_X=Rain/Snow Scale X
 option.RAIN_SCALE_Y=Rain/Snow Scale Y
 
-option.SELECTION_BOX_COLOR_R=Selection Box Color R
-option.SELECTION_BOX_COLOR_G=Selection Box Color G
-option.SELECTION_BOX_COLOR_B=Selection Box Color B
+option.SELECTION_BOX_COLOR_R=Selection Box Color §4Red
+option.SELECTION_BOX_COLOR_G=Selection Box Color §2Green
+option.SELECTION_BOX_COLOR_B=Selection Box Color §1Blue
 option.SELECTION_BOX_WIDTH=Selection Box Width
 
 option.WAVING_FOLIAGE=Waving Foliage
@@ -231,7 +232,8 @@ option.sunPathRotation=Sun Path Rotation
 suffix.shadowMapResolution=²
 suffix.sunPathRotation=°
 
-option.PCF_SAMPLES=PCF Samples
+option.PCSS_SEARCH_SAMPLES=PCSS Search Samples
+option.PCSS_FILTER_SAMPLES=PCSS Filter Samples
 option.COLORED_SHADOWS=Colored Shadows
 
 option.SHADOW_BACKFACE_CULLING=Shadow Backface Culling
@@ -267,9 +269,9 @@ option.RSM_MAX_ACCUM_FRAMES=Max Accumulated Frames
 option.SSPT_ENABLED=Screen-Space Path Tracing
 option.SSPT_SPP=Samples Per Pixel
 option.SSPT_BOUNCES=SSPT Bounces
+option.SSPT_RT_STEPS=SSPT Raytracing Steps
 option.SSPT_BLENDED_LIGHTMAP=SSPT Blended Lightmap
 option.SSPT_MAX_ACCUM_FRAMES=Max Accumulated Frames
-option.SSPT_RR_MIN_BOUNCES=SSPT RR Min Bounces
 
 option.SVGF_ENABLED=Spatio-Temporal Variance-Guided Filtering
 
@@ -370,7 +372,16 @@ option.VIGNETTE_STRENGTH=Vignette Strength
 option.VIGNETTE_ROUNDNESS=Vignette Roundness
 
 option.TONE_MAPPER=Tone-Mapper
+value.TONE_MAPPER.AcademyFit=ACES Fit
+value.TONE_MAPPER.AcademyFull=ACES Full
+value.TONE_MAPPER.AgX_Minimal=AgX Fit
+value.TONE_MAPPER.AgX_Full=AgX Full
+
 option.AGX_LOOK=AGX Look
+value.AGX_LOOK.0=Default
+value.AGX_LOOK.1=Golden
+value.AGX_LOOK.2=Punchy
+value.AGX_LOOK.3=Custom
 
 option.CAS_ENABLED=Contrast-Adaptive Sharpening
 option.CAS_STRENGTH=CAS Strength
@@ -379,7 +390,7 @@ option.CAS_STRENGTH=CAS Strength
 # Compatibility
 option.MOD_BLOCK_SUPPORT=Mod Block Support
 option.PHYSICS_OCEAN_SUPPORT=Physics Ocean Support
-option.FORCE_DISABLE_SUBGROUP_OPS=Force Disable Subgroup Ops
+option.FORCE_DISABLE_SUBGROUP_OPS=§4Force Disable Subgroup Ops
 
 option.WHITE_WORLD=White World
 option.DEBUG_BLOOM_TILES=DEBUG_BLOOM_TILES
