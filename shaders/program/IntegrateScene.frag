@@ -62,37 +62,27 @@ uniform sampler2D brdfLutTex;
 //======// Main //================================================================================//
 void main() {
     ivec2 screenTexel = ivec2(gl_FragCoord.xy);
-	uvec4 gbufferData0 = loadGbufferData0(screenTexel);
-
-	uint materialID = gbufferData0.y;
+    vec2 screenCoord = gl_FragCoord.xy * viewPixelSize;
 
 	float depth = loadDepth0(screenTexel);
-	float depth1 = loadDepth1(screenTexel);
-
-    vec2 screenCoord = gl_FragCoord.xy * viewPixelSize;
 
 	vec3 screenPos = vec3(screenCoord, depth);
 	vec3 viewPos = ScreenToViewSpace(screenPos);
-	vec3 viewPos1 = ScreenToViewSpace(vec3(screenCoord, depth1));
 	#if defined DISTANT_HORIZONS
 		if (depth > 1.0 - EPS) {
 			depth = screenPos.z = loadDepth0DH(screenTexel);
 			viewPos = ScreenToViewSpaceDH(screenPos);
 		}
-		if (depth1 > 1.0 - EPS) {
-			depth1 = loadDepth1DH(screenTexel);
-			viewPos1 = ScreenToViewSpaceDH(vec3(screenCoord, depth1));
-		}
 	#endif
 
-	float viewDistance = length(viewPos);
-	float transparentDepth = distance(viewPos, viewPos1);
+	uvec4 gbufferData0 = loadGbufferData0(screenTexel);
 
-	ivec2 refractedTexel = screenTexel;
+	uint materialID = gbufferData0.y;
 	bool glassMask = materialID == 2u;
 	bool waterMask = materialID == 3u;
 
 	// Process refraction
+	ivec2 refractedTexel = screenTexel;
 	if (glassMask || waterMask) {
 		vec3 viewNormal = mat3(gbufferModelView) * FetchWorldNormal(gbufferData0.w);
 
@@ -101,18 +91,19 @@ void main() {
 		#else
 			vec3 viewFlatNormal = mat3(gbufferModelView) * FetchFlatNormal(gbufferData0);
 			viewNormal -= float(waterMask) * viewFlatNormal; // Fix water refraction artifacts
-			vec2 refractedCoord = CalculateRefractedCoord(waterMask, viewPos, viewNormal, screenPos, transparentDepth);
-		#endif
-		refractedTexel = uvToTexel(refractedCoord);
 
-		depth = loadDepth0(refractedTexel);
-		viewPos = ScreenToViewSpace(vec3(refractedCoord, depth));
-		#if defined DISTANT_HORIZONS
-			if (depth > 1.0 - EPS) {
-				depth = loadDepth0DH(refractedTexel);
-				viewPos = ScreenToViewSpaceDH(vec3(refractedCoord, depth));
-			}
+			float depth1 = loadDepth1(screenTexel);
+			vec3 viewPos1 = ScreenToViewSpace(vec3(screenCoord, depth1));
+			#if defined DISTANT_HORIZONS
+				if (depth1 > 1.0 - EPS) {
+					depth1 = loadDepth1DH(screenTexel);
+					viewPos1 = ScreenToViewSpaceDH(vec3(screenCoord, depth1));
+				}
+			#endif
+			vec2 refractedCoord = CalculateRefractedCoord(waterMask, viewPos, viewNormal, screenPos, distance(viewPos, viewPos1));
 		#endif
+
+		refractedTexel = uvToTexel(refractedCoord);
 	}
 
     sceneOut = loadSceneColor(refractedTexel);
@@ -126,23 +117,11 @@ void main() {
 
 		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
 			Material material = GetMaterialData(gbufferData1.xy);
-		#endif
 
-		if (glassMask || waterMask) {
-			// Apply specular lighting
-			vec4 blendedData = texelFetch(colortex1, screenTexel, 0);
-			sceneOut += blendedData.rgb - sceneOut * blendedData.a;
-
-			// Glass absorption
-			if (glassMask) {
-				sceneOut *= exp2(5.0 * (gbufferData1.rgb - 1.0) * approxSqrt(approxSqrt(gbufferData1.a)));
-			}
-		}
-		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-			else if (material.specularMask) {
+			if (material.specularMask) {
 				// Specular reflections of other materials
-				vec3 reflectionData = texelFetch(colortex1, refractedTexel, 0).rgb;
-				vec3 albedo = sRGBtoLinear(loadAlbedo(refractedTexel));
+				vec3 reflectionData = texelFetch(colortex1, screenTexel, 0).rgb;
+				vec3 albedo = sRGBtoLinear(loadAlbedo(screenTexel));
 
 				float NdotV = abs(dot(worldNormal, worldDir));
 				vec2 brdf = texture(brdfLutTex, vec2(material.roughness, NdotV)).xy;
@@ -153,6 +132,19 @@ void main() {
 			}
 		#endif
 
+		if (glassMask || waterMask) {
+			// Glass absorption
+			if (glassMask) {
+				vec3 absorption = log2(gbufferData1.rgb);
+				absorption *= 2.0 * sqrt2(gbufferData1.a);
+				sceneOut *= exp2(absorption);
+			}
+
+			// Apply specular lighting
+			vec4 blendedData = texelFetch(colortex1, screenTexel, 0);
+			sceneOut += blendedData.rgb - sceneOut * blendedData.a;
+		}
+
 		// Border fog
 		#ifdef BORDER_FOG
 			#if defined DISTANT_HORIZONS
@@ -161,7 +153,7 @@ void main() {
 
 			if (isEyeInWater == 0) {
 				float density = saturate(1.0 - exp2(-pow8(sdot(worldPos.xz) * rcp(far * far)) * BORDER_FOG_FALLOFF));
-				density *= exp2(-5.0 * curve(saturate(worldDir.y * 3.0)));
+				density *= exp2(-4.0 * curve(saturate(worldDir.y * 3.0)));
 
 				vec3 skyRadiance = textureBicubic(skyViewTex, FromSkyViewLutParams(worldDir)).rgb;
 				sceneOut = mix(sceneOut, skyRadiance, density);
@@ -181,6 +173,7 @@ void main() {
 		}
 	#endif
 
+	float viewDistance = length(viewPos);
 	float LdotV = dot(worldLightVector, worldDir);
 
 	// Underwater fog
