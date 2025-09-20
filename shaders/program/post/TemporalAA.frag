@@ -162,14 +162,14 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
 
     float frameIndex = texture(colortex1, prevCoord).a;
 
+    float alpha = min(++frameIndex, TAA_MAX_ACCUM_FRAMES);
+    alpha /= alpha + 1.0;
+
     float currLum = sample0.x, prevLum = prevData.x;
     float unbiasedDiff = abs(currLum - prevLum) / max(currLum, prevLum);
-	float lumWeight = 1.0 - saturate(unbiasedDiff) * 0.25;
+	alpha *= 1.0 - sqr(saturate(unbiasedDiff)) * 0.25;
 
-    float alpha = min(++frameIndex, TAA_MAX_ACCUM_FRAMES) * lumWeight;
-    alpha *= 1.0 - saturate(length(motionVector * viewSize) * 0.02);
-
-    currData = mix(perceptualWeight(prevData), perceptualWeight(sample0), rcp(alpha + 1.0));
+    currData = mix(perceptualWeight(sample0), perceptualWeight(prevData), alpha);
     return vec4(YCoCgToSRGB(perceptualWeightInv(currData)), frameIndex);
 }
 
