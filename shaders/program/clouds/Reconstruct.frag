@@ -118,36 +118,40 @@ float sinc(float x) {
     return sin(PI * x) / (PI * x);
 }
 
-float lanczos(float x) {
-    if (abs(x) < 1e-6) return 1.0;
-    else return sinc(x) * sinc(x * rcp(3.0));
+float lanczos2(float x) {
+    x = clamp(x, -2.0, 2.0);
+    if (abs(x) < EPS) return 1.0;
+    else return sinc(x) * sinc(x * 0.5);
 }
 
 vec4 textureLanczos(in sampler2D tex, in vec2 coord) {
+	const int radius = 1;
+
 	vec2 res = vec2(textureSize(tex, 0));
-	vec2 pixelSize = 1.0 / res;
+	coord = coord * res - 0.5;
 
-	coord *= res;
+    vec2 p = floor(coord);
+    vec2 f = coord - p;
 
-    vec2 uv = floor(coord - 0.5) + 0.5;
-    vec2 fp = coord - uv;
+	ivec2 texel = ivec2(p);
 
     vec4 sum = vec4(0.0);
-	float weightSum = 0.0;
+	float sumWeight = 0.0;
 
-    for (int x = -2; x <= 2; ++x) {
-        float fx = lanczos(float(x) - fp.x);
+    for (int x = -radius; x <= radius; ++x) {
+        float fx = lanczos2(float(x) - f.x);
 
-        for (int y = -2; y <= 2; ++y) {
-			float fy = lanczos(float(y) - fp.y);
+        for (int y = -radius; y <= radius; ++y) {
+			float fy = lanczos2(float(y) - f.y);
+			float weight = fx * fy;
 
-			vec4 sampleData = texture(tex, (uv + vec2(x, y)) * pixelSize);
-            sum += sampleData * fx * fy;
-			weightSum += fx * fy;
+			vec4 sampleData = texelFetch(tex, texel + ivec2(x, y), 0);
+            sum += sampleData * weight;
+			sumWeight += weight;
         }
     }
 
-    return sum / weightSum;
+    return sum * rcp(sumWeight);
 }
 
 #define currentLoad(offset) texelFetchOffset(cloudOriginTex, currTexel, 0, offset)
@@ -223,7 +227,7 @@ void main() {
 		if (disocclusion) {
 			cloudOut = textureBicubic(cloudOriginTex, currCoord);
 		} else {
-			vec4 prevData = textureCatmullRomFast(cloudReconstructTex, prevCoord, 0.5);
+			vec4 prevData = textureCatmullRom(cloudReconstructTex, prevCoord);
 			prevData.rgb = sRGBToYCoCg(satU16f(prevData.rgb));
 			frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
 
@@ -253,13 +257,14 @@ void main() {
 			// Checkerboard upscaling
 			ivec2 offset = cloudCbrOffset[frameCounter % cloudRenderArea];
 			if (screenTexel % CLOUD_CBR_SCALE == offset) {
-				float currLum = currData.x, prevLum = prevData.x;
-				float unbiasedDiff = abs(currLum - prevLum) / max(currLum, prevLum);
-				float lumWeight = 1.0 - saturate(unbiasedDiff) * 0.5;
-				float alpha = max0(float(frameOut - cloudRenderArea)) * lumWeight;
+				float alpha = max0(float(frameOut - cloudRenderArea));
+				alpha /= alpha + 1.0;
+
+				float subpixelSharpen = sdot(fract(prevCoord * viewSize) * 2.0 - 1.0);
+				alpha *= 1.0 - sqr(subpixelSharpen) * 0.75;
 
 				// Accumulate
-				cloudOut = mix(prevData, currData, rcp(alpha + 1.0));
+				cloudOut = mix(currData, prevData, alpha);
 			} else {
 				cloudOut = prevData;
 			}
