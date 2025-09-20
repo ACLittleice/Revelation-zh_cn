@@ -43,7 +43,7 @@ writeonly uniform image2D cloudShadowImg;
 //======// Main //================================================================================//
 void main() {
 	ivec2 mapTexel = ivec2(gl_GlobalInvocationID.xy);
-	bool frameUpdate = global.exposure.value < EPS || worldTimeChanged;
+	bool frameUpdate = global.prevWorldTime < EPS || worldTimeChanged;
 
     // Checkerboard render cloud shadow map
 	ivec2 offset = checkerboardOffset4x4[frameCounter % 16];

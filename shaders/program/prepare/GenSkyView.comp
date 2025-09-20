@@ -48,7 +48,7 @@ uniform sampler3D atmosCombinedLut;
 //======// Main //================================================================================//
 void main() {
 	ivec2 viewTexel = ivec2(gl_GlobalInvocationID.xy);
-	bool frameUpdate = global.exposure.value < EPS || worldTimeChanged;
+	bool frameUpdate = global.prevWorldTime < EPS || worldTimeChanged;
 
     // Checkerboard render
 	ivec2 offset = checkerboardOffset2x2[frameCounter % 4];

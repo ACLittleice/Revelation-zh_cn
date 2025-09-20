@@ -267,6 +267,4 @@ void main() {
 
 		cloudOut.rgb = YCoCgToSRGB(cloudOut.rgb);
 	}
-
-	global.prevWorldTime = worldTime;
 }
