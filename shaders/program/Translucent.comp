@@ -176,7 +176,7 @@ void main() {
 				float NdotH = dot(worldNormal, halfway);
 				float LdotH = dot(worldLightVector, halfway);
 
-				shadow *= sunlightMult;
+				shadow = saturate(shadow) * sunlightMult;
 
 				float f0 = F0FromIOR(waterMask ? WATER_REFRACT_IOR : GLASS_REFRACT_IOR);
 				specularOut.rgb += shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, TRANSLUCENT_ROUGHNESS, vec3(f0));
