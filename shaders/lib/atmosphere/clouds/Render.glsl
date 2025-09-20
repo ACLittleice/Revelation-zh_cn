@@ -38,7 +38,8 @@ float CloudVolumeOpticalDepth(in vec3 rayPos, in vec3 rayDir, in float lightNois
 	for (uint i = 0u; i < steps; ++i, rayPos += rayStep.xyz) {
         rayStep *= 1.5;
 
-		float density = CloudVolumeDensity(rayPos + rayStep.xyz * lightNoise, opticalDepth < 0.25 * rayStep.w);
+		float temp;
+		float density = CloudVolumeDensity(rayPos + rayStep.xyz * lightNoise, temp, temp, opticalDepth < 0.25 * rayStep.w);
         opticalDepth += density * rayStep.w;
     }
 
@@ -195,12 +196,11 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 	#endif
 	// float phases[cloudMsCount] = SetupParticipatingMediaPhases(phase, cloudMsFalloffC);
 
+	vec3 camera = vec3(0.0, viewerHeight, 0.0);
 	float r = viewerHeight; // length(camera)
 	float mu = rayDir.y;	// dot(camera, rayDir) / r
 
 	bool planetIntersection = RayIntersectsGround(r, mu);
-
-	vec3 cloudViewerPos = vec3(cameraPosition.xz, r).xzy;
 
 	// Initialize
 	vec2 integralScattering = vec2(0.0);
@@ -243,7 +243,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 				// Raymarch through the cloud volume
 				for (uint i = 0u; i < raySteps; ++i, rayT += stepSize) {
-					vec3 rayPos = cloudViewerPos + rayDir * rayT;
+					vec3 rayPos = camera + rayDir * rayT;
 
 					// Method from [Hillaire, 2016]
 					// Accumulate the weighted ray length
@@ -252,7 +252,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 					// Compute sample cloud density
 					float heightFraction, dimensionalProfile;
-					float stepDensity = CloudVolumeDensity(rayPos, heightFraction, dimensionalProfile);
+					float stepDensity = CloudVolumeDensity(rayPos, heightFraction, dimensionalProfile, true);
 
 					if (stepDensity < cloudEpsilon) continue;
 
@@ -321,7 +321,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 		if ((mu > 0.0 && r < cloudMidRadius) // Below clouds
 		 || (planetIntersection && r > cloudMidRadius)) { // Above clouds
 			float rayLength = (cloudMidRadius - r) / mu;
-			vec3 rayPos = rayDir * rayLength + cloudViewerPos;
+			vec3 rayPos = rayDir * rayLength + camera;
 
 			vec3 cloudTemp = RenderCloudMid(rayPos.xz, rayDir, noise.y, phase);
 
@@ -348,7 +348,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 		if ((mu > 0.0 && r < cloudHighRadius) // Below clouds
 		 || (planetIntersection && r > cloudHighRadius)) { // Above clouds
 			float rayLength = (cloudHighRadius - r) / mu;
-			vec3 rayPos = rayDir * rayLength + cloudViewerPos;
+			vec3 rayPos = rayDir * rayLength + camera;
 
 			vec3 cloudTemp = RenderCloudHigh(rayPos.xz, rayDir, noise.y, phase);
 
@@ -380,7 +380,6 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 		// Compute irradiance
 		vec3 sunIrradiance, moonIrradiance;
-		vec3 camera = vec3(0.0, viewerHeight, 0.0);
 		vec3 skyIlluminance = GetSunAndSkyIrradiance(camera + cloudPos, vec3(0.0, 1.0, 0.0), worldSunVector, sunIrradiance, moonIrradiance) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
 		vec3 directIlluminance = SUN_SPECTRAL_RADIANCE_TO_LUMINANCE * (sunIrradiance + moonIrradiance);
 

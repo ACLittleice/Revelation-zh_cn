@@ -77,8 +77,7 @@ vec2 DistortCloudShadowPos(in vec2 shadowPos) {
 float CalculateCloudShadows(in vec3 rayPos) {
 	const uint steps = CLOUD_SHADOW_SAMPLES;
 
-	vec3 cloudViewerPos = vec3(cameraPosition.xz, viewerHeight).xzy;
-	rayPos += cloudViewerPos;
+	rayPos += vec3(0.0, viewerHeight, 0.0);
 
 	vec2 intersection = RaySphericalShellIntersection(rayPos, worldLightVector, cumulusBottomRadius, cumulusTopRadius);
 	float stepLength = (intersection.y - intersection.x) * rcp(float(steps));
@@ -91,7 +90,8 @@ float CalculateCloudShadows(in vec3 rayPos) {
 
 	// Raymarch along the light vector
 	for (uint i = 0u; i < steps; ++i, rayPos += rayStep) {
-		opticalDepth += CloudVolumeDensity(rayPos, false);
+		float temp;
+		opticalDepth += CloudVolumeDensity(rayPos, temp, temp, false);
 		if (opticalDepth > float(steps) * 0.25) break;
 	}
 
