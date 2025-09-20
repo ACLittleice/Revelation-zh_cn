@@ -75,24 +75,24 @@ vec2 DistortCloudShadowPos(in vec2 shadowPos) {
 #include "/lib/atmosphere/clouds/Shape.glsl"
 
 float CalculateCloudShadows(in vec3 rayPos) {
-	const uint steps = CLOUD_SHADOW_SAMPLES;
+	float steps = float(CLOUD_SHADOW_SAMPLES) * (2.0 - worldLightVector.y);
 
 	rayPos += vec3(0.0, viewerHeight, 0.0);
 
 	vec2 intersection = RaySphericalShellIntersection(rayPos, worldLightVector, cumulusBottomRadius, cumulusTopRadius);
-	float stepLength = (intersection.y - intersection.x) * rcp(float(steps));
+	float stepLength = (intersection.y - intersection.x) * rcp(steps);
 	vec3 rayStep = worldLightVector * stepLength;
 
 	rayPos += worldLightVector * intersection.x;
-	// rayPos += rayStep * InterleavedGradientNoiseTemporal(gl_GlobalInvocationID.xy);
+	rayPos += rayStep * BlueNoiseTemporal(ivec2(gl_GlobalInvocationID.xy));
 
 	float opticalDepth = 0.0;
 
 	// Raymarch along the light vector
-	for (uint i = 0u; i < steps; ++i, rayPos += rayStep) {
+	for (uint i = 0u; i < uint(steps); ++i, rayPos += rayStep) {
 		float temp;
 		opticalDepth += CloudVolumeDensity(rayPos, temp, temp, false);
-		if (opticalDepth > float(steps) * 0.25) break;
+		if (opticalDepth > steps * 0.25) break;
 	}
 
 	float cloudShadow = exp2(-rLOG2 * cumulusExtinction * opticalDepth * stepLength);
