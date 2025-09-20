@@ -219,8 +219,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	vec2 cloudMap = texture(cloudMapTex, rayPos.xz * rcp(cloudMapCovDist)).xy;
 
 	// Coveage profile
-	float coverage = cloudMap.x * (4.0 * CLOUD_CU_COVERAGE);
-	coverage += wetness * 0.5;
+	float coverage = saturate(cloudMap.x * (4.0 * CLOUD_CU_COVERAGE)) + wetness * 0.5;
 	// coverage = pow(coverage, remap(heightFraction, 0.7, 0.8, 1.0, 1.0 - 0.5 * anvilBias));
 	if (coverage < 0.25) return 0.0;
 
@@ -228,30 +227,31 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	float verticalProfile = GetVerticalProfile(heightFraction, cloudMap.y);
 
 	dimensionalProfile = saturate(verticalProfile * coverage);
-	if (dimensionalProfile < cloudEpsilon) return 0.0;
+	// if (dimensionalProfile < cloudEpsilon) return 0.0;
 
 	vec3 position = (rayPos - windOffset * 0.5) * 3e-4;
 
 	// Perlin-worley + fBm worley noise for base shape
-	float baseNoise = texture(baseNoiseTex, position).x;
+	float baseNoise = curve(texture(baseNoiseTex, position).x);
 
-	// Detail shape
+	float cloudDensity = saturate(dimensionalProfile + baseNoise - 1.0);
+	if (cloudDensity < cloudEpsilon) return 0.0;
+
+	// Detail erosion
 	float detailNoise = 0.5;
 	#if !defined PASS_SKY_VIEW
 	if (detail) {
 		vec3 curlNoise = texture(curlNoiseTex, position.xz * 2.0).xyz;
-		position += curlNoise * 0.05 * oms(heightFraction);
+		position += curlNoise * 0.05 * oms(heightFraction) - windOffset * 1e-3;
 
 		// fBm worley noise for detail shape
-		detailNoise = texture(detailNoiseTex, position * 8.0 - windOffset * 1e-2).x;
+		detailNoise = texture(detailNoiseTex, position * 8.0).x;
 
 		// Transition from wispy shapes to billowy shapes over height
 		detailNoise = mix(detailNoise, 1.0 - detailNoise, saturate(heightFraction * 8.0));
 	}
 	#endif
-	float noiseComposite = remap(0.85, detailNoise * 0.5, baseNoise);
-
-	float cloudDensity = ValueErosion(dimensionalProfile, noiseComposite);
+	cloudDensity = remap(detailNoise * 0.25, 1.0, cloudDensity);
 
 	// Density profile
 	return approxSqrt(cloudDensity) * saturate(heightFraction * 2.0);
