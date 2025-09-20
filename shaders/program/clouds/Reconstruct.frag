@@ -261,7 +261,7 @@ void main() {
 				alpha /= alpha + 1.0;
 
 				float subpixelSharpen = sdot(fract(prevCoord * viewSize) * 2.0 - 1.0);
-				alpha *= 1.0 - sqr(subpixelSharpen) * 0.75;
+				alpha *= 1.0 - sqr(subpixelSharpen) * 0.5;
 
 				// Accumulate
 				cloudOut = mix(currData, prevData, alpha);
