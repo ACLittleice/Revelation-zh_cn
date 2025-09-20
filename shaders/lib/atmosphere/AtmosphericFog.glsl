@@ -74,8 +74,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither) {
 	#endif
 
 	float LdotV = dot(worldLightVector, worldDir);
-	vec2 phase = vec2(HenyeyGreensteinPhase(LdotV, 0.65) * 0.75 + HenyeyGreensteinPhase(LdotV, -0.25) * 0.25, RayleighPhase(LdotV));
-	phase.x = mix(uniformPhase, phase.x, 0.75); // Trick to fit the multi-scattering
+	vec2 phase = vec2(DualLobePhase(LdotV, 0.7, -0.3, 0.25), RayleighPhase(LdotV));
 
 	float uniformFog = 8.0 / far;
 
@@ -97,9 +96,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither) {
 
 	for (uint i = 0u; i < steps; ++i, rayPos += rayStep, shadowPos += shadowStep) {
 		vec2 stepFogmass = CalculateFogDensity(rayPos) + uniformFog;
-		stepFogmass *= stepLength;
-
-		if (dot(stepFogmass, vec2(1.0)) < 1e-5) continue; // Faster than maxOf()
+		if (dot(stepFogmass, vec2(1.0)) < EPS) continue; // Faster than maxOf()
 
     #if defined PASS_SKY_VIEW
         const float sampleShadow = 1.0;
@@ -131,12 +128,15 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither) {
 		#endif
     #endif
 
+		vec2 stepPhase = mix(phase, vec2(uniformPhase), stepFogmass);
+
+		stepFogmass *= stepLength;
 		vec3 opticalDepth = fogExtinctionCoeff * stepFogmass;
 		vec3 stepTransmittance = fastExp(-opticalDepth);
 
 		vec3 stepScattering = transmittance * oms(stepTransmittance) / maxEps(opticalDepth);
 
-		scatteringSun += fogScatteringCoeff * (stepFogmass * phase) * sampleShadow * stepScattering;
+		scatteringSun += fogScatteringCoeff * (stepFogmass * stepPhase) * sampleShadow * stepScattering;
 		scatteringSky += fogScatteringCoeff * stepFogmass * stepScattering;
 
 		transmittance *= stepTransmittance;
@@ -148,11 +148,8 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither) {
 		scatteringSun *= 1.0 - wetness * 0.75;
 	#endif
 
-	vec3 directIlluminance = global.light.directIlluminance;
-	vec3 skyIlluminance = global.light.skyIlluminance;
-
-	vec3 scattering = scatteringSun * directIlluminance;
-	scattering += scatteringSky * uniformPhase * skyIlluminance;
+	vec3 scattering = scatteringSun * global.light.directIlluminance;
+	scattering += scatteringSky * uniformPhase * global.light.skyIlluminance;
 	scattering *= eyeSkylightSmooth;
 
 	return mat2x3(scattering, transmittance);
