@@ -25,7 +25,7 @@ const vec2 workGroupsRender = vec2(1.0, 1.0);
 //======// Uniform //=============================================================================//
 
 layout (r11f_g11f_b10f) restrict uniform image2D colorimg0; // Scene data
-writeonly uniform image2D colorimg1; // Specular lighting output
+writeonly uniform image2D colorimg3; // Specular lighting output
 
 #include "/lib/universal/Uniform.glsl"
 
@@ -184,5 +184,5 @@ void main() {
 		}
 	}
 
-	imageStore(colorimg1, screenTexel, specularOut);
+	imageStore(colorimg3, screenTexel, specularOut);
 }

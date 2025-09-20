@@ -23,7 +23,7 @@ const vec2 workGroupsRender = vec2(1.0, 1.0);
 
 //======// Uniform //=============================================================================//
 
-layout (rgba16f) restrict uniform image2D colorimg1;
+layout (rgba16f) restrict uniform image2D colorimg3;
 
 #include "/lib/universal/Uniform.glsl"
 
@@ -82,7 +82,7 @@ vec4 SpecularFilter(in ivec2 texel, in vec4 specularData, in float roughness, in
         vec2 offset = offset3x3N[i] + randOffset;
         ivec2 sampleTexel = clamp(texel + ivec2(tangent * offset.x + bitangent * offset.y), ivec2(0), texelEnd);
 
-        vec4 sampleData = imageLoad(colorimg1, sampleTexel);
+        vec4 sampleData = imageLoad(colorimg3, sampleTexel);
 
         // float sampleLinerDepth = FetchLinearDepth(sampleTexel);
         vec3 sampleWorldNormal = FetchWorldNormal(sampleTexel);
@@ -111,7 +111,7 @@ vec4 SpecularFilter(in ivec2 texel, in vec4 specularData, in float roughness, in
 void main() {
 	ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
 
-    vec4 specularData = imageLoad(colorimg1, screenTexel);
+    vec4 specularData = imageLoad(colorimg3, screenTexel);
 
     #if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
         Material material = GetMaterialData(loadGbufferData1(screenTexel).xy);
@@ -128,5 +128,5 @@ void main() {
         }
     #endif
 
-    imageStore(colorimg1, screenTexel, specularData);
+    imageStore(colorimg3, screenTexel, specularData);
 }

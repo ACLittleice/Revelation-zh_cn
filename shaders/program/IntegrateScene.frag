@@ -120,7 +120,7 @@ void main() {
 
 			if (material.specularMask) {
 				// Specular reflections of other materials
-				vec3 reflectionData = texelFetch(colortex1, screenTexel, 0).rgb;
+				vec3 specularLight = texelFetch(colortex3, screenTexel, 0).rgb;
 				vec3 albedo = sRGBtoLinear(loadAlbedo(screenTexel));
 
 				float NdotV = abs(dot(worldNormal, worldDir));
@@ -128,7 +128,7 @@ void main() {
 
 				vec3 f0 = GetMaterialF0(material.metalness, albedo);
 				vec3 specular = f0 * brdf.x + brdf.y;
-				sceneOut += reflectionData * specular;
+				sceneOut += specularLight * specular;
 			}
 		#endif
 
@@ -141,8 +141,8 @@ void main() {
 			}
 
 			// Apply specular lighting
-			vec4 blendedData = texelFetch(colortex1, screenTexel, 0);
-			sceneOut += blendedData.rgb - sceneOut * blendedData.a;
+			vec4 specularLight = texelFetch(colortex3, screenTexel, 0);
+			sceneOut += specularLight.rgb - sceneOut * specularLight.a;
 		}
 
 		// Border fog
