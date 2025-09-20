@@ -196,7 +196,7 @@ float CloudHighDensity(in vec2 rayPos) {
 
 		float verticalProfile = mix(stratus, cumulus, saturate(cloudType * 2.0));
 		verticalProfile = mix(verticalProfile, altocumulus, saturate(cloudType * 2.0 - 1.0));
-		return verticalProfile * saturate(relativeHeight * (8.0 - 2.0 * cloudType));
+		return verticalProfile * saturate(relativeHeight * (12.0 - 8.0 * cloudType));
 	}
 #endif
 
