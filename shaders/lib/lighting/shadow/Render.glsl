@@ -7,7 +7,7 @@ const float realShadowMapRes = float(shadowMapResolution) * MC_SHADOW_QUALITY;
 
 //================================================================================================//
 
-#include "ShadowDistortion.glsl"
+#include "Common.glsl"
 
 vec3 WorldToShadowScreenSpace(in vec3 worldPos) {
 	vec3 shadowClipPos = transMAD(shadowModelView, worldPos);

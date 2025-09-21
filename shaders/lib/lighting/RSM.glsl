@@ -11,7 +11,7 @@ uniform sampler2D shadowtex1;
 uniform sampler2D shadowcolor0;
 uniform sampler2D shadowcolor1;
 
-#include "ShadowDistortion.glsl"
+#include "/lib/lighting/shadow/Common.glsl"
 
 //================================================================================================//
 

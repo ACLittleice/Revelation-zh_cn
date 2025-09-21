@@ -46,7 +46,7 @@ uniform sampler2D shadowcolor1;
 #include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/clouds/Shadows.glsl"
 
-#include "/lib/lighting/ShadowDistortion.glsl"
+#include "/lib/lighting/shadow/Common.glsl"
 
 #include "/lib/atmosphere/AtmosphericFog.glsl"
 #include "/lib/water/WaterFog.glsl"

@@ -51,7 +51,7 @@ writeonly uniform image2D colorimg3; // Lighting output
 #include "/lib/water/WaterFog.glsl"
 
 #include "/lib/lighting/Common.glsl"
-#include "/lib/lighting/Shadows.glsl"
+#include "/lib/lighting/shadow/Render.glsl"
 
 #include "/lib/surface/SSRT.glsl"
 

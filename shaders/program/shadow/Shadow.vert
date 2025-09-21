@@ -60,7 +60,7 @@ uniform mat4 shadowProjection;
 
 //======// Function //============================================================================//
 
-#include "/lib/lighting/ShadowDistortion.glsl"
+#include "/lib/lighting/shadow/Common.glsl"
 
 //======// Main //================================================================================//
 void main() {
