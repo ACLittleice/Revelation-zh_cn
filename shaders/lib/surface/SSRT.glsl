@@ -23,7 +23,7 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
 
     vec3 endPos = ViewToScreenSpace(viewDir + viewPos);
     vec3 rayDir = normalize(endPos - rayPos);
-    float stepWeight = 1.0 / rayDir.z;
+    float stepNorm = 1.0 / rayDir.z;
 
     float stepLength = minOf((fastSign(rayDir) - rayPos) / rayDir) * rSteps;
 
@@ -33,7 +33,6 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
     vec3 rayStep = rayDir * stepLength;
     rayPos += rayStep * dither;
 
-	float diffTolerance = max(1e-2 * inversesqrt(sdot(viewPos)), -2.0 * rayStep.z);
     #if defined DISTANT_HORIZONS
         float screenDepthMax = ViewToScreenDepth(ScreenToViewDepthDH(1.0));
     #else
@@ -54,15 +53,18 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
             if (sampleDepth > 1.0 - EPS) sampleDepth = ViewToScreenDepth(ScreenToViewDepthDH(loadDepthMacroDH(ivec2(rayPos.xy))));
         #endif
 
-		float difference = rayPos.z - sampleDepth;
+		if (rayPos.z > sampleDepth) {
+			float sampleViewDepth = ScreenToViewDepth(sampleDepth);
+			float traceViewDepth = ScreenToViewDepth(rayPos.z);
 
-        if (clamp(difference, 0.0, diffTolerance) == difference) {
-            hit = true;
-            break;
+            if (traceViewDepth - sampleViewDepth > 0.2 * traceViewDepth) {
+                hit = true;
+                break;
+            }
         }
 
         #ifdef SSRT_ADAPTIVE_STEP
-            rayStep = rayDir * clamp((sampleDepth - rayPos.z) * stepWeight, diffTolerance * rSteps, rSteps);
+            rayStep = rayDir * clamp((sampleDepth - rayPos.z) * stepNorm, 1e-2 * rSteps, rSteps);
         #endif
     }
 

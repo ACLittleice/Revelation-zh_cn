@@ -128,7 +128,7 @@ void main() {
 
 				vec3 f0 = GetMaterialF0(material.metalness, albedo);
 				vec3 specular = f0 * brdf.x + brdf.y;
-				sceneOut += specularLight * specular;
+				sceneOut = mix(sceneOut, specularLight, specular);
 			}
 		#endif
 
