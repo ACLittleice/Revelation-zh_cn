@@ -14,7 +14,7 @@ out vec2 texCoord;
 out vec2 lightmap;
 flat out uint materialID;
 
-out vec3 viewPos;
+out vec3 worldPos;
 
 //======// Attribute //===========================================================================//
 
@@ -47,13 +47,13 @@ void main() {
 
 	lightmap = saturate(vec2(vaUV2) * r240);
 
-	viewPos = transMAD(modelViewMatrix, vaPosition + chunkOffset);
+	materialID = uint(blockEntityId - 10000);
+
+	vec3 viewPos = transMAD(modelViewMatrix, vaPosition + chunkOffset);
 	gl_Position = diagonal4(projectionMatrix) * viewPos.xyzz + projectionMatrix[3];
+	worldPos = transMAD(gbufferModelViewInverse, viewPos);
 
 	#ifdef TAA_ENABLED
 		gl_Position.xy += taaOffset * gl_Position.w;
 	#endif
-	// vec4 worldPos = gbufferModelViewInverse * viewPos;
-
-	materialID = uint(blockEntityId - 10000);
 }

@@ -25,7 +25,6 @@ in vec3 worldPos;
 in vec4 vertColor;
 in vec2 texCoord;
 in vec2 lightmap;
-flat in uint materialID;
 
 //======// Function //============================================================================//
 

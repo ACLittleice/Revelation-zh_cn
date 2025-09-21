@@ -21,7 +21,7 @@ in vec2 texCoord;
 in vec2 lightmap;
 flat in uint materialID;
 
-in vec3 viewPos;
+in vec3 worldPos;
 
 //======// Uniform //=============================================================================//
 
@@ -81,7 +81,7 @@ vec2 endPortalLayer(in vec2 coord, in float layer) {
 void main() {
 	vec4 albedo = texture(tex, texCoord) * vertColor;
 
-	mat3 tbnMatrix = CalculateTBNMatrix(viewPos, texCoord);
+	mat3 tbnMatrix = CalculateTBNMatrix(worldPos, texCoord);
 
 	if (albedo.a < 0.1) { discard; return; }
 
@@ -90,7 +90,7 @@ void main() {
 	#endif
 
 	if (materialID == 46u) {
-		vec3 worldDir = mat3(gbufferModelViewInverse) * normalize(viewPos);
+		vec3 worldDir = normalize(worldPos);
 		vec3 worldDirAbs = abs(worldDir);
 		vec3 samplePartAbs = step(maxOf(worldDirAbs), worldDirAbs);
 		vec3 samplePart = samplePartAbs * fastSign(worldDir);

@@ -3,7 +3,7 @@ mat3 CalculateTBNMatrix(in vec3 position, in vec2 coord) {
     vec3 deltaPos1 = dFdx(position);
     vec3 deltaPos2 = dFdy(position);
 
-	vec3 normal = mat3(gbufferModelViewInverse) * normalize(cross(deltaPos1, deltaPos2));
+	vec3 normal = normalize(cross(deltaPos1, deltaPos2));
 
 	#if defined NORMAL_MAPPING
         vec3 deltaPos1Perp = cross(normal, deltaPos1);
