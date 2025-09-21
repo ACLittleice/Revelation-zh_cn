@@ -227,7 +227,7 @@ void main() {
 		if (disocclusion) {
 			cloudOut = textureBicubic(cloudOriginTex, currCoord);
 		} else {
-			vec4 prevData = textureCatmullRom(cloudReconstructTex, prevCoord);
+			vec4 prevData = textureCatmullRomFast(cloudReconstructTex, prevCoord, 0.5);
 			prevData.rgb = sRGBToYCoCg(satU16f(prevData.rgb));
 			frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
 
