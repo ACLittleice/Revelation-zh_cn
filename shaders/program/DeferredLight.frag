@@ -333,14 +333,14 @@ void main() {
 			#ifndef SSPT_ENABLED
 				if (emissive.a * lightmap.x > 1e-5) {
 					lightmap.x = CalculateBlocklightFalloff(lightmap.x);
-					sceneOut += lightmap.x * emissive.a * 2.0 * (ao * oms(lightmap.x) + lightmap.x) * blocklightColor;
+					sceneOut += lightmap.x * emissive.a * (ao * oms(lightmap.x) + lightmap.x) * blocklightColor;
 				}
 			#endif
 
 			sceneOut += emissive.rgb * EMISSIVE_BRIGHTNESS;
 		#elif !defined SSPT_ENABLED
 			lightmap.x = CalculateBlocklightFalloff(lightmap.x);
-			sceneOut += lightmap.x * 2.0 * (ao * oms(lightmap.x) + lightmap.x) * blocklightColor;
+			sceneOut += lightmap.x * (ao * oms(lightmap.x) + lightmap.x) * blocklightColor;
 		#endif
 
 		// Handheld light
