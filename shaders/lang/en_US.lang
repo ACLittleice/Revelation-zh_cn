@@ -321,10 +321,10 @@ option.WATER_ABSORPTION_R=Water Absorption §4Red
 option.WATER_ABSORPTION_G=Water Absorption §2Green
 option.WATER_ABSORPTION_B=Water Absorption §1Blue
 option.WATER_FOG_DENSITY=Water Fog Density
-option.WATER_IOR=Water Refract IOR
+option.WATER_IOR=Water IOR
 
 option.TRANSLUCENT_ROUGHNESS=Translucent Roughness
-option.GLASS_IOR=Glass Refract IOR
+option.GLASS_IOR=Glass IOR
 
 # Misc
 option.DEFAULT_DIELECTRIC_F0=Default Dielectric F0
