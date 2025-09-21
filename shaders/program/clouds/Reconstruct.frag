@@ -123,7 +123,7 @@ float lanczos2(float x) {
 }
 
 vec4 textureLanczos(in sampler2D tex, in vec2 coord) {
-	const int radius = 1;
+	const int radius = 2;
 
 	vec2 res = vec2(textureSize(tex, 0));
 	coord = coord * res - 0.5;
@@ -225,7 +225,7 @@ void main() {
 		if (disocclusion) {
 			cloudOut = textureBicubic(cloudOriginTex, currCoord);
 		} else {
-			vec4 prevData = textureCatmullRomFast(cloudReconstructTex, prevCoord, 0.5);
+			vec4 prevData = textureLanczos(cloudReconstructTex, prevCoord);
 			frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
 
 			ivec2 currTexel = clamp(screenTexel / CLOUD_TAAU_SCALE, ivec2(0), ivec2(viewSize) / CLOUD_TAAU_SCALE - 1);
@@ -255,7 +255,7 @@ void main() {
 			alpha /= alpha + 1.0;
 
 			float subpixelSharpen = sdot(fract(prevCoord * viewSize) * 2.0 - 1.0);
-			alpha *= 1.0 - sqr(subpixelSharpen) * 0.25;
+			alpha *= 1.0 - sqr(subpixelSharpen) * 0.2;
 
 			// Accumulate
 			cloudOut = mix(currData, prevData, alpha);
