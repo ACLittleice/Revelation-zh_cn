@@ -20,7 +20,7 @@ uniform sampler2D tex;
 
 //======// Input //===============================================================================//
 
-flat in vec3 flatNormal;
+in vec3 worldPos;
 
 in vec4 vertColor;
 in vec2 texCoord;
@@ -45,9 +45,12 @@ void main() {
 	albedoOut = vec4(albedo.rgb, 1.0);
 
 	gbufferOut0.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
-	gbufferOut0.y = materialID;
+	gbufferOut0.y = lightmap.x > 0.99 ? 20u : 40u;
 
+	vec3 flatNormal = normalize(cross(dFdx(worldPos), dFdy(worldPos)));
 	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(flatNormal));
+	gbufferOut0.w = gbufferOut0.z;
+
 	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
 		gbufferOut1 = vec4(0.0);
 	#endif
