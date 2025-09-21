@@ -12,9 +12,8 @@ screen.Debug=调试
 screen.Compatibility=兼容
 
 screen.Atmospherics=大气
-screen.Transparent=半透明
-screen.Foliage=植物
 screen.Weather=天气
+screen.Foliage=植物
 
 screen.Clouds=云设置
 screen.CrepuscularRays=云隙光
@@ -27,19 +26,21 @@ screen.HighLevelClouds=高云族
 
 screen.Fog=雾
 screen.Volumetric=体积雾
-screen.WaterParams=水参数
 
 screen.GlobalIllumination=全局光照
 screen.AmbientOcclusion=环境光遮蔽
 screen.Reflections=反射
 screen.Refractions=折射
 screen.Shadows=阴影
-screen.Misc=杂项
+screen.MiscLighting=杂项
 
 screen.Normal=法线
 screen.Parallax=视差
 screen.Emissive=自发光
 screen.SubsurfaceScattering=次表面散射
+screen.Transparent=半透明
+screen.WaterParams=水参数
+screen.MiscMaterials=杂项
 
 screen.FidelityFX=FidelityFX
 screen.DoF=景深
@@ -173,20 +174,7 @@ option.LAVA_FOG=岩浆雾
 option.POWDERED_SNOW_FOG=细雪雾
 option.BLINDNESS_DARKNESS_FOG=失明&黑暗雾
 
-# Transparent
-option.WATER_PARALLAX=水体视差
-option.WATER_CAUSTICS=水体焦散
-option.WATER_WAVE_HEIGHT=水波高度
-option.WATER_WAVE_SPEED=水波速度
-option.WATER_ABSORPTION_R=水体吸收系数-§4红
-option.WATER_ABSORPTION_G=水体吸收系数-§2绿
-option.WATER_ABSORPTION_B=水体吸收系数-§1蓝
-option.WATER_FOG_DENSITY=水雾密度
-option.WATER_REFRACT_IOR=水体折射率
-
-option.TRANSLUCENT_ROUGHNESS=半透明粗糙度
-option.GLASS_REFRACT_IOR=玻璃折射率
-
+# Weather
 option.RAIN_PUDDLES=雨水坑
 option.RAIN_PUDDLE_SCALE=雨水坑缩放
 option.RAIN_PUDDLE_SMOOTHNESS=雨水坑平滑度
@@ -195,11 +183,7 @@ option.RAIN_VISIBILITY=雨雪能见度
 option.RAIN_SCALE_X=雨雪缩放-横向
 option.RAIN_SCALE_Y=雨雪缩放-纵向
 
-option.SELECTION_BOX_COLOR_R=选择框颜色-§4红
-option.SELECTION_BOX_COLOR_G=选择框颜色-§2绿
-option.SELECTION_BOX_COLOR_B=选择框颜色-§1蓝
-option.SELECTION_BOX_WIDTH=选择框宽度
-
+# Foliage
 option.WAVING_FOLIAGE=植物晃动
 option.UNLABELLED_FOILAGE_DETECTION=植物判定补充
 
@@ -284,7 +268,6 @@ value.TEXTURE_FORMAT.2=§c§k???
 
 option.NORMAL_MAPPING=法线贴图支持
 option.SPECULAR_MAPPING=高光贴图支持
-option.DEFAULT_DIELECTRIC_F0=默认电介质F0
 
 option.AUTO_GENERATED_NORMAL=自动生成法线
 option.AGN_RESOLUTION=分辨率
@@ -328,6 +311,27 @@ option.REFLECTION_FILTER=反射过滤
 
 option.RAYTRACED_REFRACTION=光线追踪折射
 option.REFRACTION_STRENGTH=折射强度
+
+# Transparent
+option.WATER_PARALLAX=水体视差
+option.WATER_CAUSTICS=水体焦散
+option.WATER_WAVE_HEIGHT=水波高度
+option.WATER_WAVE_SPEED=水波速度
+option.WATER_ABSORPTION_R=水体吸收系数-§4红
+option.WATER_ABSORPTION_G=水体吸收系数-§2绿
+option.WATER_ABSORPTION_B=水体吸收系数-§1蓝
+option.WATER_FOG_DENSITY=水雾密度
+option.WATER_REFRACT_IOR=水体折射率
+
+option.TRANSLUCENT_ROUGHNESS=半透明粗糙度
+option.GLASS_REFRACT_IOR=玻璃折射率
+
+# Misc
+option.DEFAULT_DIELECTRIC_F0=默认电介质F0
+option.SELECTION_BOX_WIDTH=选择框宽度
+option.SELECTION_BOX_COLOR_R=选择框颜色-§4红
+option.SELECTION_BOX_COLOR_G=选择框颜色-§2绿
+option.SELECTION_BOX_COLOR_B=选择框颜色-§1蓝
 
 
 # Post-Processing

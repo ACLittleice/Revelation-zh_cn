@@ -12,9 +12,8 @@ screen.Debug=Debug
 screen.Compatibility=Compatibility
 
 screen.Atmospherics=Atmospherics
-screen.Transparent=Transparent
-screen.Foliage=Foliage
 screen.Weather=Weather
+screen.Foliage=Foliage
 
 screen.Clouds=Clouds
 screen.CrepuscularRays=Crepuscular Rays
@@ -27,19 +26,21 @@ screen.HighLevelClouds=High-level Clouds
 
 screen.Fog=Fog
 screen.Volumetric=Volumetric Fog
-screen.WaterParams=Water Parameters
 
 screen.GlobalIllumination=Global Illumination
 screen.AmbientOcclusion=Ambient Occlusion
 screen.Reflections=Reflections
 screen.Refractions=Refractions
 screen.Shadows=Shadows
-screen.Misc=Misc
+screen.MiscLighting=Miscellaneous
 
 screen.Normal=Normal
 screen.Parallax=Parallax
 screen.Emissive=Emissive
 screen.SubsurfaceScattering=Subsurface Scattering
+screen.Transparent=Transparent
+screen.WaterParams=Water Parameters
+screen.MiscMaterials=Miscellaneous
 
 screen.FidelityFX=FidelityFX
 screen.DoF=DoF
@@ -173,20 +174,7 @@ option.LAVA_FOG=Lava Fog
 option.POWDERED_SNOW_FOG=Powdered Snow Fog
 option.BLINDNESS_DARKNESS_FOG=Blindness & Darkness Fog
 
-# Transparent
-option.WATER_PARALLAX=Water Parallax
-option.WATER_CAUSTICS=Water Caustics
-option.WATER_WAVE_HEIGHT=Water Wave Height
-option.WATER_WAVE_SPEED=Water Wave Speed
-option.WATER_ABSORPTION_R=Water Absorption §4Red
-option.WATER_ABSORPTION_G=Water Absorption §2Green
-option.WATER_ABSORPTION_B=Water Absorption §1Blue
-option.WATER_FOG_DENSITY=Water Fog Density
-option.WATER_REFRACT_IOR=Water Refract IOR
-
-option.TRANSLUCENT_ROUGHNESS=Translucent Roughness
-option.GLASS_REFRACT_IOR=Glass Refract IOR
-
+# Weather
 option.RAIN_PUDDLES=Rain Puddles
 option.RAIN_PUDDLE_SCALE=Rain Puddle Scale
 option.RAIN_PUDDLE_SMOOTHNESS=Rain Puddle Smoothness
@@ -195,11 +183,7 @@ option.RAIN_VISIBILITY=Rain/Snow Visibility
 option.RAIN_SCALE_X=Rain/Snow Scale X
 option.RAIN_SCALE_Y=Rain/Snow Scale Y
 
-option.SELECTION_BOX_COLOR_R=Selection Box Color §4Red
-option.SELECTION_BOX_COLOR_G=Selection Box Color §2Green
-option.SELECTION_BOX_COLOR_B=Selection Box Color §1Blue
-option.SELECTION_BOX_WIDTH=Selection Box Width
-
+# Foliage
 option.WAVING_FOLIAGE=Waving Foliage
 option.UNLABELLED_FOILAGE_DETECTION=Unlabelled Foliage Detection
 
@@ -284,7 +268,6 @@ value.TEXTURE_FORMAT.2=§c§k???
 
 option.NORMAL_MAPPING=Normal Mapping
 option.SPECULAR_MAPPING=Specular Mapping
-option.DEFAULT_DIELECTRIC_F0=Default Dielectric F0
 
 option.AUTO_GENERATED_NORMAL=Auto Generated Normal
 option.AGN_RESOLUTION=AGN Resolution
@@ -328,6 +311,27 @@ option.REFLECTION_FILTER=Reflection Filter
 
 option.RAYTRACED_REFRACTION=Raytraced Refraction
 option.REFRACTION_STRENGTH=Refraction Strength
+
+# Transparent
+option.WATER_PARALLAX=Water Parallax
+option.WATER_CAUSTICS=Water Caustics
+option.WATER_WAVE_HEIGHT=Water Wave Height
+option.WATER_WAVE_SPEED=Water Wave Speed
+option.WATER_ABSORPTION_R=Water Absorption §4Red
+option.WATER_ABSORPTION_G=Water Absorption §2Green
+option.WATER_ABSORPTION_B=Water Absorption §1Blue
+option.WATER_FOG_DENSITY=Water Fog Density
+option.WATER_REFRACT_IOR=Water Refract IOR
+
+option.TRANSLUCENT_ROUGHNESS=Translucent Roughness
+option.GLASS_REFRACT_IOR=Glass Refract IOR
+
+# Misc
+option.DEFAULT_DIELECTRIC_F0=Default Dielectric F0
+option.SELECTION_BOX_WIDTH=Selection Box Width
+option.SELECTION_BOX_COLOR_R=Selection Box Color §4Red
+option.SELECTION_BOX_COLOR_G=Selection Box Color §2Green
+option.SELECTION_BOX_COLOR_B=Selection Box Color §1Blue
 
 
 # Post-Processing
