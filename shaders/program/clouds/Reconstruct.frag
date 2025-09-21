@@ -228,7 +228,8 @@ void main() {
 			vec4 prevData = textureLanczos(cloudReconstructTex, prevCoord);
 			frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
 
-			ivec2 currTexel = clamp(screenTexel / CLOUD_TAAU_SCALE, ivec2(0), ivec2(viewSize) / CLOUD_TAAU_SCALE - 1);
+			ivec2 currTexel = ivec2(gl_FragCoord.xy * rcp(CLOUD_TAAU_SCALE) - R2(frameCounter + 11));
+			currTexel = clamp(currTexel, ivec2(0), ivec2(viewSize) / CLOUD_TAAU_SCALE - 1);
 			vec4 currData = texelFetch(cloudOriginTex, currTexel, 0);
 
 			// Ellipsoid intersection clipping
