@@ -85,9 +85,9 @@ option.RAINBOWS_SECONDARY_INTENSITY=Secondary Rainbow Intensity
 
 # Clouds
 option.CLOUDS=Clouds
-option.CLOUD_CBR_ENABLED=Checkerboard Rendering
-option.CLOUD_CBR_SCALE=CBR Scale
-suffix.CLOUD_CBR_SCALE=x
+option.CLOUD_TAAU_ENABLED=Temporal Upsampling
+option.CLOUD_TAAU_SCALE=Upsampling Scale
+suffix.CLOUD_TAAU_SCALE=x
 
 option.CLOUD_EI_CLIP=Ellipsoid Intersection Clip
 option.CLOUD_MAX_ACCUM_FRAMES=Max Accumulated Frames

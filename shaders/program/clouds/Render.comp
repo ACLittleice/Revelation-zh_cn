@@ -6,9 +6,7 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-	Pass: Checkerboard render clouds
-	Reference: https://www.intel.com/content/dam/develop/external/us/en/documents/checkerboard-rendering-for-real-time-upscaling-on-intel-integrated-graphics.pdf
-			   https://developer.nvidia.com/sites/default/files/akamai/gameworks/samples/DeinterleavedTexturing.pdf
+	Pass: Compute clouds
 
 --------------------------------------------------------------------------------
 */
@@ -23,13 +21,13 @@
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
-#ifndef CLOUD_CBR_ENABLED
+#ifndef CLOUD_TAAU_ENABLED
 	const vec2 workGroupsRender = vec2(1.0, 1.0);
-#elif CLOUD_CBR_SCALE == 2
+#elif CLOUD_TAAU_SCALE == 2
 	const vec2 workGroupsRender = vec2(0.5, 0.5);
-#elif CLOUD_CBR_SCALE == 3
+#elif CLOUD_TAAU_SCALE == 3
 	const vec2 workGroupsRender = vec2(0.333333, 0.333333);
-#elif CLOUD_CBR_SCALE == 4
+#elif CLOUD_TAAU_SCALE == 4
 	const vec2 workGroupsRender = vec2(0.25, 0.25);
 #endif
 
@@ -83,8 +81,9 @@ vec3 ScreenToViewVectorRaw(in vec2 screenCoord) {
 void main() {
     ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
 
-	#ifdef CLOUD_CBR_ENABLED
-		ivec2 cloudTexel = screenTexel * CLOUD_CBR_SCALE + cloudCbrOffset[frameCounter % cloudRenderArea];
+	#ifdef CLOUD_TAAU_ENABLED
+		vec2 ditheredTexel = vec2(screenTexel) + R2(frameCounter + 11);
+		ivec2 cloudTexel = ivec2(ditheredTexel * CLOUD_TAAU_SCALE);
 	#else
 		#define cloudTexel screenTexel
 	#endif
@@ -98,8 +97,8 @@ void main() {
 		if (depthMax > 1.0 - EPS) depthMax = loadDepth0DH(cloudTexel);
 	#endif
 
-	#ifdef CLOUD_CBR_ENABLED
-		depthMax = clusteredMax(depthMax, cloudRenderArea);
+	#ifdef CLOUD_TAAU_ENABLED
+		depthMax = clusteredMax(depthMax, CLOUD_TAAU_SCALE * CLOUD_TAAU_SCALE);
 	#endif
 
 	if (depthMax > 1.0 - EPS) {
@@ -122,10 +121,6 @@ void main() {
 			#endif
 		#endif
 	}
-
-	#ifdef CLOUD_CBR_ENABLED
-		cloudOut.rgb = sRGBToYCoCg(cloudOut.rgb);
-	#endif
 
 	imageStore(cloudOriginImg, screenTexel, cloudOut);
 	imageStore(cloudDepthOriginImg, screenTexel, vec4(cloudDepth));

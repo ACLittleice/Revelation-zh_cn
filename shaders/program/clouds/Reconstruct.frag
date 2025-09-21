@@ -7,8 +7,6 @@
 	Apache License 2.0
 
 	Pass: Temporal reconstruct clouds
-	Reference: https://www.intel.com/content/dam/develop/external/us/en/documents/checkerboard-rendering-for-real-time-upscaling-on-intel-integrated-graphics.pdf
-			   https://developer.nvidia.com/sites/default/files/akamai/gameworks/samples/DeinterleavedTexturing.pdf
 
 --------------------------------------------------------------------------------
 */
@@ -208,7 +206,7 @@ void main() {
 
 		vec2 screenCoord = gl_FragCoord.xy * viewPixelSize;
 
-		const float currScale = rcp(float(CLOUD_CBR_SCALE));
+		const float currScale = rcp(float(CLOUD_TAAU_SCALE));
 		vec2 currCoord = min(screenCoord * currScale, currScale - viewPixelSize);
 
 		float cloudDepth = minOf(textureGather(cloudDepthOriginTex, currCoord, 0));
@@ -228,49 +226,39 @@ void main() {
 			cloudOut = textureBicubic(cloudOriginTex, currCoord);
 		} else {
 			vec4 prevData = textureCatmullRomFast(cloudReconstructTex, prevCoord, 0.5);
-			prevData.rgb = sRGBToYCoCg(satU16f(prevData.rgb));
 			frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
 
-			ivec2 currTexel = clamp(screenTexel / CLOUD_CBR_SCALE, ivec2(0), ivec2(viewSize) / CLOUD_CBR_SCALE - 1);
+			ivec2 currTexel = clamp(screenTexel / CLOUD_TAAU_SCALE, ivec2(0), ivec2(viewSize) / CLOUD_TAAU_SCALE - 1);
 			vec4 currData = texelFetch(cloudOriginTex, currTexel, 0);
 
-			// Checkerboard upscaling
-			ivec2 offset = cloudCbrOffset[frameCounter % cloudRenderArea];
-			if (screenTexel % CLOUD_CBR_SCALE == offset) {
-				// Ellipsoid intersection clipping
-				#ifdef CLOUD_EI_CLIP
-					vec4 sample1 = currentLoad(ivec2(-1,  1));
-					vec4 sample2 = currentLoad(ivec2( 0,  1));
-					vec4 sample3 = currentLoad(ivec2( 1,  1));
-					vec4 sample4 = currentLoad(ivec2(-1,  0));
-					vec4 sample5 = currentLoad(ivec2( 1,  0));
-					vec4 sample6 = currentLoad(ivec2(-1, -1));
-					vec4 sample7 = currentLoad(ivec2( 0, -1));
-					vec4 sample8 = currentLoad(ivec2( 1, -1));
+			// Ellipsoid intersection clipping
+			#ifdef CLOUD_EI_CLIP
+				vec4 sample1 = currentLoad(ivec2(-1,  1));
+				vec4 sample2 = currentLoad(ivec2( 0,  1));
+				vec4 sample3 = currentLoad(ivec2( 1,  1));
+				vec4 sample4 = currentLoad(ivec2(-1,  0));
+				vec4 sample5 = currentLoad(ivec2( 1,  0));
+				vec4 sample6 = currentLoad(ivec2(-1, -1));
+				vec4 sample7 = currentLoad(ivec2( 0, -1));
+				vec4 sample8 = currentLoad(ivec2( 1, -1));
 
-					vec4 clipAvg = mean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
-					vec4 clipAvg2 = sqrMean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
+				vec4 clipAvg = mean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
+				vec4 clipAvg2 = sqrMean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
 
-					vec4 clipStdDev = sqrt(maxEps(clipAvg2 - clipAvg * clipAvg)) * 4.0;
-					prevData -= clipAvg;
-					prevData *= saturate(inversesqrt(sdot(prevData / clipStdDev)));
-					prevData += clipAvg;
-				#endif
+				vec4 clipStdDev = sqrt(maxEps(clipAvg2 - clipAvg * clipAvg)) * 4.0;
+				prevData -= clipAvg;
+				prevData *= saturate(inversesqrt(sdot(prevData / clipStdDev)));
+				prevData += clipAvg;
+			#endif
 
-				float alpha = max0(float(frameOut - cloudRenderArea));
-				alpha /= alpha + 1.0;
+			float alpha = float(frameOut);
+			alpha /= alpha + 1.0;
 
-				float subpixelSharpen = sdot(fract(prevCoord * viewSize) * 2.0 - 1.0);
-				alpha *= 1.0 - sqr(subpixelSharpen) * 0.5;
+			float subpixelSharpen = sdot(fract(prevCoord * viewSize) * 2.0 - 1.0);
+			alpha *= 1.0 - sqr(subpixelSharpen) * 0.25;
 
-				// Accumulate
-				cloudOut = mix(currData, prevData, alpha);
-			} else {
-				// Reuse
-				cloudOut = prevData;
-			}
+			// Accumulate
+			cloudOut = mix(currData, prevData, alpha);
 		}
-
-		cloudOut.rgb = YCoCgToSRGB(cloudOut.rgb);
 	}
 }
