@@ -227,6 +227,7 @@ void main() {
 			cloudOut = textureBicubic(cloudOriginTex, currCoord);
 		} else {
 			vec4 prevData = textureLanczos(cloudReconstructTex, prevCoord);
+			prevData = vec4(satU16f(prevData.rgb), saturate(prevData.a));
 			frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
 
 			ivec2 currTexel = uvToTexel(currCoord);
