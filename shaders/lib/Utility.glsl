@@ -18,6 +18,7 @@
 #include "/lib/utility/Texture.glsl"
 #include "/lib/utility/Phase.glsl"
 #include "/lib/utility/Load.glsl"
+#include "/lib/utility/Offset.glsl"
 #include "/lib/utility/SubgroupOps.glsl"
 
 //================================================================================================//

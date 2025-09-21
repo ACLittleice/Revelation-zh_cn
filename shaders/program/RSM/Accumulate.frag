@@ -33,7 +33,6 @@ out vec4 indirectHistory;
 #include "/lib/universal/Transform.glsl"
 #include "/lib/universal/Fetch.glsl"
 #include "/lib/universal/Random.glsl"
-#include "/lib/universal/Offset.glsl"
 
 void TemporalFilter(in vec3 screenPos, in vec3 worldNormal) {
     vec2 prevCoord = Reproject(screenPos).xy;

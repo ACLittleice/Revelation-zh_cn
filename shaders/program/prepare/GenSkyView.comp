@@ -37,7 +37,6 @@ uniform sampler3D atmosCombinedLut;
 //======// Function //============================================================================//
 
 #include "/lib/universal/Random.glsl"
-#include "/lib/universal/Offset.glsl"
 
 #include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/PrecomputedAtmosphericScattering.glsl"

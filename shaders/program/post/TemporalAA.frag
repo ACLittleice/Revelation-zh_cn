@@ -39,7 +39,6 @@ layout (location = 2) out vec2 motionVectorOut;
 
 #include "/lib/universal/Transform.glsl"
 #include "/lib/universal/Fetch.glsl"
-#include "/lib/universal/Offset.glsl"
 
 vec3 GetClosestFragment(in ivec2 texel, in float depth) {
     vec3 closestFragment = vec3(texel, depth);

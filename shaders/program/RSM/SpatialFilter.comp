@@ -28,7 +28,6 @@ writeonly restrict uniform image2D colorimg3;
 
 //======// Function //============================================================================//
 
-#include "/lib/universal/Offset.glsl"
 #include "/lib/universal/Random.glsl"
 
 const uint padRadius = 2;

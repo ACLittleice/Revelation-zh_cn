@@ -35,7 +35,6 @@ layout (location = 2) out vec2 varianceMoments;
 #include "/lib/universal/Transform.glsl"
 #include "/lib/universal/Fetch.glsl"
 #include "/lib/universal/Random.glsl"
-#include "/lib/universal/Offset.glsl"
 
 void TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal) {
     vec2 prevCoord = Reproject(screenPos).xy;
