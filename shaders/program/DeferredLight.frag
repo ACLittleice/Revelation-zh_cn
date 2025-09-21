@@ -116,12 +116,11 @@ void main() {
 		}
 
 		#ifdef CLOUDS
-			// Dither offset
-			screenCoord += viewPixelSize * (dither * 2.0 - 1.0);
-
 			#ifdef CLOUD_TAAU_ENABLED
 				vec4 cloudData = texture(cloudReconstructTex, screenCoord);
 			#else
+				// Dither offset
+				screenCoord += viewPixelSize * (dither * 2.0 - 1.0);
 				vec4 cloudData = textureBicubic(cloudOriginTex, screenCoord);
 			#endif
 			sceneOut = sceneOut * cloudData.a + cloudData.rgb;
