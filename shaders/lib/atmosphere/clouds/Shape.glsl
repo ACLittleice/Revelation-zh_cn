@@ -128,7 +128,7 @@ float CloudHighDensity(in vec2 rayPos) {
 	#ifdef CLOUD_CIRRUS
 	else {
 		/* Cirrus clouds */
-		vec2 position = (rayPos - windOffset) * 4e-7 + curlNoise * 2e-3;
+		vec2 position = (rayPos - windOffset) * 3e-7 + curlNoise * 1e-3;
 		windOffset *= 2e-7;
 
 		const vec2 angle = cossin(goldenAngle);
