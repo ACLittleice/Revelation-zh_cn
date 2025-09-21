@@ -70,7 +70,7 @@ vec4 CalculateSpecularReflections(in vec3 screenPos, in vec3 viewPos, in vec3 wo
 		reflection = skyRadiance * skylight;
 	}
 
-	float ior = waterMask ? isEyeInWater == 1 ? 1.0 / WATER_REFRACT_IOR : WATER_REFRACT_IOR : GLASS_REFRACT_IOR;
+	float ior = waterMask ? isEyeInWater == 1 ? 1.0 / WATER_IOR : WATER_IOR : GLASS_IOR;
 	float fresnel = FresnelDielectricN(NdotV, ior);
 	uint raySteps = uint(SSRT_MAX_SAMPLES * (fresnel * 0.5 + 0.5));
 
@@ -130,7 +130,7 @@ void main() {
 			vec3 skyRadiance = textureBicubic(skyViewTex, skyViewCoord).rgb;
 
 			vec3 reflection = skyRadiance * remap(0.3, 0.7, cube(waterData.y));
-			float fresnel = FresnelDielectricN(NdotV, WATER_REFRACT_IOR);
+			float fresnel = FresnelDielectricN(NdotV, WATER_IOR);
 
 			sceneOut = mix(sceneOut, reflection, fresnel);
 		}
@@ -195,7 +195,7 @@ void main() {
 					float NdotH = dot(worldNormal, halfway);
 					float LdotH = dot(worldLightVector, halfway);
 
-					float f0 = F0FromIOR(waterMask ? WATER_REFRACT_IOR : GLASS_REFRACT_IOR);
+					float f0 = F0FromIOR(waterMask ? WATER_IOR : GLASS_IOR);
 					lightingOut.rgb += shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, TRANSLUCENT_ROUGHNESS, vec3(f0));
 				} else {
 					lightingOut.rgb += shadow * rPI;

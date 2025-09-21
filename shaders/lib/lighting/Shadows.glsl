@@ -89,7 +89,7 @@ vec3 CalculateWaterCaustics(in vec3 worldPos, in float waterDepth, in float dith
 		vec2 sampleCoord = WorldToShadowScreenSpace(samplePos - vec3(0.0, 1.0, 0.0)).xy;
 		vec3 waveNormal = OctDecodeUnorm(texture(shadowcolor1, sampleCoord).xy);
 
-		vec3 refractDir = refract(vec3(0.0, 1.0, 0.0), waveNormal, 1.0 / WATER_REFRACT_IOR);
+		vec3 refractDir = refract(vec3(0.0, 1.0, 0.0), waveNormal, 1.0 / WATER_IOR);
 		vec3 refractedPos = samplePos - refractDir * rcp(refractDir.y);
 
 		caustics += saturate(1.0 - 512.0 * sdot(worldPos - refractedPos));

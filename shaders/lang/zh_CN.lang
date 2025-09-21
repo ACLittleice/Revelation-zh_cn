@@ -321,10 +321,10 @@ option.WATER_ABSORPTION_R=水体吸收系数-§4红
 option.WATER_ABSORPTION_G=水体吸收系数-§2绿
 option.WATER_ABSORPTION_B=水体吸收系数-§1蓝
 option.WATER_FOG_DENSITY=水雾密度
-option.WATER_REFRACT_IOR=水体折射率
+option.WATER_IOR=水体折射率
 
 option.TRANSLUCENT_ROUGHNESS=半透明粗糙度
-option.GLASS_REFRACT_IOR=玻璃折射率
+option.GLASS_IOR=玻璃折射率
 
 # Misc
 option.DEFAULT_DIELECTRIC_F0=默认电介质F0
