@@ -234,29 +234,29 @@ void main() {
 			ivec2 currTexel = clamp(screenTexel / CLOUD_CBR_SCALE, ivec2(0), ivec2(viewSize) / CLOUD_CBR_SCALE - 1);
 			vec4 currData = texelFetch(cloudOriginTex, currTexel, 0);
 
-			// Ellipsoid intersection clipping
-			#ifdef CLOUD_EI_CLIP
-				vec4 sample1 = currentLoad(ivec2(-1,  1));
-				vec4 sample2 = currentLoad(ivec2( 0,  1));
-				vec4 sample3 = currentLoad(ivec2( 1,  1));
-				vec4 sample4 = currentLoad(ivec2(-1,  0));
-				vec4 sample5 = currentLoad(ivec2( 1,  0));
-				vec4 sample6 = currentLoad(ivec2(-1, -1));
-				vec4 sample7 = currentLoad(ivec2( 0, -1));
-				vec4 sample8 = currentLoad(ivec2( 1, -1));
-
-				vec4 clipAvg = mean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
-				vec4 clipAvg2 = sqrMean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
-
-				vec4 clipStdDev = sqrt(maxEps(clipAvg2 - clipAvg * clipAvg)) * 4.0;
-				prevData -= clipAvg;
-				prevData *= saturate(inversesqrt(sdot(prevData / clipStdDev)));
-				prevData += clipAvg;
-			#endif
-
 			// Checkerboard upscaling
 			ivec2 offset = cloudCbrOffset[frameCounter % cloudRenderArea];
 			if (screenTexel % CLOUD_CBR_SCALE == offset) {
+				// Ellipsoid intersection clipping
+				#ifdef CLOUD_EI_CLIP
+					vec4 sample1 = currentLoad(ivec2(-1,  1));
+					vec4 sample2 = currentLoad(ivec2( 0,  1));
+					vec4 sample3 = currentLoad(ivec2( 1,  1));
+					vec4 sample4 = currentLoad(ivec2(-1,  0));
+					vec4 sample5 = currentLoad(ivec2( 1,  0));
+					vec4 sample6 = currentLoad(ivec2(-1, -1));
+					vec4 sample7 = currentLoad(ivec2( 0, -1));
+					vec4 sample8 = currentLoad(ivec2( 1, -1));
+
+					vec4 clipAvg = mean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
+					vec4 clipAvg2 = sqrMean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
+
+					vec4 clipStdDev = sqrt(maxEps(clipAvg2 - clipAvg * clipAvg)) * 4.0;
+					prevData -= clipAvg;
+					prevData *= saturate(inversesqrt(sdot(prevData / clipStdDev)));
+					prevData += clipAvg;
+				#endif
+
 				float alpha = max0(float(frameOut - cloudRenderArea));
 				alpha /= alpha + 1.0;
 
@@ -266,6 +266,7 @@ void main() {
 				// Accumulate
 				cloudOut = mix(currData, prevData, alpha);
 			} else {
+				// Reuse
 				cloudOut = prevData;
 			}
 		}
