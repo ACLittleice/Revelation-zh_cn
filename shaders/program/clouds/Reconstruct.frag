@@ -207,7 +207,8 @@ void main() {
 		vec2 screenCoord = gl_FragCoord.xy * viewPixelSize;
 
 		const float currScale = rcp(float(CLOUD_TAAU_SCALE));
-		vec2 currCoord = min(screenCoord * currScale, currScale - viewPixelSize);
+		vec2 currCoord = screenCoord * currScale - R2(frameCounter + 11) * viewPixelSize;
+		currCoord = min(currCoord, currScale - viewPixelSize);
 
 		float cloudDepth = minOf(textureGather(cloudDepthOriginTex, currCoord, 0));
 
@@ -228,8 +229,7 @@ void main() {
 			vec4 prevData = textureLanczos(cloudReconstructTex, prevCoord);
 			frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
 
-			ivec2 currTexel = ivec2(gl_FragCoord.xy * rcp(CLOUD_TAAU_SCALE) - R2(frameCounter + 11));
-			currTexel = clamp(currTexel, ivec2(0), ivec2(viewSize) / CLOUD_TAAU_SCALE - 1);
+			ivec2 currTexel = uvToTexel(currCoord);
 			vec4 currData = texelFetch(cloudOriginTex, currTexel, 0);
 
 			// Ellipsoid intersection clipping
