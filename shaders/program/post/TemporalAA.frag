@@ -68,41 +68,44 @@ vec3 historyClipAABB(in vec3 history, in vec3 clipMin, in vec3 clipMax) {
     return history;
 }
 
-// Approximation from SMAA presentation from siggraph 2016
-vec4 textureCatmullRomFast(in sampler2D tex, in vec2 coord, in const float sharpness) {
-    //vec2 viewSize = textureSize(sampler, 0);
-    //vec2 pixelSize = 1.0 / viewSize;
+float sinc(float x) {
+    return sin(PI * x) / (PI * x);
+}
 
-    vec2 position = viewSize * coord;
-    vec2 centerPosition = floor(position - 0.5) + 0.5;
-    vec2 f = position - centerPosition;
-    vec2 f2 = f * f;
-    vec2 f3 = f * f2;
+float lanczos2(float x) {
+    x = clamp(x, -2.0, 2.0);
+    if (abs(x) < EPS) return 1.0;
+    else return sinc(x) * sinc(x * 0.5);
+}
 
-    vec2 w0 = -sharpness        * f3 + 2.0 * sharpness         * f2 - sharpness * f;
-    vec2 w1 = (2.0 - sharpness) * f3 - (3.0 - sharpness)       * f2 + 1.0;
-    vec2 w2 = (sharpness - 2.0) * f3 + (3.0 - 2.0 * sharpness) * f2 + sharpness * f;
-    vec2 w3 = sharpness         * f3 - sharpness               * f2;
+vec3 textureLanczos(in sampler2D tex, in vec2 coord) {
+	const int radius = 1;
 
-    vec2 w12 = w1 + w2;
+	vec2 res = vec2(textureSize(tex, 0));
+	coord = coord * res - 0.5;
 
-    vec2 tc0 = viewPixelSize * (centerPosition - 1.0);
-    vec2 tc3 = viewPixelSize * (centerPosition + 2.0);
-    vec2 tc12 = viewPixelSize * (centerPosition + w2 / w12);
+    vec2 p = floor(coord);
+    vec2 f = coord - p;
 
-    float l0 = w12.x * w0.y;
-    float l1 = w0.x  * w12.y;
-    float l2 = w12.x * w12.y;
-    float l3 = w3.x  * w12.y;
-    float l4 = w12.x * w3.y;
+	ivec2 texel = ivec2(p);
 
-    vec4 color =  texture(tex, vec2(tc12.x, tc0.y )) * l0
-                + texture(tex, vec2(tc0.x,  tc12.y)) * l1
-                + texture(tex, vec2(tc12.x, tc12.y)) * l2
-                + texture(tex, vec2(tc3.x,  tc12.y)) * l3
-                + texture(tex, vec2(tc12.x, tc3.y )) * l4;
+    vec3 sum = vec3(0.0);
+	float sumWeight = 0.0;
 
-    return color / (l0 + l1 + l2 + l3 + l4);
+    for (int x = -radius; x <= radius; ++x) {
+        float fx = lanczos2(float(x) - f.x);
+
+        for (int y = -radius; y <= radius; ++y) {
+			float fy = lanczos2(float(y) - f.y);
+			float weight = fx * fy;
+
+			vec3 sampleData = texelFetch(tex, texel + ivec2(x, y), 0).rgb;
+            sum += sampleData * weight;
+			sumWeight += weight;
+        }
+    }
+
+    return sum * rcp(sumWeight);
 }
 
 // Lumiance aware perceptual weight
@@ -128,8 +131,7 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
     if (saturate(prevCoord) != prevCoord) return vec4(currData, 1.0);
 
     #ifdef TAA_SHARPEN
-        vec3 prevData = textureCatmullRomFast(colortex1, prevCoord, TAA_SHARPNESS).rgb;
-        prevData = satU16f(prevData);
+        vec3 prevData = textureLanczos(colortex1, prevCoord).rgb;
     #else
         vec3 prevData = texture(colortex1, prevCoord).rgb;
     #endif

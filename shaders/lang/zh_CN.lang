@@ -337,7 +337,6 @@ option.TAA_EI_CLIP=椭球交裁切
 option.TAA_AGGRESSION=裁切容差
 option.TAA_MAX_ACCUM_FRAMES=最大累积帧数
 option.TAA_SHARPEN=锐化
-option.TAA_SHARPNESS=锐化强度
 
 option.MOTION_BLUR=动态模糊
 option.MOTION_BLUR_SAMPLES=动态模糊采样数

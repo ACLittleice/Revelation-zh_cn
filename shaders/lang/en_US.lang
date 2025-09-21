@@ -337,7 +337,6 @@ option.TAA_EI_CLIP=Ellipsoid Intersection Clip
 option.TAA_AGGRESSION=TAA Aggression
 option.TAA_MAX_ACCUM_FRAMES=Max Accumulated Frames
 option.TAA_SHARPEN=TAA Sharpen
-option.TAA_SHARPNESS=TAA Sharpness
 
 option.MOTION_BLUR=Motion Blur
 option.MOTION_BLUR_SAMPLES=Motion Blur Samples
