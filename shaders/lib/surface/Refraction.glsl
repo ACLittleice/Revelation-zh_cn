@@ -1,5 +1,5 @@
 #ifdef RAYTRACED_REFRACTION
-#include "/lib/surface/ScreenSpaceRaytracer.glsl"
+#include "/lib/surface/SSRT.glsl"
 
 vec2 CalculateRefractedCoord(in bool waterMask, in vec3 viewPos, in vec3 viewNormal, in vec3 screenPos) {
 	vec3 rayDir = refract(normalize(viewPos), viewNormal, mix(1.0 / GLASS_REFRACT_IOR, 1.0 / WATER_REFRACT_IOR, waterMask));

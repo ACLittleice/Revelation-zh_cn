@@ -53,7 +53,7 @@ writeonly uniform image2D colorimg3; // Specular lighting output
 #include "/lib/lighting/Common.glsl"
 #include "/lib/lighting/Shadows.glsl"
 
-#include "/lib/surface/ScreenSpaceRaytracer.glsl"
+#include "/lib/surface/SSRT.glsl"
 
 vec4 CalculateSpecularReflections(in vec3 screenPos, in vec3 viewPos, in vec3 worldNormal, in vec3 worldDir, in float dither, in float skylight, in bool waterMask) {
 	float NdotV = abs(dot(worldNormal, worldDir));
@@ -72,7 +72,7 @@ vec4 CalculateSpecularReflections(in vec3 screenPos, in vec3 viewPos, in vec3 wo
 
 	float ior = waterMask ? isEyeInWater == 1 ? 1.0 / WATER_REFRACT_IOR : WATER_REFRACT_IOR : GLASS_REFRACT_IOR;
 	float fresnel = FresnelDielectricN(NdotV, ior);
-	uint raySteps = uint(RAYTRACE_SAMPLES * (fresnel * 0.5 + 0.5));
+	uint raySteps = uint(SSRT_MAX_SAMPLES * (fresnel * 0.5 + 0.5));
 
 	if (ScreenSpaceRaytrace(viewPos, mat3(gbufferModelView) * rayDir, dither, raySteps, screenPos)) {
 		screenPos.xy *= viewPixelSize;

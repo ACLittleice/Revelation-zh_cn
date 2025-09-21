@@ -1,4 +1,4 @@
-#include "/lib/surface/ScreenSpaceRaytracer.glsl"
+#include "/lib/surface/SSRT.glsl"
 
 vec4 CalculateSpecularReflections(Material material, in vec3 normal, in vec3 screenPos, in vec3 worldDir, in vec3 viewPos, in float skylight, in float dither) {
 #ifdef ROUGH_REFLECTIONS
@@ -11,7 +11,7 @@ vec4 CalculateSpecularReflections(Material material, in vec3 normal, in vec3 scr
 		float NdotL = dot(normal, lightDir);
 		if (NdotL < EPS) return vec4(0.0);
 
-		bool hit = ScreenSpaceRaytrace(viewPos, mat3(gbufferModelView) * lightDir, dither, uint(RAYTRACE_SAMPLES * oms(material.roughness)), screenPos);
+		bool hit = ScreenSpaceRaytrace(viewPos, mat3(gbufferModelView) * lightDir, dither, uint(SSRT_MAX_SAMPLES * oms(material.roughness)), screenPos);
 
 		vec4 reflection = vec4(0.0);
 		if (hit) {
@@ -45,7 +45,7 @@ vec4 CalculateSpecularReflections(Material material, in vec3 normal, in vec3 scr
 			reflection = skyRadiance * skylight;
 		}
 
-		bool hit = ScreenSpaceRaytrace(viewPos, mat3(gbufferModelView) * lightDir, dither, RAYTRACE_SAMPLES, screenPos);
+		bool hit = ScreenSpaceRaytrace(viewPos, mat3(gbufferModelView) * lightDir, dither, SSRT_MAX_SAMPLES, screenPos);
 		if (hit) {
 			screenPos.xy *= viewPixelSize;
 			float edgeFade = screenPos.x * screenPos.y * oms(screenPos.x) * oms(screenPos.y);

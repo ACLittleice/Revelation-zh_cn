@@ -1,10 +1,10 @@
-#define RAYTRACE_SAMPLES 20 // [4 8 12 16 18 20 24 28 32 36 40 48 64 128 256 512]
-#define REAL_SKY_REFLECTIONS
+#define SSRT_MAX_SAMPLES 20 // [4 8 12 16 18 20 24 28 32 36 40 48 64 128 256 512]
+#define SSRT_SKY_TRACING
 
-#define RAYTRACE_REFINEMENT
-#define RAYTRACE_REFINEMENT_STEPS 6 // [2 3 4 5 6 7 8 9 10 12 14 16 18 20 22 24 26 28 30 32]
+#define SSRT_REFINEMENT
+#define SSRT_REFINEMENT_STEPS 6 // [2 3 4 5 6 7 8 9 10 12 14 16 18 20 22 24 26 28 30 32]
 
-#define RAYTRACE_ADAPTIVE_STEP
+#define SSRT_ADAPTIVE_STEP
 
 //================================================================================================//
 
@@ -17,7 +17,7 @@
 #endif
 
 bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in uint steps, inout vec3 rayPos) {
-	if (viewDir.z >= maxEps(-viewPos.z)) return false;
+	if (viewDir.z > max0(-viewPos.z)) return false;
 
     float rSteps = 1.0 / float(steps);
 
@@ -45,7 +45,7 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
     for (uint i = 0u; i < steps; ++i, rayPos += rayStep) {
         if (clamp(rayPos.xy, vec2(0.0), viewSize) != rayPos.xy) break;
 
-        #ifndef REAL_SKY_REFLECTIONS
+        #ifndef SSRT_SKY_TRACING
             if (rayPos.z >= screenDepthMax) break;
         #endif
 
@@ -61,15 +61,15 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
             break;
         }
 
-        #ifdef RAYTRACE_ADAPTIVE_STEP
+        #ifdef SSRT_ADAPTIVE_STEP
             rayStep = rayDir * clamp((sampleDepth - rayPos.z) * stepWeight, diffTolerance * rSteps, rSteps);
         #endif
     }
 
     // Refine hit position (binary search)
-    #ifdef RAYTRACE_REFINEMENT
+    #ifdef SSRT_REFINEMENT
 	if (hit) {
-        for (uint i = 0u; i < RAYTRACE_REFINEMENT_STEPS; ++i) {
+        for (uint i = 0u; i < SSRT_REFINEMENT_STEPS; ++i) {
             rayStep *= 0.5;
 
             float sampleDepth = loadDepthMacro(ivec2(rayPos.xy));
