@@ -6,7 +6,7 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-	Pass: Compute translucent specular lighting & water fog
+	Pass: Compute translucent lighting & water fog
 
 --------------------------------------------------------------------------------
 */
@@ -25,7 +25,7 @@ const vec2 workGroupsRender = vec2(1.0, 1.0);
 //======// Uniform //=============================================================================//
 
 layout (r11f_g11f_b10f) restrict uniform image2D colorimg0; // Scene data
-writeonly uniform image2D colorimg3; // Specular lighting output
+writeonly uniform image2D colorimg3; // Lighting output
 
 #include "/lib/universal/Uniform.glsl"
 
@@ -81,7 +81,7 @@ vec4 CalculateSpecularReflections(in vec3 screenPos, in vec3 viewPos, in vec3 wo
 		reflection += (texture(colortex4, screenPos.xy * 0.5).rgb - reflection) * saturate(edgeFade);
 	}
 
-	return satU16f(vec4(reflection * fresnel, fresnel));
+	return satU16f(vec4(reflection, fresnel));
 }
 
 //======// Main //================================================================================//
@@ -89,8 +89,11 @@ void main() {
     ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
 	uvec4 gbufferData0 = loadGbufferData0(screenTexel);
 
+	uint materialID = gbufferData0.y;
+	bool notParticle = materialID != 1000u;
+
 	// Skip opaque fragments
-	if (clamp(gbufferData0.y, 2u, 3u) != gbufferData0.y) return;
+	if (clamp(materialID, 2u, 3u) != materialID && notParticle) return;
 
 	float depth = loadDepth0(screenTexel);
 	vec3 screenPos = vec3(texelToUv(screenTexel), depth);
@@ -110,14 +113,14 @@ void main() {
 	vec2 waterData = Unpack2x8(texelFetch(colortex12, screenTexel, 0).x);
 	bool waterMask = waterData.x > 0.0;
 
-	// Water fog
+	// Process water
 	if (waterMask && isEyeInWater == 0) {
 		mat2x3 waterFog = AnalyticWaterFog(waterData.y, waterData.x * 64.0, dot(worldLightVector, worldDir));
 
 		vec3 sceneOut = ApplyFog(imageLoad(colorimg0, screenTexel).rgb, waterFog);
 
 		// Skybox reflection for occluded water
-		if (gbufferData0.y == 2u) {
+		if (materialID == 2u) {
 			vec3 worldNormal = OctDecodeUnorm(Unpack2x8(texelFetch(colortex12, screenTexel, 0).y));
 
 			float NdotV = abs(dot(worldNormal, worldDir));
@@ -137,12 +140,28 @@ void main() {
 
 	//============================================================================================//
 
-	// Specular lighting
-	float skyLightmap = Unpack2x8UY(gbufferData0.x);
+	// Translucent lighting
+	vec4 lightingOut = vec4(0.0);
+
+	vec2 lightmap = Unpack2x8U(gbufferData0.x);
 	vec3 worldNormal = FetchWorldNormal(gbufferData0.w);
 
 	float dither = SampleStbnVec1(screenTexel, frameCounter + 4);
-	vec4 specularOut = CalculateSpecularReflections(screenPos, viewPos, worldNormal, worldDir, dither, skyLightmap, waterMask);
+	float NdotL = 1.0; // Particle has no normal
+
+	if (notParticle) {
+		NdotL = dot(worldNormal, worldLightVector);
+
+		// Specular indirect
+		lightingOut = CalculateSpecularReflections(screenPos, viewPos, worldNormal, worldDir, dither, lightmap.y, waterMask);
+	} else {
+		// Skylight
+		lightingOut.rgb = global.light.skyIlluminance * cube(lightmap.y);
+
+		// Blocklight
+		vec3 blocklightColor = blackbody(float(BLOCKLIGHT_TEMPERATURE));
+		lightingOut.rgb += CalculateBlocklightFalloff(lightmap.x) * blocklightColor;
+	}
 
 	// Cloud shadows
 	#ifdef CLOUD_SHADOWS
@@ -153,16 +172,13 @@ void main() {
 	#endif
 
 	// Sunlight
-	vec3 sunlightMult = cloudShadow * saturate(skyLightmap * 1e6) * global.light.directIlluminance;
-	float NdotL = dot(worldNormal, worldLightVector);
-
-	// Direct specular lighting
+	vec3 sunlightMult = cloudShadow * saturate(lightmap.y * 1e6) * global.light.directIlluminance;
 	if (NdotL > 1e-3) {
 		float distortionFactor;
 
-		vec3 flatNormal = FetchFlatNormal(gbufferData0);
-		vec3 normalOffset = flatNormal * (worldDistSquared * 1e-4 + 3e-2) * (2.0 - saturate(NdotL));
-		vec3 shadowScreenPos = WorldToShadowScreenSpace(worldPos + normalOffset, distortionFactor);
+		// vec3 flatNormal = FetchFlatNormal(gbufferData0);
+		// vec3 normalOffset = flatNormal * (worldDistSquared * 1e-4 + 3e-2) * (2.0 - saturate(NdotL));
+		vec3 shadowScreenPos = WorldToShadowScreenSpace(worldPos/*  + normalOffset */, distortionFactor);
 
 		if (saturate(shadowScreenPos) == shadowScreenPos) {
 			float blockerSearch = BlockerSearch(shadowScreenPos, dither, 0.5 * distortionFactor);
@@ -171,18 +187,22 @@ void main() {
 			vec3 shadow = PercentageCloserFilter(shadowScreenPos, worldPos, dither, 0.5 * blockerSearch * distortionFactor);
 
 			if (dot(shadow, vec3(1.0)) > EPS) {
-				float NdotV = abs(dot(worldNormal, worldDir));
-				vec3 halfway = normalize(worldLightVector - worldDir);
-				float NdotH = dot(worldNormal, halfway);
-				float LdotH = dot(worldLightVector, halfway);
-
 				shadow = saturate(shadow) * sunlightMult;
 
-				float f0 = F0FromIOR(waterMask ? WATER_REFRACT_IOR : GLASS_REFRACT_IOR);
-				specularOut.rgb += shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, TRANSLUCENT_ROUGHNESS, vec3(f0));
+				if (notParticle) {
+					float NdotV = abs(dot(worldNormal, worldDir));
+					vec3 halfway = normalize(worldLightVector - worldDir);
+					float NdotH = dot(worldNormal, halfway);
+					float LdotH = dot(worldLightVector, halfway);
+
+					float f0 = F0FromIOR(waterMask ? WATER_REFRACT_IOR : GLASS_REFRACT_IOR);
+					lightingOut.rgb += shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, TRANSLUCENT_ROUGHNESS, vec3(f0));
+				} else {
+					lightingOut.rgb += shadow * rPI;
+				}
 			}
 		}
 	}
 
-	imageStore(colorimg3, screenTexel, specularOut);
+	imageStore(colorimg3, screenTexel, lightingOut);
 }

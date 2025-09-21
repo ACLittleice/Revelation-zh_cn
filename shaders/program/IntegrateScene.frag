@@ -132,6 +132,14 @@ void main() {
 			}
 		#endif
 
+		// Particle translucent
+		if (materialID == 1000u) {
+			vec3 diffuseLight = texelFetch(colortex3, screenTexel, 0).rgb;
+			vec3 albedo = sRGBtoLinear(gbufferData1.rgb);
+			sceneOut = mix(sceneOut, albedo * diffuseLight, gbufferData1.a);
+		}
+
+		// Translucent
 		if (glassMask || waterMask) {
 			// Glass absorption
 			if (glassMask) {
@@ -142,7 +150,7 @@ void main() {
 
 			// Apply specular lighting
 			vec4 specularLight = texelFetch(colortex3, screenTexel, 0);
-			sceneOut += specularLight.rgb - sceneOut * specularLight.a;
+			sceneOut = mix(sceneOut, specularLight.rgb, specularLight.a);
 		}
 
 		// Border fog
