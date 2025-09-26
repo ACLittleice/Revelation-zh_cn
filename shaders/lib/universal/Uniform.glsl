@@ -20,7 +20,7 @@ uniform sampler2D depthtex0;
 uniform sampler2D depthtex1;
 uniform sampler2D depthtex2;
 
-uniform sampler2D waterDepthTex;
+uniform sampler2D brdfLutTex;
 
 uniform sampler3D stbnVec1Tex;
 uniform sampler3D stbnVec2Tex;

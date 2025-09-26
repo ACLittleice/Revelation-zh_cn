@@ -124,6 +124,8 @@ void main() {
 			#endif
 			sceneOut = sceneOut * cloudData.a + cloudData.rgb;
 		#endif
+
+		imageStore(colorimg8, screenTexel, vec4(0.0));
 	} else {
 		worldPos += gbufferModelViewInverse[3].xyz;
 

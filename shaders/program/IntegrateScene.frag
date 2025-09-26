@@ -26,7 +26,6 @@ layout (location = 1) out float bloomyFogMask;
 //======// Uniform //=============================================================================//
 
 uniform usampler2D colortex11; // Volumetric Fog, linear depth
-uniform sampler2D brdfLutTex;
 
 #if defined DEPTH_OF_FIELD && CAMERA_FOCUS_MODE == 0
     uniform float centerDepthSmooth;
@@ -114,23 +113,6 @@ void main() {
 
 	if (depth < 1.0) {
 		vec4 gbufferData1 = loadGbufferData1(screenTexel);
-
-		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-			Material material = GetMaterialData(gbufferData1.xy);
-
-			if (material.specularMask) {
-				// Specular reflections of other materials
-				vec3 specularLight = texelFetch(colortex3, screenTexel, 0).rgb;
-				vec3 albedo = sRGBtoLinear(loadAlbedo(screenTexel));
-
-				float NdotV = abs(dot(worldNormal, worldDir));
-				vec2 brdf = texture(brdfLutTex, vec2(material.roughness, NdotV)).xy;
-
-				vec3 f0 = GetMaterialF0(material.metalness, albedo);
-				vec3 specular = f0 * brdf.x + brdf.y;
-				sceneOut = mix(sceneOut, specularLight, specular);
-			}
-		#endif
 
 		// Particle translucent
 		if (materialID == 1000u) {
