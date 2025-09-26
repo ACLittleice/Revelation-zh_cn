@@ -94,7 +94,7 @@ void SpecularFilter(inout vec4 specularData, in ivec2 texel, in float roughness,
 
         float weight = lobeWeight(worldNormal, sampleWorldNormal, roughness, sampleRoughness, 2.0);
         // weight *= exp2(abs(specularData.a - sampleData.a) * hitDistPhi);
-        // weight = saturate(weight);
+        weight = saturate(weight);
 
         // Sharpen
         sampleData.rgb *= pow(sdot(sampleData.rgb) + EPS, 0.5 * sharpenWeight - 0.5);
@@ -121,7 +121,7 @@ void main() {
         vec3 worldDir = mat3(gbufferModelViewInverse) * viewDir;
         vec3 worldNormal = FetchWorldNormal(screenTexel);
 
-        vec2 randOffset = SampleStbnVec2(screenTexel, frameCounter);
+        vec2 randOffset = SampleStbnVec2(screenTexel, frameCounter) - 0.5;
         vec4 specularData = texelFetch(colortex3, screenTexel, 0);
         SpecularFilter(specularData, screenTexel, material.roughness, worldNormal, worldDir, SPECULAR_FILTER_SIZE, randOffset);
 
