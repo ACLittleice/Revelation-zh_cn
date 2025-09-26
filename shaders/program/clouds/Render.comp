@@ -89,7 +89,7 @@ void main() {
 	vec2 cloudUv = texelToUv(cloudTexel);
 
 	vec4 cloudOut = vec4(0.0, 0.0, 0.0, 1.0);
-	float cloudDepth = 128e3;
+	float cloudDepth = -1.0;
 
 	float depthMax = loadDepth2(cloudTexel);
 	#if defined DISTANT_HORIZONS

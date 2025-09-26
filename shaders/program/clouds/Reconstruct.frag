@@ -194,22 +194,16 @@ void main() {
 	cloudOut = vec4(0.0, 0.0, 0.0, 1.0);
 	frameOut = 0u;
 
-    ivec2 screenTexel = ivec2(gl_FragCoord.xy);
-	float depth = loadDepth2(screenTexel);
-	#if defined DISTANT_HORIZONS
-		if (depth > 1.0 - EPS) depth = loadDepth0DH(screenTexel);
-	#endif
+	vec2 screenCoord = gl_FragCoord.xy * viewPixelSize;
 
-	if (depth > 1.0 - EPS) {
+	const float currScale = rcp(float(CLOUD_TAAU_SCALE));
+	vec2 currCoord = screenCoord * currScale - R2(frameCounter + 11) * viewPixelSize;
+	currCoord = min(currCoord, currScale - viewPixelSize);
+
+	float cloudDepth = minOf(textureGather(cloudDepthOriginTex, currCoord, 0));
+
+	if (cloudDepth > EPS) {
 		frameOut = 1u;
-
-		vec2 screenCoord = gl_FragCoord.xy * viewPixelSize;
-
-		const float currScale = rcp(float(CLOUD_TAAU_SCALE));
-		vec2 currCoord = screenCoord * currScale - R2(frameCounter + 11) * viewPixelSize;
-		currCoord = min(currCoord, currScale - viewPixelSize);
-
-		float cloudDepth = minOf(textureGather(cloudDepthOriginTex, currCoord, 0));
 
 		vec2 prevCoord = ReprojectClouds(screenCoord, cloudDepth).xy;
 		uint frameIndex = texture(colortex13, prevCoord).x;
