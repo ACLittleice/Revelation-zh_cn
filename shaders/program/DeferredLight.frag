@@ -309,7 +309,7 @@ void main() {
 				skylight *= 0.02 * (worldNormal.y * 0.5 + 0.5);
 
 				// Spherical harmonics skylight
-				skylight += max(FromSphericalHarmonics(global.light.skySH, worldNormal), global.light.skySH[0] * 0.2820947918);
+				skylight += ConvolvedReconstructSH3(global.light.skySH, worldNormal);
 
 				sceneOut += skylight * cube(lightmap.y) * ao;
 

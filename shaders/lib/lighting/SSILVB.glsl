@@ -42,7 +42,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
         vec3 projN = viewNormal - sliceN * dot(viewNormal, sliceN);
         float cosN = dot(projN, viewDir) * inversesqrt(sdot(projN));
 
-        float angN = -fastSign(dot(projN, cross(viewDir, sliceN))) * acosFast4(cosN);
+        float angN = -fastSign(dot(projN, cross(viewDir, sliceN))) * acosFast4(clamp(cosN, -1.0, 1.0));
         float angOff = angN * rPI + 0.5;
 
         uint bitMask = 0u;
@@ -61,7 +61,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
 
                     vec2 frontBackHorizon = vec2(dot(sampleDirFront, viewDir), dot(sampleDirBack, viewDir));
 
-                    frontBackHorizon = acosFast4(frontBackHorizon);
+                    frontBackHorizon = acosFast4(clamp(frontBackHorizon, -1.0, 1.0));
                     frontBackHorizon = saturate(frontBackHorizon * rPI + angOff);
 
                     uint sBitMask = updateSectors(frontBackHorizon.x, frontBackHorizon.y);
@@ -89,6 +89,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
     irradiance *= rSectorCount * rSliceCount;
     irradiance = vec4(irradiance.rgb * PI, 1.0 - irradiance.a);
 
-    irradiance.rgb += FromSphericalHarmonics(global.light.skySH, worldNormal) * irradiance.a * cube(lightmap.y);
+    vec3 skylight = ConvolvedReconstructSH3(global.light.skySH, worldNormal);
+    irradiance.rgb += skylight * irradiance.a * cube(lightmap.y);
     return irradiance;
 }

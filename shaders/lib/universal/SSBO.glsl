@@ -2,7 +2,7 @@
 struct LightData {
     vec3 directIlluminance;
     vec3 skyIlluminance;
-    vec3[4] skySH;
+    vec3[9] skySH;
 };
 
 struct ExposureData {
