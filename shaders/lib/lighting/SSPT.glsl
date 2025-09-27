@@ -89,7 +89,7 @@ vec3 CalculateSSPT(in vec3 screenPos, in vec3 viewPos, in vec3 worldNormal, in v
 				float occulusion = saturate(dot(viewNormal, rayDir));
 				vec3 skyRadiance = FromSphericalHarmonics(global.light.skySH, worldNormal);
 				sum += (skyRadiance * lightmap.y + lightmap.x) * occulusion;
-				break;
+				// break;
 			}
 
             // Russian roulette
