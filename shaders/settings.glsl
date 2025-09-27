@@ -23,17 +23,17 @@ const float	shadowDistance 	  = 192.0; // [64.0 80.0 96.0 112.0 128.0 160.0 192.
 const ivec2 skyViewRes = ivec2(256, 128);
 
 /* Clouds */
-	#define CLOUDS // Enables clouds
-	#define CLOUD_SHADOWS // Enables cloud shadows
+	#define CLOUDS
+	#define CLOUD_SHADOWS
 
 	#ifndef CLOUDS
 		#undef CLOUD_SHADOWS
 	#endif
 
-	#define CLOUD_TAAU_ENABLED // Enables cloud checkerboard rendering
-	#define CLOUD_TAAU_SCALE 2 // Upscaling factor for cloud checkerboard rendering. [2 3 4 5]
-	#define CLOUD_MAX_ACCUM_FRAMES 64 // Maximum number of accumulated frames for cloud temporal upscaling. [16 20 24 28 32 36 40 44 48 52 56 60 64 68 72 76 80 84 88 92 96 100 104 108 112 116 120 124 128 132 136 140 144 148 152 156 160 164 168 172 176 180 184 188 192 196 200 204 208 212 216 220 224 228 232 236 240 244 248 252]
-	// #define CLOUD_EI_CLIP // Enables ellipsoid intersection clipping for cloud temporal upscaling
+	#define CLOUD_TAAU_ENABLED
+	#define CLOUD_TAAU_SCALE 2 // [2 3 4 5]
+	#define CLOUD_MAX_ACCUM_FRAMES 64 // [16 20 24 28 32 36 40 44 48 52 56 60 64 68 72 76 80 84 88 92 96 100 104 108 112 116 120 124 128 132 136 140 144 148 152 156 160 164 168 172 176 180 184 188 192 196 200 204 208 212 216 220 224 228 232 236 240 244 248 252]
+	// #define CLOUD_EI_CLIP
 
 /* Fog */
 	// #define BORDER_FOG // Enables border fog
