@@ -18,30 +18,28 @@ float horizonWeight(vec3 projNormal, vec3 pos) {
     return sqrt(1.0 - cosH * cosH);
 }
 
-vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal) {
+vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in vec2 lightmap) {
 	const uint sliceCount = 2u;
 	const uint sampleCount = 8u;
 	const float sampleRadius = 4.0;
-	const float hitThickness = 2.0;
+	const float hitThickness = 1.0;
 
 	const float rSliceCount = 1.0 / float(sliceCount);
 	const float rSampleCount = 1.0 / float(sampleCount);
 	const float rSectorCount = 1.0 / float(sectorCount);
 
-    NoiseGenerator noiseGenerator = initNoiseGenerator(gl_GlobalInvocationID.xy, uint(frameCounter));
-    vec2 dither = Halton23(noiseGenerator.currentNum);
+    vec2 noise = SampleStbnVec2(ivec2(gl_GlobalInvocationID.xy), frameCounter);
 
     vec3 viewDir = normalize(-viewPos);
     vec3 viewNormal = mat3(gbufferModelView) * worldNormal;
 
-    float visibility = 0.0;
-    vec3 irradiance = vec3(0.0);
+    vec4 irradiance = vec4(0.0);
 
     const float sliceRotation = TAU * rSliceCount;
     vec2 sampleScale = -sampleRadius / viewPos.z * diagonal2(gbufferProjection);
 
     for (uint slice = 0u; slice < sliceCount; ++slice) {
-        float phi = sliceRotation * (float(slice) + dither.x);
+        float phi = sliceRotation * (float(slice) + noise.x);
         vec2 omega = vec2(cos(phi), sin(phi));
         vec3 orthoDir = cross(vec3(omega, 0.0), viewDir);
         vec3 projNormal = viewNormal - orthoDir * dot(viewNormal, orthoDir);
@@ -50,37 +48,45 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal) {
         uint bitMask = 0u;
 
         for (uint currentSample = 0u; currentSample < sampleCount; ++currentSample) {
-            float sampleStep = (float(currentSample) + dither.y) * rSampleCount;
+            float sampleStep = (float(currentSample) + noise.y) * rSampleCount;
             vec2 sampleUV = fragCoord + sampleStep * stepDir;
 
 			if (saturate(sampleUV) == sampleUV) {
 				vec3 sampleDiff = ScreenToViewSpace(sampleUV) - viewPos;
-                vec3 sampleDirFront = normalize(sampleDiff);
-				vec3 sampleDirBack = normalize(sampleDiff - viewDir * hitThickness);
+                float frontDistSq = sdot(sampleDiff);
 
-                float frontHorizon = horizonWeight(projNormal, sampleDirFront);
-                float backHorizon = horizonWeight(projNormal, sampleDirBack);
+                if (frontDistSq < sampleRadius * sampleRadius) {
+                    vec3 sampleDirFront = sampleDiff * inversesqrt(frontDistSq);
+                    vec3 sampleDirBack = normalize(sampleDiff - viewDir * hitThickness);
 
-				uint sBitMask = updateSectors(min(frontHorizon, backHorizon), max(frontHorizon, backHorizon));
-				uint sampleOccludedBit = bitCount(sBitMask & ~bitMask);
+                    float frontHorizon = horizonWeight(projNormal, sampleDirFront);
+                    float backHorizon = horizonWeight(projNormal, sampleDirBack);
 
-				if (sampleOccludedBit > 0u) {
-                    ivec2 sampleTexel = uvToTexel(sampleUV);
-					vec3 sampleNormal = mat3(gbufferModelView) * FetchWorldNormal(loadGbufferData0(sampleTexel));
-                    // uint mipLevel = min((currentSample + 1u) >> 2u, 4u);
-					vec3 sampleRadiance = texelFetch(colortex4, sampleTexel >> 1, 0).rgb;
-					irradiance += float(sampleOccludedBit) *
-						saturate(dot(viewNormal, sampleDirFront)) *
-						saturate(dot(sampleNormal, -sampleDirFront)) *
-						sampleRadiance;
+                    uint sBitMask = updateSectors(min(frontHorizon, backHorizon), max(frontHorizon, backHorizon));
+                    uint sampleOccludedBit = sBitMask & ~bitMask;
 
-					bitMask |= sBitMask;
-				}
+                    if (sampleOccludedBit > 0u) {
+                        ivec2 sampleTexel = uvToTexel(sampleUV);
+                        vec3 sampleNormal = mat3(gbufferModelView) * FetchWorldNormal(sampleTexel);
+
+                        vec3 sampleRadiance = texelFetch(colortex4, sampleTexel >> 1, 0).rgb;
+                        irradiance.rgb += float(bitCount(sampleOccludedBit)) *
+                            saturate(dot(viewNormal, sampleDirFront)) *
+                            saturate(0.5 - 0.5 * dot(sampleNormal, sampleDirFront)) *
+                            sampleRadiance;
+
+                        bitMask |= sBitMask;
+                    }
+                }
 			}
         }
 
-        visibility += float(bitCount(bitMask));
+        irradiance.a += float(bitCount(bitMask));
     }
 
-    return vec4(irradiance * TAU, visibility) * rSectorCount * rSliceCount;
+    irradiance *= rSectorCount * rSliceCount;
+    irradiance = vec4(irradiance.rgb * PI, 1.0 - irradiance.a);
+
+    irradiance.rgb += FromSphericalHarmonics(global.light.skySH, worldNormal) * irradiance.a * cube(lightmap.y);
+    return irradiance;
 }
