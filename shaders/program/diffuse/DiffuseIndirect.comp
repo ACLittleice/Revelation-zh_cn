@@ -73,10 +73,9 @@ void main() {
 		vec3 worldNormal = FetchWorldNormal(gbufferData0);
 
     	vec2 screenCoord = texelToUv(currentTexel);
-		vec3 screenPos = vec3(screenCoord, depth);
-		vec3 viewPos = ScreenToViewSpace(screenPos);
+		vec3 viewPos = ScreenToViewSpace(vec3(screenCoord, depth));
 
 		vec2 lightmap = Unpack2x8U(gbufferData0.x);
-		imageStore(colorimg3, screenTexel, CalculateSSILVB(screenPos.xy, viewPos, worldNormal, lightmap));
+		imageStore(colorimg3, screenTexel, CalculateSSILVB(screenCoord, viewPos, worldNormal, lightmap));
 	}
 }
