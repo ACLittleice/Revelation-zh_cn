@@ -121,7 +121,7 @@ float CloudHighDensity(in vec2 rayPos) {
 			cirrocumulus = mix(cirrocumulus * cirrocumulus, cirrocumulus, coverage);
 			cirrocumulus *= sqr(saturate(coverage * 2.0));
 
-			density += cube(cirrocumulus) * 16.0;
+			density += cube(cirrocumulus) * 8.0;
 		}
 	}
 	#endif
