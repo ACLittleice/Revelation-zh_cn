@@ -25,7 +25,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
 	const float rSampleCount = 1.0 / float(sampleCount);
 	const float rSectorCount = 1.0 / float(sectorCount);
 
-    vec2 noise = SampleStbnVec2(ivec2(gl_GlobalInvocationID.xy), frameCounter);
+    float dither = SampleStbnVec1(ivec2(gl_GlobalInvocationID.xy), frameCounter);
 
     vec3 viewDir = normalize(-viewPos);
     vec3 viewNormal = mat3(gbufferModelView) * worldNormal;
@@ -34,9 +34,10 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
 
     vec2 sampleScale = -sampleRadius / viewPos.z * diagonal2(gbufferProjection);
 
-    for (uint slice = 0u; slice < sliceCount; ++slice) {
-        float phi = (TAU * rSliceCount) * (float(slice) + noise.x);
-        vec2 dir = vec2(cos(phi), sin(phi));
+    for (int slice = 0; slice < sliceCount; ++slice) {
+        vec2 dir = SampleStbnUnitvec2(ivec2(gl_GlobalInvocationID.xy), frameCounter + slice);
+        dir = normalize(dir * 2.0 - 1.0);
+
         vec3 sliceN = normalize(cross(vec3(dir, 0.0), viewDir));
         vec3 projN = viewNormal - sliceN * dot(viewNormal, sliceN);
         float cosN = dot(projN, viewDir) * inversesqrt(sdot(projN));
@@ -47,7 +48,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
         uint bitMask = 0u;
 
         for (uint currentSample = 0u; currentSample < sampleCount; ++currentSample) {
-            float sampleStep = (float(currentSample) + noise.y) * rSampleCount;
+            float sampleStep = (float(currentSample) + dither) * rSampleCount;
             vec2 sampleUV = fragCoord + sampleStep * sampleScale * dir;
 
 			if (saturate(sampleUV) == sampleUV) {
