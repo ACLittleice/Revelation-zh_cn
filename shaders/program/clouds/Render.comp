@@ -101,7 +101,7 @@ void main() {
 	#endif
 
 	if (depthMax > 1.0 - EPS) {
-		vec2 noise = vec2(Bayer64Temporal(cloudTexel), BlueNoiseTemporal(cloudTexel));
+		vec2 noise = vec2(BlueNoiseTemporal(cloudTexel), Bayer64Temporal(cloudTexel));
 
 		vec3 viewDir  = ScreenToViewVectorRaw(cloudUv);
 		vec3 worldDir = mat3(gbufferModelViewInverse) * viewDir;
