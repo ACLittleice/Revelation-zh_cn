@@ -34,12 +34,12 @@ const ivec3 workGroups = ivec3(1, 1, 1);
 
 #ifdef SUBGROUP_OPS
 	#if defined MC_GL_VENDOR_NVIDIA
-		shared vec3[4] sharedSkySH[gl_NumSubgroups];
+		shared vec3[9] sharedSkySH[gl_NumSubgroups];
 	#else
-		shared vec3[4] sharedSkySH[8];
+		shared vec3[9] sharedSkySH[8];
 	#endif
 #else
-	shared vec3[4] sharedSkySH[128];
+	shared vec3[9] sharedSkySH[128];
 #endif
 
 //======// Function //============================================================================//
@@ -59,7 +59,7 @@ vec3 sampleHemisphereVector(in vec3 vector, in vec2 xy) {
 void ParallelReduceSum(in uint index, in uint samples) {
 	for (uint stride = samples >> 1u; stride > 0u; stride >>= 1u) {
 		if (index < stride) {
-			for (uint band = 0u; band < 4u; ++band) {
+			for (uint band = 0u; band < 9u; ++band) {
 				sharedSkySH[index][band] += sharedSkySH[index + stride][band];
 			}
 		}
@@ -80,44 +80,45 @@ void main() {
 	vec3 direction = sampleHemisphereVector(upDir, Hammersley(index, samples));
 	vec3 skyRadiance = texture(skyViewTex, FromSkyViewLutParams(direction) + vec2(0.0, 0.5)).rgb;
 
-	vec3[4] shCoeff = ToSphericalHarmonics(skyRadiance, direction);
+	vec3[9] shCoeff;
+	float[9] basis = BasisSH3(direction);
+	for (uint band = 0u; band < 9u; ++band) {
+		shCoeff[band] = basis[band] * (TAU / float(samples)) * skyRadiance;
+	}
 
 	#ifdef SUBGROUP_OPS
 		// Reduce SH coefficients in subgroup
-		for (uint band = 0u; band < 4u; ++band) {
+		for (uint band = 0u; band < 9u; ++band) {
 			shCoeff[band] = subgroupAdd(shCoeff[band]);
 			SCALARIZED_LOAD(sharedSkySH[gl_SubgroupID][band], shCoeff[band]);
 		}
 		barrier();
 
 		if (index < gl_NumSubgroups) {
-			for (uint band = 0u; band < 4u; ++band) {
+			for (uint band = 0u; band < 9u; ++band) {
 				shCoeff[band] = subgroupAdd(sharedSkySH[index][band]);
 			}
 		}
 		barrier();
 	#else
 		// Reduce SH coefficients in shared memory
-		for (uint band = 0u; band < 4u; ++band) {
+		for (uint band = 0u; band < 9u; ++band) {
 			sharedSkySH[index][band] = shCoeff[band];
 		}
 		barrier();
 
 		ParallelReduceSum(index, samples);
 
-		for (uint band = 0u; band < 4u; ++band) {
+		for (uint band = 0u; band < 9u; ++band) {
 			shCoeff[band] = sharedSkySH[0][band];
 		}
 	#endif
 
 	// Store SH coefficients in thread 0
 	if (index == 0u) {
-		for (uint band = 0u; band < 4u; ++band) {
-			shCoeff[band] *= TAU / float(samples); // Normalization
-			global.light.skySH[band] = shCoeff[band];
-		}
+		global.light.skySH = shCoeff;
 
 		// Evaluate sky illuminance from SH coefficients (facing up)
-		global.light.skyIlluminance = FromSphericalHarmonics(shCoeff, upDir);
+		global.light.skyIlluminance = ReconstructSH3(shCoeff, upDir);
 	}
 }
