@@ -24,6 +24,7 @@ uniform sampler2D brdfLutTex;
 
 uniform sampler3D stbnVec1Tex;
 uniform sampler3D stbnVec2Tex;
+uniform sampler3D stbnUnitvec2Tex;
 
 uniform int frameCounter;
 uniform int isEyeInWater;
