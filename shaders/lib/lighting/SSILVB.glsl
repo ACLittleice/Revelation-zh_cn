@@ -99,6 +99,6 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
     irradiance = vec4(irradiance.rgb * PI, 1.0 - irradiance.a);
 
     vec3 skylight = ConvolvedReconstructSH3(global.light.skySH, worldNormal);
-    irradiance.rgb += skylight * irradiance.a * cube(lightmap.y);
+    irradiance.rgb += max(global.light.skyIlluminance * rPI, skylight) * irradiance.a * cube(lightmap.y);
     return irradiance;
 }
