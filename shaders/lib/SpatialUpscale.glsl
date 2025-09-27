@@ -1,5 +1,5 @@
 #if defined PASS_DEFERRED_LIGHTING
-#if (defined SSPT_ENABLED && defined SVGF_ENABLED) || defined RSM_ENABLED
+#if defined SSILVB_ENABLED && defined SVGF_ENABLED
 	vec3 SpatialUpscale5x5(in ivec2 texel, in vec3 worldNormal, in float viewDistance, in float NdotV) {
 		vec3 sum = texelFetch(colortex3, texel, 0).rgb;
 		float sumWeight = 1.0;

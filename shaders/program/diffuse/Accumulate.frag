@@ -6,7 +6,7 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-    Pass: Accumulation for SSPT and variance estimation
+    Pass: Accumulation and variance estimation
 	Reference:  https://research.nvidia.com/sites/default/files/pubs/2017-07_Spatiotemporal-Variance-Guided-Filtering://svgf_preprint.pdf
                 https://cescg.org/wp-content/uploads/2018/04/Dundr-Progressive-Spatiotemporal-Variance-Guided-Filtering-2.pdf
 
@@ -109,7 +109,7 @@ void TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal) {
             prevDiffuse *= sumWeight;
             prevMoments *= sumWeight;
 
-            indirectHistory.a = min(prevDiffuse.a + 1.0, SSPT_MAX_ACCUM_FRAMES);
+            indirectHistory.a = min(prevDiffuse.a + 1.0, SSILVB_MAX_ACCUM_FRAMES);
             float alpha = rcp(indirectHistory.a);
 
             // See section 4.2 of the paper
@@ -117,19 +117,18 @@ void TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal) {
                 varianceMoments.xy = mix(prevMoments, varianceMoments.xy, alpha);
             }
 
-            float mipLevel = 4.0 * saturate(1.0 - indirectHistory.a * rcp(16.0));
+            float mipLevel = 3.0 * saturate(1.0 - indirectHistory.a * rcp(16.0));
             indirectCurrent.rgb = textureLod(colortex3, screenPos.xy * 0.5, mipLevel).rgb;
 
             indirectCurrent.rgb = indirectHistory.rgb = mix(prevDiffuse.rgb, indirectCurrent.rgb, alpha);
 
-            varianceMoments.x *= varianceMoments.x;
-            indirectCurrent.a = maxEps(varianceMoments.y - varianceMoments.x);
+            indirectCurrent.a = maxEps(varianceMoments.y - varianceMoments.x * varianceMoments.x);
             indirectCurrent.a *= inversesqrt(indirectCurrent.a);
             return;
         }
     }
 
-    indirectCurrent.rgb = textureLod(colortex3, screenPos.xy * 0.5, 4.0).rgb;
+    indirectCurrent.rgb = textureLod(colortex3, screenPos.xy * 0.5, 3.0).rgb;
     indirectCurrent.a = varianceMoments.x;
 }
 
@@ -171,7 +170,7 @@ void main() {
 
                 float blocklight = Unpack2x8UX(loadGbufferData0(currentTexel).x);
                 blocklight = pow5(blocklight) * exp2(-64.0 * luminance(indirectCurrent.rgb) * global.exposure.value);
-                indirectCurrent.rgb += blackbody(float(BLOCKLIGHT_TEMPERATURE)) * saturate(blocklight) * SSPT_BLENDED_LIGHTMAP;
+                indirectCurrent.rgb += blackbody(float(BLOCKLIGHT_TEMPERATURE)) * saturate(blocklight) * SSILVB_BLENDED_LIGHTMAP;
             }
         } else {
             ivec2 currentTexel = (screenTexel << 1) - ivec2(viewWidth, 0);

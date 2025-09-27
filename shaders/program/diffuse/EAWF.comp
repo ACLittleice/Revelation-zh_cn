@@ -6,7 +6,7 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-    Pass: Edge-Avoiding À-Trous Wavelet Filter for indirect diffuse irradiance
+    Pass: Edge-Avoiding À-Trous Wavelet Filter
 	Reference:  https://research.nvidia.com/sites/default/files/pubs/2017-07_Spatiotemporal-Variance-Guided-Filtering://svgf_preprint.pdf
                 https://cescg.org/wp-content/uploads/2018/04/Dundr-Progressive-Spatiotemporal-Variance-Guided-Filtering-2.pdf
 
@@ -139,7 +139,7 @@ void main() {
     vec3 worldNormal = OctDecodeSnorm(normalDepthData.xy);
 
 	float sumWeight = 1.0;
-	ivec2 randTexel = texel + ivec2((R2(BlueNoiseTemporal(texel)) - 0.5) * float(min(ATROUS_FILTER_SIZE, 16)));
+	ivec2 randTexel = texel + ivec2((SampleStbnVec2(texel, frameCounter) - 0.5) * float(min(ATROUS_FILTER_SIZE, 16)));
 
 	for (uint i = 0u; i < 8u; ++i) {
 		ivec2 sampleTexel = clamp(randTexel + offset[i] * ATROUS_FILTER_SIZE, ivec2(1), texelEnd);

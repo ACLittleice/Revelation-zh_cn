@@ -21,11 +21,6 @@ in ivec2 vaUV2;
 
 out vec2 texCoord;
 
-#ifdef RSM_ENABLED
-	out float skyLightmap;
-	flat out vec3 flatNormal;
-#endif
-
 // out vec3 viewPos;
 out vec3 vectorData; // Minecraf position in water, vertColor in other materials
 
@@ -75,15 +70,6 @@ void main() {
 			gl_Position = vec4(-1.0);
 			return;
 		}
-	#endif
-
-	#ifdef RSM_ENABLED
-		#ifdef IS_IRIS
-			skyLightmap = saturate((float(vaUV2.y) - 8.0) * rcp(232.0));
-		#else
-			skyLightmap = saturate(float(vaUV2.y) * r240);
-		#endif
-		flatNormal = normal;
 	#endif
 
 	texCoord = vaUV0;

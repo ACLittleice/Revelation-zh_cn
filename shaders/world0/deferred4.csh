@@ -1,3 +1,3 @@
 #version 450 core
 
-#include "/program/DiffuseIndirect.comp"
+#include "/program/diffuse/DiffuseIndirect.comp"

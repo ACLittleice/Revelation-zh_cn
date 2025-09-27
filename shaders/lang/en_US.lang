@@ -240,22 +240,17 @@ option.AO_MULTI_BOUNCE=AO Multi-bounce
 option.SSAO_SAMPLES=SSAO Samples
 option.SSAO_STRENGTH=SSAO Strength
 
-option.GTAO_SLICES=GTAO Slices
-option.GTAO_DIRECTION_SAMPLES=GTAO Direction Samples
+option.GTAO_SLICES=GTAO Direction Samples
+option.GTAO_DIRECTION_SAMPLES=GTAO Marching Samples
 option.GTAO_RADIUS=GTAO Radius
 
-option.RSM_ENABLED=Reflective Shadow Maps
-option.RSM_SAMPLES=RSM Samples
-option.RSM_RADIUS=RSM Radius
-option.RSM_BRIGHTNESS=RSM Brightness
-option.RSM_MAX_ACCUM_FRAMES=Max Accumulated Frames
-
-option.SSPT_ENABLED=Screen-Space Path Tracing
-option.SSPT_SPP=Samples Per Pixel
-option.SSPT_BOUNCES=SSPT Bounces
-option.SSPT_RT_STEPS=SSPT Raytracing Steps
-option.SSPT_BLENDED_LIGHTMAP=SSPT Blended Lightmap
-option.SSPT_MAX_ACCUM_FRAMES=Max Accumulated Frames
+option.SSILVB_ENABLED=SSILVB GI
+option.SSILVB_SLICE_COUNT=Direction Samples
+option.SSILVB_SAMPLE_COUNT=Marching Samples
+option.SSILVB_SAMPLE_RADIUS=Sample Radius
+option.SSILVB_HIT_THICKNESS=Hit Thickness
+option.SSILVB_BLENDED_LIGHTMAP=Blended Lightmap
+option.SSILVB_MAX_ACCUM_FRAMES=Max Accumulated Frames
 
 option.SVGF_ENABLED=Spatio-Temporal Variance-Guided Filtering
 

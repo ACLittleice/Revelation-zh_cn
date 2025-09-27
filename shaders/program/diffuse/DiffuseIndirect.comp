@@ -39,12 +39,7 @@ writeonly restrict uniform image2D colorimg3;
 #include "/lib/atmosphere/Common.glsl"
 
 #include "/lib/surface/BRDF.glsl"
-
-#ifdef RSM_ENABLED
-	#include "/lib/lighting/RSM.glsl"
-#else
-	#include "/lib/lighting/SSPT.glsl"
-#endif
+#include "/lib/lighting/SSILVB.glsl"
 
 float GetClosestDepth(in ivec2 texel) {
     float depth = loadDepth0(texel);
@@ -81,13 +76,7 @@ void main() {
 		vec3 screenPos = vec3(screenCoord, depth);
 		vec3 viewPos = ScreenToViewSpace(screenPos);
 
-		#ifdef RSM_ENABLED
-			vec2 stbnVec2 = SampleStbnVec2(currentTexel, frameCounter);
-			float skyLightmap = Unpack2x8UY(gbufferData0.x);
-			imageStore(colorimg3, screenTexel, vec4(CalculateRSM(viewPos, worldNormal, stbnVec2, skyLightmap), 1.0));
-		#else
-			vec2 lightmap = Unpack2x8U(gbufferData0.x);
-			imageStore(colorimg3, screenTexel, vec4(CalculateSSPT(screenPos, viewPos, worldNormal, lightmap), 1.0));
-		#endif
+		vec2 lightmap = Unpack2x8U(gbufferData0.x);
+		imageStore(colorimg3, screenTexel, CalculateSSILVB(screenPos.xy, viewPos, worldNormal, lightmap));
 	}
 }
