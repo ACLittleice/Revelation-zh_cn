@@ -3,6 +3,8 @@
 // https://cdrinmatane.github.io/posts/cgspotlight-slides/
 // https://cybereality.com/screen-space-indirect-lighting-with-visibility-bitmask-improvement-to-gtao-ssao-real-time-ambient-occlusion-algorithm-glsl-shader-implementation/
 
+#include "/lib/utility/ShaderFastMathLib.glsl"
+
 // https://cdrinmatane.github.io/posts/ssaovb-code/
 const uint sectorCount = 32u;
 uint updateSectors(float minHorizon, float maxHorizon) {
@@ -13,16 +15,11 @@ uint updateSectors(float minHorizon, float maxHorizon) {
     return currentBitfield;
 }
 
-float horizonWeight(vec3 projNormal, vec3 pos) {
-    float cosH = saturate(dot(pos, projNormal));
-    return sqrt(1.0 - cosH * cosH);
-}
-
 vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in vec2 lightmap) {
-	const uint sliceCount = 2u;
-	const uint sampleCount = 8u;
-	const float sampleRadius = 4.0;
-	const float hitThickness = 1.0;
+	const uint sliceCount = 1u;
+	const uint sampleCount = 16u;
+	const float sampleRadius = 8.0;
+	const float hitThickness = 2.0;
 
 	const float rSliceCount = 1.0 / float(sliceCount);
 	const float rSampleCount = 1.0 / float(sampleCount);
@@ -35,44 +32,48 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
 
     vec4 irradiance = vec4(0.0);
 
-    const float sliceRotation = TAU * rSliceCount;
     vec2 sampleScale = -sampleRadius / viewPos.z * diagonal2(gbufferProjection);
 
     for (uint slice = 0u; slice < sliceCount; ++slice) {
-        float phi = sliceRotation * (float(slice) + noise.x);
-        vec2 omega = vec2(cos(phi), sin(phi));
-        vec3 orthoDir = cross(vec3(omega, 0.0), viewDir);
-        vec3 projNormal = viewNormal - orthoDir * dot(viewNormal, orthoDir);
-        vec2 stepDir = omega * sampleScale;
+        float phi = (TAU * rSliceCount) * (float(slice) + noise.x);
+        vec2 dir = vec2(cos(phi), sin(phi));
+        vec3 sliceN = normalize(cross(vec3(dir, 0.0), viewDir));
+        vec3 projN = viewNormal - sliceN * dot(viewNormal, sliceN);
+        float cosN = dot(projN, viewDir) * inversesqrt(sdot(projN));
+
+        float angN = fastSign(dot(sliceN, projN)) * acosFast4(cosN);
+        float angOff = angN * rPI + 0.5;
 
         uint bitMask = 0u;
 
         for (uint currentSample = 0u; currentSample < sampleCount; ++currentSample) {
             float sampleStep = (float(currentSample) + noise.y) * rSampleCount;
-            vec2 sampleUV = fragCoord + sampleStep * stepDir;
+            vec2 sampleUV = fragCoord + sampleStep * sampleScale * dir;
 
 			if (saturate(sampleUV) == sampleUV) {
 				vec3 sampleDiff = ScreenToViewSpace(sampleUV) - viewPos;
                 float frontDistSq = sdot(sampleDiff);
 
-                if (frontDistSq < sampleRadius * sampleRadius) {
+                if (frontDistSq < sampleRadius * sampleRadius * 4.0) {
                     vec3 sampleDirFront = sampleDiff * inversesqrt(frontDistSq);
                     vec3 sampleDirBack = normalize(sampleDiff - viewDir * hitThickness);
 
-                    float frontHorizon = horizonWeight(projNormal, sampleDirFront);
-                    float backHorizon = horizonWeight(projNormal, sampleDirBack);
+                    vec2 frontBackHorizon = vec2(dot(sampleDirFront, viewDir), dot(sampleDirBack, viewDir));
 
-                    uint sBitMask = updateSectors(min(frontHorizon, backHorizon), max(frontHorizon, backHorizon));
+                    frontBackHorizon = acosFast4(frontBackHorizon);
+                    frontBackHorizon = saturate(frontBackHorizon * rPI + angOff);
+
+                    uint sBitMask = updateSectors(frontBackHorizon.x, frontBackHorizon.y);
                     uint sampleOccludedBit = sBitMask & ~bitMask;
 
                     if (sampleOccludedBit > 0u) {
                         ivec2 sampleTexel = uvToTexel(sampleUV);
-                        vec3 sampleNormal = mat3(gbufferModelView) * FetchWorldNormal(sampleTexel);
+                        // vec3 sampleNormal = mat3(gbufferModelView) * FetchWorldNormal(sampleTexel);
 
                         vec3 sampleRadiance = texelFetch(colortex4, sampleTexel >> 1, 0).rgb;
                         irradiance.rgb += float(bitCount(sampleOccludedBit)) *
                             saturate(dot(viewNormal, sampleDirFront)) *
-                            saturate(0.5 - 0.5 * dot(sampleNormal, sampleDirFront)) *
+                            // saturate(-dot(sampleNormal, sampleDirFront)) *
                             sampleRadiance;
 
                         bitMask |= sBitMask;
