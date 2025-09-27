@@ -30,6 +30,10 @@ layout (location = 2) out vec2 varianceMoments;
 
 #include "/lib/universal/Uniform.glsl"
 
+//======// SSBO //================================================================================//
+
+#include "/lib/universal/SSBO.glsl"
+
 //======// Function //============================================================================//
 
 #include "/lib/universal/Transform.glsl"
@@ -164,6 +168,10 @@ void main() {
                 vec3 screenPos = vec3(currentCoord, depth);
                 vec3 worldNormal = FetchWorldNormal(currentTexel);
                 TemporalFilter(screenTexel, screenPos, worldNormal);
+
+                float blocklight = Unpack2x8UX(loadGbufferData0(currentTexel).x);
+                blocklight = pow5(blocklight) * exp2(-64.0 * luminance(indirectCurrent.rgb) * global.exposure.value);
+                indirectCurrent.rgb += blackbody(float(BLOCKLIGHT_TEMPERATURE)) * saturate(blocklight) * SSPT_BLENDED_LIGHTMAP;
             }
         } else {
             ivec2 currentTexel = (screenTexel << 1) - ivec2(viewWidth, 0);

@@ -114,6 +114,7 @@ const ivec2 skyViewRes = ivec2(256, 128);
 /* Global Illumination */
 	// #define SSPT_ENABLED // Enables screen-space path tracing
 	#define SVGF_ENABLED // Enables spatiotemporal variance-guided filtering
+	#define SSPT_BLENDED_LIGHTMAP 0.25 // [0.0 0.01 0.02 0.05 0.07 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.6 0.7 0.8 0.9 1.0]
 
 	// #define RSM_ENABLED // Enables reflective shadow maps
 	#ifdef SSPT_ENABLED

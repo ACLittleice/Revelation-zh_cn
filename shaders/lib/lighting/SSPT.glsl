@@ -5,7 +5,6 @@
 #define SSPT_RT_STEPS 16 // [1 2 3 4 5 6 7 8 9 10 11 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 48 50 52 54 56 58 60 62 64]
 
 #define SSPT_RR_MIN_BOUNCES 1 // [1 2 3 4 5 6 7 8 9 10 11 12 14 16 18 20 22 24]
-#define SSPT_BLENDED_LIGHTMAP 0.25 // [0.0 0.01 0.02 0.05 0.07 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.6 0.7 0.8 0.9 1.0]
 
 //================================================================================================//
 
@@ -41,11 +40,6 @@ vec3 SampleRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in vec3 r
 	return vec3(1e6);
 }
 
-float CalculateBlocklightFalloff(in float blocklight) {
-	blocklight = mix(blocklight, sqr(blocklight), 0.75);
-	return blocklight * blocklight * blocklight;
-}
-
 // struct TracingData {
 // 	vec3 rayPos;
 //     vec3 rayDir;
@@ -54,7 +48,6 @@ float CalculateBlocklightFalloff(in float blocklight) {
 // };
 
 vec3 CalculateSSPT(in vec3 screenPos, in vec3 viewPos, in vec3 worldNormal, in vec2 lightmap) {
-	lightmap.x = CalculateBlocklightFalloff(lightmap.x) * SSPT_BLENDED_LIGHTMAP;
 	lightmap.y *= lightmap.y * lightmap.y;
 
     vec3 viewNormal = mat3(gbufferModelView) * worldNormal;
@@ -88,7 +81,7 @@ vec3 CalculateSSPT(in vec3 screenPos, in vec3 viewPos, in vec3 worldNormal, in v
 
 				float occulusion = saturate(dot(viewNormal, rayDir));
 				vec3 skyRadiance = FromSphericalHarmonics(global.light.skySH, worldNormal);
-				sum += (skyRadiance * lightmap.y + lightmap.x) * occulusion;
+				sum += skyRadiance * lightmap.y * occulusion;
 				// break;
 			}
 
