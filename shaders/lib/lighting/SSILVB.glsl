@@ -41,7 +41,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
         vec3 projN = viewNormal - sliceN * dot(viewNormal, sliceN);
         float cosN = dot(projN, viewDir) * inversesqrt(sdot(projN));
 
-        float angN = fastSign(dot(sliceN, projN)) * acosFast4(cosN);
+        float angN = -fastSign(dot(projN, cross(viewDir, sliceN))) * acosFast4(cosN);
         float angOff = angN * rPI + 0.5;
 
         uint bitMask = 0u;
