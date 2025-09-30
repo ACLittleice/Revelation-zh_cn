@@ -186,11 +186,10 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
 
         vec3 clipAvg = mean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
         vec3 clipAvg2 = sqrMean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
-        vec3 clipStdDev = sqrt(max0(clipAvg2 - clipAvg * clipAvg));
+        vec3 clipStdDev = sqrt(abs(clipAvg2 - clipAvg * clipAvg)) * TAA_AGGRESSION;
 
-        float currLum = currData.x, prevLum = prevData.x;
-        float temporalContrast = saturate(abs(currLum - prevLum) / max(currLum, prevLum));
-        clipStdDev *= (1.0 + temporalContrast) * TAA_AGGRESSION;
+        // float currLum = currData.x, prevLum = prevData.x;
+        // float temporalContrast = saturate(abs(currLum - prevLum) / max(currLum, prevLum));
 
         // Ellipsoid intersection clipping
         prevData -= clipAvg;
