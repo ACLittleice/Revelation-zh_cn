@@ -192,9 +192,12 @@ void main() {
 
 		// Ellipsoid intersection clipping
 		#ifdef CLOUD_TAAU_CLIPPING
-			vec4 clipStdDevInv = inversesqrt(maxEps(moment2 - moment1 * moment1));
+			float currLum = luminance(currData.rgb), prevLum = luminance(prevData.rgb);
+			float temporalContrast = saturate(abs(currLum - prevLum) / max(currLum, prevLum));
+
+			vec4 clipStdDevInv = inversesqrt(abs(moment2 - moment1 * moment1) + EPS);
 			prevData -= moment1;
-			prevData *= saturate(inversesqrt(sdot(prevData * clipStdDevInv * 0.25))) * 0.5 + 0.5;
+			prevData *= pow(saturate(inversesqrt(sdot(prevData * clipStdDevInv * 0.25))), 1.0 - temporalContrast);
 			prevData += moment1;
 		#endif
 
