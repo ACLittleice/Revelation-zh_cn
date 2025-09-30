@@ -41,74 +41,13 @@ uniform sampler2D cloudDepthOriginTex;
 #include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/clouds/Common.glsl"
 
-vec4 textureCatmullRom(in sampler2D tex, in vec2 coord) {
-	vec2 res = vec2(textureSize(tex, 0));
-	vec2 pixelSize = 1.0 / res;
-
-	vec2 position = coord * res;
-	vec2 centerPosition = floor(position - 0.5) + 0.5;
-
-	vec2 f = position - centerPosition;
-
-	vec2 w0 = f * (-0.5 + f * (1.0 - 0.5 * f));
-	vec2 w1 = 1.0 + f * f * (-2.5 + 1.5 * f);
-	vec2 w2 = f * (0.5 + f * (2.0 - 1.5 * f));
-	vec2 w3 = f * f * (-0.5 + 0.5 * f);
-
-	vec2 w12 = w1 + w2;
-
-	vec2 tc0 = pixelSize * (centerPosition - 1.0);
-	vec2 tc3 = pixelSize * (centerPosition + 2.0);
-	vec2 tc12 = pixelSize * (centerPosition + w2 * rcp(w12));
-
-	vec4 color = vec4(0.0);
-	color += textureLod(tex, vec2(tc0.x, tc0.y), 0) * w0.x * w0.y;
-	color += textureLod(tex, vec2(tc12.x, tc0.y), 0) * w12.x * w0.y;
-	color += textureLod(tex, vec2(tc3.x, tc0.y), 0) * w3.x * w0.y;
-
-	color += textureLod(tex, vec2(tc0.x, tc12.y), 0) * w0.x * w12.y;
-	color += textureLod(tex, vec2(tc12.x, tc12.y), 0) * w12.x * w12.y;
-	color += textureLod(tex, vec2(tc3.x, tc12.y), 0) * w3.x * w12.y;
-
-	color += textureLod(tex, vec2(tc0.x, tc3.y), 0) * w0.x * w3.y;
-	color += textureLod(tex, vec2(tc12.x, tc3.y), 0) * w12.x * w3.y;
-	color += textureLod(tex, vec2(tc3.x, tc3.y), 0) * w3.x * w3.y;
-
-	return color;
-}
-
-// Approximation from SMAA presentation from siggraph 2016
-vec4 textureCatmullRomFast(in sampler2D tex, in vec2 coord, in const float sharpness) {
-    vec2 position = viewSize * coord;
-    vec2 centerPosition = floor(position - 0.5) + 0.5;
-    vec2 f = position - centerPosition;
-    vec2 f2 = f * f;
-    vec2 f3 = f * f2;
-
-    vec2 w0 = -sharpness        * f3 + 2.0 * sharpness         * f2 - sharpness * f;
-    vec2 w1 = (2.0 - sharpness) * f3 - (3.0 - sharpness)       * f2 + 1.0;
-    vec2 w2 = (sharpness - 2.0) * f3 + (3.0 - 2.0 * sharpness) * f2 + sharpness * f;
-    vec2 w3 = sharpness         * f3 - sharpness               * f2;
-
-    vec2 w12 = w1 + w2;
-
-    vec2 tc0 = viewPixelSize * (centerPosition - 1.0);
-    vec2 tc3 = viewPixelSize * (centerPosition + 2.0);
-    vec2 tc12 = viewPixelSize * (centerPosition + w2 / w12);
-
-    float l0 = w12.x * w0.y;
-    float l1 = w0.x  * w12.y;
-    float l2 = w12.x * w12.y;
-    float l3 = w3.x  * w12.y;
-    float l4 = w12.x * w3.y;
-
-    vec4 color =  texture(tex, vec2(tc12.x, tc0.y )) * l0
-                + texture(tex, vec2(tc0.x,  tc12.y)) * l1
-                + texture(tex, vec2(tc12.x, tc12.y)) * l2
-                + texture(tex, vec2(tc3.x,  tc12.y)) * l3
-                + texture(tex, vec2(tc12.x, tc3.y )) * l4;
-
-    return color / (l0 + l1 + l2 + l3 + l4);
+vec4 CatmullRomWeights(in float f) {
+    return vec4(
+        f * (-0.5 + f * (1.0 - 0.5 * f)),
+        1.0 + f * f * (-2.5 + 1.5 * f),
+        f * (0.5 + f * (2.0 - 1.5 * f)),
+        f * f * (-0.5 + 0.5 * f)
+    );
 }
 
 float sinc(float x) {
@@ -124,7 +63,7 @@ float lanczos2(float x) {
 vec4 textureLanczos(in sampler2D tex, in vec2 coord) {
 	const int radius = 2;
 
-	vec2 res = vec2(textureSize(tex, 0));
+	vec2 res = textureSize(tex, 0);
 	coord = coord * res - 0.5;
 
     vec2 p = floor(coord);
@@ -150,11 +89,6 @@ vec4 textureLanczos(in sampler2D tex, in vec2 coord) {
 
     return sum * rcp(sumWeight);
 }
-
-#define currentLoad(offset) texelFetchOffset(cloudOriginTex, currTexel, 0, offset)
-
-#define mean(a, b, c, d, e, f, g, h, i) (a + b + c + d + e + f + g + h + i) * rcp(9.0)
-#define sqrMean(a, b, c, d, e, f, g, h, i) (a * a + b * b + c * c + d * d + e * e + f * f + g * g + h * h + i * i) * rcp(9.0)
 
 vec3 ReprojectClouds(in vec2 coord, in float radius) {
 	vec3 cloudPos = ScreenToViewVectorRaw(coord) * radius;
@@ -191,6 +125,7 @@ vec3 ReprojectClouds(in vec2 coord, in float radius) {
 
 //======// Main //================================================================================//
 void main() {
+	// Initialize
 	cloudOut = vec4(0.0, 0.0, 0.0, 1.0);
 	frameOut = 0u;
 
@@ -200,60 +135,71 @@ void main() {
 	vec2 currCoord = screenCoord * currScale - R2(frameCounter + 11) * viewPixelSize;
 	currCoord = min(currCoord, currScale - viewPixelSize);
 
+	// Fetch closest cloud depth
 	float cloudDepth = minOf(textureGather(cloudDepthOriginTex, currCoord, 0));
 
-	if (cloudDepth > EPS) {
-		frameOut = 1u;
+	// Skip ground
+	if (cloudDepth < EPS) {
+		discard;
+		return;
+	}
 
-		vec2 prevCoord = ReprojectClouds(screenCoord, cloudDepth).xy;
-		uint frameIndex = texture(colortex13, prevCoord).x;
+	frameOut = 1u;
 
-		bool disocclusion = worldTimeChanged;
-		// Offscreen invalidation
-		disocclusion = disocclusion || saturate(prevCoord) != prevCoord;
-		// Previous land invalidation
-		disocclusion = disocclusion || frameIndex < 1u;
-		// Fov change invalidation
-		// disocclusion = disocclusion || (gbufferProjection[0].x - gbufferPreviousProjection[0].x) > 0.25;
+	vec2 prevCoord = ReprojectClouds(screenCoord, cloudDepth).xy;
+	uint frameIndex = texture(colortex13, prevCoord).x;
 
-		if (disocclusion) {
-			cloudOut = textureBicubic(cloudOriginTex, currCoord);
-		} else {
-			vec4 prevData = textureLanczos(cloudReconstructTex, prevCoord);
-			prevData = vec4(satU16f(prevData.rgb), saturate(prevData.a));
-			frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
+	bool disocclusion = worldTimeChanged;
+	// Offscreen invalidation
+	disocclusion = disocclusion || saturate(prevCoord) != prevCoord;
+	// Previous ground invalidation
+	disocclusion = disocclusion || frameIndex < 1u;
+	// Fov change invalidation
+	// disocclusion = disocclusion || (gbufferProjection[0].x - gbufferPreviousProjection[0].x) > 0.25;
 
-			ivec2 currTexel = uvToTexel(currCoord);
-			vec4 currData = texelFetch(cloudOriginTex, currTexel, 0);
+	if (disocclusion) {
+		// Return smoothed origin
+		cloudOut = textureBicubic(cloudOriginTex, currCoord);
+	} else {
+		vec4 prevData = textureLanczos(cloudReconstructTex, prevCoord);
+		prevData = vec4(satU16f(prevData.rgb), saturate(prevData.a));
 
-			// Ellipsoid intersection clipping
-			#ifdef CLOUD_EI_CLIP
-				vec4 sample1 = currentLoad(ivec2(-1,  1));
-				vec4 sample2 = currentLoad(ivec2( 0,  1));
-				vec4 sample3 = currentLoad(ivec2( 1,  1));
-				vec4 sample4 = currentLoad(ivec2(-1,  0));
-				vec4 sample5 = currentLoad(ivec2( 1,  0));
-				vec4 sample6 = currentLoad(ivec2(-1, -1));
-				vec4 sample7 = currentLoad(ivec2( 0, -1));
-				vec4 sample8 = currentLoad(ivec2( 1, -1));
+		vec2 centerPixel = currCoord * viewSize - 0.5;
+		vec2 floorPixel = floor(centerPixel);
+		vec2 fractPixel = centerPixel - floorPixel;
 
-				vec4 clipAvg = mean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
-				vec4 clipAvg2 = sqrMean(currData, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
+		// Catmull-Rom filter for current pixel
+		vec4 weightX = CatmullRomWeights(fractPixel.x);
+		vec4 weightY = CatmullRomWeights(fractPixel.y);
 
-				vec4 clipStdDev = sqrt(maxEps(clipAvg2 - clipAvg * clipAvg)) * 4.0;
-				prevData -= clipAvg;
-				prevData *= saturate(inversesqrt(sdot(prevData / clipStdDev)));
-				prevData += clipAvg;
-			#endif
+		vec4 currData = vec4(0.0);
+		vec4 moment1  = vec4(0.0);
+		vec4 moment2  = vec4(0.0);
 
-			float alpha = float(frameOut);
-			alpha /= alpha + 1.0;
+		// Fetch 4x4 neighbour pixels
+		ivec2 baseTexel = ivec2(floorPixel) - 1;
+		for (uint y = 0u; y < 4u; ++y) {
+			for (uint x = 0u; x < 4u; ++x) {
+				vec4 sampleData = texelFetchOffset(cloudOriginTex, baseTexel, 0, ivec2(x, y));
+				currData += sampleData * weightX[x] * weightY[y];
 
-			float subpixelSharpen = sdot(fract(prevCoord * viewSize) * 2.0 - 1.0);
-			alpha *= 1.0 - sqr(subpixelSharpen) * 0.2;
-
-			// Accumulate
-			cloudOut = mix(currData, prevData, alpha);
+				moment1 += sampleData;
+				moment2 += sampleData * sampleData;
+			}
 		}
+		moment1 *= 1.0 / 16.0;
+		moment2 *= 1.0 / 16.0;
+
+		// Ellipsoid intersection clipping
+		#ifdef CLOUD_TAAU_CLIPPING
+			vec4 clipStdDevInv = inversesqrt(maxEps(moment2 - moment1 * moment1));
+			prevData -= moment1;
+			prevData *= saturate(inversesqrt(sdot(prevData * clipStdDevInv * 0.25))) * 0.5 + 0.5;
+			prevData += moment1;
+		#endif
+
+		// Accumulate
+		frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
+		cloudOut = satU16f(mix(prevData, currData, rcp(float(frameOut))));
 	}
 }
