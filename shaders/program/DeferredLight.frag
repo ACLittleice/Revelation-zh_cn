@@ -356,7 +356,7 @@ void main() {
 		#ifdef SSILVB_ENABLED
 			#ifdef SVGF_ENABLED
 				float NdotV = abs(dot(worldNormal, worldDir));
-				sceneOut += SpatialUpscale5x5(screenTexel >> 1, worldNormal, length(viewPos), NdotV);
+				sceneOut += SpatialUpscale(screenTexel >> 1, worldNormal, length(viewPos), NdotV);
 			#else
 				sceneOut += texelFetch(colortex3, screenTexel >> 1, 0).rgb;
 			#endif
