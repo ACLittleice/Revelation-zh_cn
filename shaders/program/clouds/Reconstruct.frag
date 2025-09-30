@@ -180,7 +180,7 @@ void main() {
 		ivec2 baseTexel = ivec2(floorPixel) - 1;
 		for (uint y = 0u; y < 4u; ++y) {
 			for (uint x = 0u; x < 4u; ++x) {
-				vec4 sampleData = texelFetchOffset(cloudOriginTex, baseTexel, 0, ivec2(x, y));
+				vec4 sampleData = texelFetch(cloudOriginTex, baseTexel + ivec2(x, y), 0);
 				currData += sampleData * weightX[x] * weightY[y];
 
 				moment1 += sampleData;
