@@ -53,20 +53,6 @@ vec3 GetClosestFragment(in ivec2 texel, in float depth) {
     return closestFragment;
 }
 
-vec3 historyClipAABB(in vec3 history, in vec3 clipMin, in vec3 clipMax) {
-    vec3 center = 0.5 * (clipMax + clipMin);
-    vec3 extent = 0.5 * (clipMax - clipMin);
-
-    vec3 delta = history - center;
-    float maxUnit = maxOf(abs(delta / extent));
-
-    if (maxUnit > 1.0) {
-        return center + delta / maxUnit;
-    }
-
-    return history;
-}
-
 float sinc(float x) {
     return sin(PI * x) / (PI * x);
 }
@@ -78,7 +64,7 @@ float lanczos2(float x) {
 }
 
 vec3 textureLanczos(in sampler2D tex, in vec2 coord) {
-	const int radius = 1;
+	const int radius = 2;
 
 	vec2 res = vec2(textureSize(tex, 0));
 	coord = coord * res - 0.5;
@@ -107,6 +93,55 @@ vec3 textureLanczos(in sampler2D tex, in vec2 coord) {
     return sum * rcp(sumWeight);
 }
 
+// Approximation from SMAA presentation [Jimenez 2016]
+vec4 textureCatmullRomFast(in sampler2D tex, in vec2 coord) {
+    vec2 resolution = textureSize(tex, 0);
+    vec2 pixelSize = 1.0 / resolution;
+
+    vec2 pos = coord * resolution;
+    vec2 tc1 = floor(pos - 0.5) + 0.5;
+    vec2 f  = pos - tc1;
+    vec2 f2 = f * f;
+    vec2 f3 = f * f2;
+
+    const float c = 0.5;
+    vec2 w0  = -c         * f3 +  2.0 * c        * f2 - c * f;
+    vec2 w1  =  (2.0 - c) * f3 - (3.0 - c)       * f2 + 1.0;
+    vec2 w2  = -(2.0 - c) * f3 + (3.0 - 2.0 * c) * f2 + c * f;
+    vec2 w3  = c          * f3 - c               * f2;
+    vec2 w12 = w1 + w2;
+
+    vec2 tc0  = pixelSize * (tc1 - 1.0);
+    vec2 tc3  = pixelSize * (tc1 + 2.0);
+    vec2 tc12 = pixelSize * (tc1 + w2 / w12);
+
+    vec4 s0 = texture(tex, vec2(tc12.x,  tc0.y));
+    vec4 s1 = texture(tex, vec2(tc0.x,  tc12.y));
+    vec4 s2 = texture(tex, vec2(tc12.x, tc12.y));
+    vec4 s3 = texture(tex, vec2(tc3.x,   tc0.y));
+    vec4 s4 = texture(tex, vec2(tc12.x,  tc3.y));
+
+    vec4 minColor = min(min(min(s0, s1), min(s2, s3)), s4);
+    vec4 maxColor = max(max(max(s0, s1), max(s2, s3)), s4);
+
+    float cw0 = w12.x * w0.y;
+    float cw1 = w0.x  * w12.y;
+    float cw2 = w12.x * w12.y;
+    float cw3 = w3.x  * w12.y;
+    float cw4 = w12.x * w3.y;
+
+    s0 *= cw0;
+    s1 *= cw1;
+    s2 *= cw2;
+    s3 *= cw3;
+    s4 *= cw4;
+
+    vec4 color = (s0 + s1 + s2 + s3 + s4) / (cw0 + cw1 + cw2 + cw3 + cw4);
+
+    // Anti-ring from unity
+    return clamp(color, minColor, maxColor);
+}
+
 // Lumiance aware perceptual weight
 vec3 perceptualWeight(vec3 colorYCoCg) {
     return colorYCoCg * rcp(1.0 + colorYCoCg.x);
@@ -130,47 +165,50 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
     if (saturate(prevCoord) != prevCoord) return vec4(currData, 1.0);
 
     #ifdef TAA_SHARPEN
-        vec3 prevData = textureLanczos(colortex1, prevCoord).rgb;
+        vec4 temporalData = textureCatmullRomFast(colortex1, prevCoord);
     #else
-        vec3 prevData = texture(colortex1, prevCoord).rgb;
+        vec4 temporalData = texture(colortex1, prevCoord);
     #endif
 
-    vec3 sample0 = sRGBToYCoCg(currData);
-    vec3 sample1 = currentLoad(ivec2(-1,  1));
-    vec3 sample2 = currentLoad(ivec2( 0,  1));
-    vec3 sample3 = currentLoad(ivec2( 1,  1));
-    vec3 sample4 = currentLoad(ivec2(-1,  0));
-    vec3 sample5 = currentLoad(ivec2( 1,  0));
-    vec3 sample6 = currentLoad(ivec2(-1, -1));
-    vec3 sample7 = currentLoad(ivec2( 0, -1));
-    vec3 sample8 = currentLoad(ivec2( 1, -1));
+    vec3 prevData = sRGBToYCoCg(temporalData.rgb);
+    currData = sRGBToYCoCg(currData);
 
-    vec3 clipAvg = mean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
-    vec3 clipAvg2 = sqrMean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
-    vec3 clipStdDev = sqrt(max0(clipAvg2 - clipAvg * clipAvg)) * TAA_AGGRESSION;
+    #ifdef TAA_CLIPPING
+        vec3 sample0 = currData;
+        vec3 sample1 = currentLoad(ivec2(-1,  1));
+        vec3 sample2 = currentLoad(ivec2( 0,  1));
+        vec3 sample3 = currentLoad(ivec2( 1,  1));
+        vec3 sample4 = currentLoad(ivec2(-1,  0));
+        vec3 sample5 = currentLoad(ivec2( 1,  0));
+        vec3 sample6 = currentLoad(ivec2(-1, -1));
+        vec3 sample7 = currentLoad(ivec2( 0, -1));
+        vec3 sample8 = currentLoad(ivec2( 1, -1));
 
-    #ifdef TAA_EI_CLIP
+        vec3 clipAvg = mean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
+        vec3 clipAvg2 = sqrMean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
+        vec3 clipStdDev = sqrt(max0(clipAvg2 - clipAvg * clipAvg));
+
+        float currLum = currData.x, prevLum = prevData.x;
+        float temporalContrast = saturate(abs(currLum - prevLum) / max(currLum, prevLum));
+        clipStdDev *= (1.0 + temporalContrast) * TAA_AGGRESSION;
+
         // Ellipsoid intersection clipping
-        prevData = sRGBToYCoCg(prevData) - clipAvg;
+        prevData -= clipAvg;
         prevData *= saturate(inversesqrt(sdot(prevData / clipStdDev)));
-        prevData = prevData + clipAvg;
-    #else
-        // Use variance clipping instead
-        vec3 clipMin = clipAvg - clipStdDev;
-        vec3 clipMax = clipAvg + clipStdDev;
-        prevData = historyClipAABB(sRGBToYCoCg(prevData), clipMin, clipMax);
+        prevData += clipAvg;
     #endif
 
-    float frameIndex = texture(colortex1, prevCoord).a;
+    float frameIndex = temporalData.a + 1.0;
+    // frameIndex *= 1.0 - saturate(cameraVelocity * 0.02);
+    // frameIndex *= 1.0 - saturate(length(motionVector * viewSize) * 0.02);
 
-    float alpha = min(++frameIndex, TAA_MAX_ACCUM_FRAMES);
-    alpha /= alpha + 1.0;
+    float blendWeight = min(frameIndex, TAA_MAX_ACCUM_FRAMES);
+    blendWeight /= blendWeight + 1.0;
 
-    float currLum = sample0.x, prevLum = prevData.x;
-    float unbiasedDiff = abs(currLum - prevLum) / max(currLum, prevLum);
-	alpha *= 1.0 - sqr(saturate(unbiasedDiff)) * 0.25;
+    float subpixelSharpen = sdot(fract(prevCoord * viewSize) * 2.0 - 1.0);
+    blendWeight *= 1.0 - approxSqrt(saturate(subpixelSharpen)) * 0.125;
 
-    currData = mix(perceptualWeight(sample0), perceptualWeight(prevData), alpha);
+    currData = mix(perceptualWeight(currData), perceptualWeight(prevData), blendWeight);
     return vec4(YCoCgToSRGB(perceptualWeightInv(currData)), frameIndex);
 }
 
