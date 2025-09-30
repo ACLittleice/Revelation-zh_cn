@@ -90,7 +90,7 @@ option.CLOUD_TAAU_ENABLED=Temporal Upsampling
 option.CLOUD_TAAU_SCALE=Upsampling Scale
 suffix.CLOUD_TAAU_SCALE=x
 
-option.CLOUD_EI_CLIP=Ellipsoid Intersection Clip
+option.CLOUD_TAAU_CLIPPING=Upsampling Clipping
 option.CLOUD_MAX_ACCUM_FRAMES=Max Accumulated Frames
 option.CLOUD_AERIAL_PERSPECTIVE=Aerial Perspective
 

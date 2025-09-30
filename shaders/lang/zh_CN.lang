@@ -90,7 +90,7 @@ option.CLOUD_TAAU_ENABLED=时域升采样
 option.CLOUD_TAAU_SCALE=升采样缩放比
 suffix.CLOUD_TAAU_SCALE=x
 
-option.CLOUD_EI_CLIP=椭球交裁切
+option.CLOUD_TAAU_CLIPPING=椭球交裁切
 option.CLOUD_MAX_ACCUM_FRAMES=最大累积帧数
 option.CLOUD_AERIAL_PERSPECTIVE=大气透视
 
