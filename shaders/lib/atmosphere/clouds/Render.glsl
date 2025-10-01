@@ -187,7 +187,7 @@ float[cloudMsCount] SetupParticipatingMediaPhases(in float primaryPhase, in floa
 }
 
 vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
-	float moonlightFactor = smoothstep(-0.02, -0.05, worldSunVector.y);
+	float moonlightFactor = smoothstep(-0.03, -0.05, worldSunVector.y);
     vec3 lightDir = worldSunVector * oms(2.0 * moonlightFactor);
 
 	float LdotV = dot(lightDir, rayDir);
