@@ -187,7 +187,10 @@ float[cloudMsCount] SetupParticipatingMediaPhases(in float primaryPhase, in floa
 }
 
 vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
-	float LdotV = dot(worldLightVector, rayDir);
+	float moonlightFactor = smoothstep(-0.02, -0.05, worldSunVector.y);
+    vec3 lightDir = worldSunVector * oms(2.0 * moonlightFactor);
+
+	float LdotV = dot(lightDir, rayDir);
 
 	// Compute phases for clouds' sunlight multi-scattering
 	#if 0
@@ -258,7 +261,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 					if (stepDensity < cloudEpsilon) continue;
 
 					// Compute the optical depth of sunlight through clouds
-					float opticalDepthSun = CloudVolumeOpticalDepth(rayPos, worldLightVector, noise.y, CLOUD_LOW_SUNLIGHT_SAMPLES);
+					float opticalDepthSun = CloudVolumeOpticalDepth(rayPos, lightDir, noise.y, CLOUD_LOW_SUNLIGHT_SAMPLES);
 
 					// Approximate sunlight multi-scattering
 					float msVolume = sqr(saturate(stepDensity * 2.0 + dimensionalProfile * 0.5));
@@ -382,7 +385,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 		// Compute irradiance
 		vec3 sunIrradiance, moonIrradiance;
 		vec3 skyIlluminance = GetSunAndSkyIrradiance(camera + cloudPos, vec3(0.0, 1.0, 0.0), worldSunVector, sunIrradiance, moonIrradiance) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
-		vec3 directIlluminance = SUN_SPECTRAL_RADIANCE_TO_LUMINANCE * (sunIrradiance + moonIrradiance);
+		vec3 directIlluminance = SUN_SPECTRAL_RADIANCE_TO_LUMINANCE * mix(sunIrradiance, moonIrradiance, moonlightFactor);
 
 		skyIlluminance += lightningShading * 0.05;
 
