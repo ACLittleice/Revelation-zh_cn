@@ -90,10 +90,7 @@ void main() {
 	float cloudDepth = minOf(textureGather(cloudDepthOriginTex, currCoord, 0));
 
 	// Skip ground
-	if (cloudDepth < EPS) {
-		discard;
-		return;
-	}
+	if (cloudDepth < EPS) return;
 
 	frameOut = 1u;
 
