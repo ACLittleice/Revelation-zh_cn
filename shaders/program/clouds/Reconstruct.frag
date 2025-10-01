@@ -64,7 +64,7 @@ vec3 ReprojectClouds(in vec2 coord, in float radius) {
 		const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_HIGH_WIND_SPEED;
 		motionVector.xz -= windVelocity;
 	}
-	motionVector *= worldTime - global.prevWorldTime;
+	motionVector *= (worldTime - global.prevWorldTime) * 0.05;
 	motionVector += cameraPosition - previousCameraPosition;
 
 	cloudPos += motionVector; // To previous frame's world space
