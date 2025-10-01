@@ -1,4 +1,4 @@
-#version 450 core
+#version 460 core
 
 #define DOWNSAMPLE_LEVEL 4
 const vec2 workGroupsRender = vec2(0.03125f, 0.03125f);
