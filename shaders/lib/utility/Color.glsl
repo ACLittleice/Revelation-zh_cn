@@ -38,7 +38,7 @@ vec3 plancks(in float t, in vec3 lambda) {
     const float k = 1.38064852e-5;  // Boltzmann's constant
 
     vec3 p1 = (2.0 * h * sqr(c)) / pow5(lambda);
-    vec3 p2 = fastExp(h * c / (lambda * k * t)) - vec3(1.0);
+    vec3 p2 = exp(h * c / (lambda * k * t)) - vec3(1.0);
     return p1 / p2;
 }
 
@@ -82,18 +82,18 @@ vec3 YCoCgToSRGB(in vec3 YCoCg) {
     Approximation errors are not provided, so this function should not be used where computational accuracy is critical!
     Instead, the primary purpose of this function is to render a black body surface in real time, which can be used in CG shaders,
     therefore the function is written in HLSL.
-    
+
     The luminance and chromaticity of a black body radiation are computed independently of each other.
-    The alpha-component of returned value is effective radiance in W/(sr*m2), which 
+    The alpha-component of returned value is effective radiance in W/(sr*m2), which
     should be multiplied by 683.002 lm/W to get the corresponding luminance in cd/m2.
     The rgb-components of returned value are color components expressed in linear sRGB color space.
     Relative luminance of returned color is close to 1 for temperatures above about 1000 K.
     Note, that returned color can have negative components, which means that chromaticity of a black body
     is outside the sRGB gamut for a given temperature (g-component < 0 for temperatures below about 900 K and
     b-component < 0 for temperatures below about 1900 K).
-    To get final color of a black body radiation with luminance in cd/m2 
+    To get final color of a black body radiation with luminance in cd/m2
     the rgb-components should be multiplied by the alpha-component and by 683.002 lm/W.
-    
+
     sRGB is defined according to ITU-R BT.709:
                              x       y
         white point   = 0.3127, 0.3290
@@ -101,11 +101,11 @@ vec3 YCoCgToSRGB(in vec3 YCoCg) {
         green primary =   0.30,   0.60
         blue primary  =   0.15,	  0.06
     More details can be found here https://www.desmos.com/calculator/qaxw5zb0zc
-    
+
     T - temperature in degrees Kelvin;
     bComputeRadiance - if true, effective radiance is computed;
     bComputeChromaticity - if true, chromaticity is computed;
-    
+
     returns: vec4 ChromaRadiance = {chroma_r, chroma_g, chroma_b, effRadiance}
 */
 vec4 BlackBodyRadiation(in float T) {

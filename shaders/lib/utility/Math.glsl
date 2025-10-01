@@ -19,7 +19,6 @@ const float max32f		 = 4294967295.0;
 
 #define rcp(x) 			 (1.0 / (x))
 #define oms(x) 	 		 (1.0 - (x))
-#define fastExp(x) 		 exp2((x) * rLOG2)
 #define max0(x) 		 max(x, 0.0)
 #define min1(x) 		 min(x, 1.0)
 #define maxEps(x) 		 max(x, EPS)

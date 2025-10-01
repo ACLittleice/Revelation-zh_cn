@@ -43,7 +43,7 @@ const vec2 workGroupsRender = vec2(1.0, 1.0);
 
 // https://alakhag.github.io/posts/sg/
 float sphericalGaussian(in vec3 v, in vec3 p, in float lambda) {
-    return fastExp(lambda * (saturate(dot(v, p)) - 1.0));
+    return exp(lambda * (saturate(dot(v, p)) - 1.0));
 }
 
 float lobeSharpness(in float roughness) {
