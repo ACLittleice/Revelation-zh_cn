@@ -253,7 +253,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 					// Compute sample cloud density
 					float heightFraction, dimensionalProfile;
-					float stepDensity = CloudVolumeDensity(rayPos, heightFraction, dimensionalProfile, rayT < 16e3);
+					float stepDensity = CloudVolumeDensity(rayPos, heightFraction, dimensionalProfile, rayT < 12e3);
 
 					if (stepDensity < cloudEpsilon) continue;
 
