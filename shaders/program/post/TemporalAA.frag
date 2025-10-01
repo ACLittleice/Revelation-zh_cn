@@ -53,95 +53,6 @@ vec3 GetClosestFragment(in ivec2 texel, in float depth) {
     return closestFragment;
 }
 
-float sinc(float x) {
-    return sin(PI * x) / (PI * x);
-}
-
-float lanczos2(float x) {
-    x = clamp(x, -2.0, 2.0);
-    if (abs(x) < EPS) return 1.0;
-    else return sinc(x) * sinc(x * 0.5);
-}
-
-vec3 textureLanczos(in sampler2D tex, in vec2 coord) {
-	const int radius = 2;
-
-	vec2 res = vec2(textureSize(tex, 0));
-	coord = coord * res - 0.5;
-
-    vec2 p = floor(coord);
-    vec2 f = coord - p;
-
-	ivec2 texel = ivec2(p);
-
-    vec3 sum = vec3(0.0);
-	float sumWeight = 0.0;
-
-    for (int x = -radius; x <= radius; ++x) {
-        float fx = lanczos2(float(x) - f.x);
-
-        for (int y = -radius; y <= radius; ++y) {
-			float fy = lanczos2(float(y) - f.y);
-			float weight = fx * fy;
-
-			vec3 sampleData = texelFetch(tex, texel + ivec2(x, y), 0).rgb;
-            sum += sampleData * weight;
-			sumWeight += weight;
-        }
-    }
-
-    return sum * rcp(sumWeight);
-}
-
-// Approximation from SMAA presentation [Jimenez 2016]
-vec4 textureCatmullRomFast(in sampler2D tex, in vec2 coord) {
-    vec2 resolution = textureSize(tex, 0);
-    vec2 pixelSize = 1.0 / resolution;
-
-    vec2 pos = coord * resolution;
-    vec2 tc1 = floor(pos - 0.5) + 0.5;
-    vec2 f  = pos - tc1;
-    vec2 f2 = f * f;
-    vec2 f3 = f * f2;
-
-    const float c = 0.5;
-    vec2 w0  = -c         * f3 +  2.0 * c        * f2 - c * f;
-    vec2 w1  =  (2.0 - c) * f3 - (3.0 - c)       * f2 + 1.0;
-    vec2 w2  = -(2.0 - c) * f3 + (3.0 - 2.0 * c) * f2 + c * f;
-    vec2 w3  = c          * f3 - c               * f2;
-    vec2 w12 = w1 + w2;
-
-    vec2 tc0  = pixelSize * (tc1 - 1.0);
-    vec2 tc3  = pixelSize * (tc1 + 2.0);
-    vec2 tc12 = pixelSize * (tc1 + w2 / w12);
-
-    vec4 s0 = texture(tex, vec2(tc12.x,  tc0.y));
-    vec4 s1 = texture(tex, vec2(tc0.x,  tc12.y));
-    vec4 s2 = texture(tex, vec2(tc12.x, tc12.y));
-    vec4 s3 = texture(tex, vec2(tc3.x,   tc0.y));
-    vec4 s4 = texture(tex, vec2(tc12.x,  tc3.y));
-
-    vec4 minColor = min(min(min(s0, s1), min(s2, s3)), s4);
-    vec4 maxColor = max(max(max(s0, s1), max(s2, s3)), s4);
-
-    float cw0 = w12.x * w0.y;
-    float cw1 = w0.x  * w12.y;
-    float cw2 = w12.x * w12.y;
-    float cw3 = w3.x  * w12.y;
-    float cw4 = w12.x * w3.y;
-
-    s0 *= cw0;
-    s1 *= cw1;
-    s2 *= cw2;
-    s3 *= cw3;
-    s4 *= cw4;
-
-    vec4 color = (s0 + s1 + s2 + s3 + s4) / (cw0 + cw1 + cw2 + cw3 + cw4);
-
-    // Anti-ring from unity
-    return clamp(color, minColor, maxColor);
-}
-
 // Lumiance aware perceptual weight
 vec3 perceptualWeight(vec3 colorYCoCg) {
     return colorYCoCg * rcp(1.0 + colorYCoCg.x);
@@ -150,8 +61,6 @@ vec3 perceptualWeight(vec3 colorYCoCg) {
 vec3 perceptualWeightInv(vec3 colorYCoCg) {
     return colorYCoCg * rcp(1.0 - colorYCoCg.x);
 }
-
-#define currentLoad(offset) sRGBToYCoCg(texelFetchOffset(colortex0, texel, 0, offset).rgb)
 
 #define mean(a, b, c, d, e, f, g, h, i) (a + b + c + d + e + f + g + h + i) * rcp(9.0)
 #define sqrMean(a, b, c, d, e, f, g, h, i) (a * a + b * b + c * c + d * d + e * e + f * f + g * g + h * h + i * i) * rcp(9.0)
@@ -174,6 +83,8 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
     currData = sRGBToYCoCg(currData);
 
     #ifdef TAA_CLIPPING
+        #define currentLoad(offset) sRGBToYCoCg(texelFetchOffset(colortex0, texel, 0, offset).rgb)
+
         vec3 sample0 = currData;
         vec3 sample1 = currentLoad(ivec2(-1,  1));
         vec3 sample2 = currentLoad(ivec2( 0,  1));
