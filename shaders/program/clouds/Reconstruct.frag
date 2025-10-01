@@ -41,55 +41,6 @@ uniform sampler2D cloudDepthOriginTex;
 #include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/clouds/Common.glsl"
 
-vec4 CatmullRomWeights(in float f) {
-    return vec4(
-        f * (-0.5 + f * (1.0 - 0.5 * f)),
-        1.0 + f * f * (-2.5 + 1.5 * f),
-        f * (0.5 + f * (2.0 - 1.5 * f)),
-        f * f * (-0.5 + 0.5 * f)
-    );
-}
-
-float sinc(float x) {
-    return sin(PI * x) / (PI * x);
-}
-
-float lanczos2(float x) {
-    x = clamp(x, -2.0, 2.0);
-    if (abs(x) < EPS) return 1.0;
-    else return sinc(x) * sinc(x * 0.5);
-}
-
-vec4 textureLanczos(in sampler2D tex, in vec2 coord) {
-	const int radius = 2;
-
-	vec2 res = textureSize(tex, 0);
-	coord = coord * res - 0.5;
-
-    vec2 p = floor(coord);
-    vec2 f = coord - p;
-
-	ivec2 texel = ivec2(p);
-
-    vec4 sum = vec4(0.0);
-	float sumWeight = 0.0;
-
-    for (int x = -radius; x <= radius; ++x) {
-        float fx = lanczos2(float(x) - f.x);
-
-        for (int y = -radius; y <= radius; ++y) {
-			float fy = lanczos2(float(y) - f.y);
-			float weight = fx * fy;
-
-			vec4 sampleData = texelFetch(tex, texel + ivec2(x, y), 0);
-            sum += sampleData * weight;
-			sumWeight += weight;
-        }
-    }
-
-    return sum * rcp(sumWeight);
-}
-
 vec3 ReprojectClouds(in vec2 coord, in float radius) {
 	vec3 cloudPos = ScreenToViewVectorRaw(coord) * radius;
 	cloudPos = transMAD(gbufferModelViewInverse, cloudPos); // To world space
@@ -169,8 +120,8 @@ void main() {
 		vec2 fractPixel = centerPixel - floorPixel;
 
 		// Catmull-Rom filter for current pixel
-		vec4 weightX = CatmullRomWeights(fractPixel.x);
-		vec4 weightY = CatmullRomWeights(fractPixel.y);
+		vec4 weightX = catmullRom(fractPixel.x);
+		vec4 weightY = catmullRom(fractPixel.y);
 
 		vec4 currData = vec4(0.0);
 		vec4 moment1  = vec4(0.0);
