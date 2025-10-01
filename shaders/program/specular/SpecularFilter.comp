@@ -66,14 +66,14 @@ void SpecularFilter(inout vec4 specularData, in ivec2 texel, in float roughness,
     vec2 bitangent = vec2(tangent.y, -tangent.x);
 
     float NdotV = abs(dot(worldNormal, worldDir));
-    // float skewFactor = mix(1.0, roughness, approxSqrt(saturate(1.0 - NdotV)));
-    // tangent *= skewFactor;
 
     float skewFactor = mix(0.5 + 0.5 * roughness, 1.0, NdotV);
     bitangent *= 1.0 / skewFactor;
 
     // float sigmaN = 128.0 / (roughness + 0.125);
     // float hitDistPhi = -0.125 * NdotV * oms(roughness) / (specularData.a + 1.0);
+
+    float linearDepth = ScreenToViewDepth(loadDepth0(texel));
 
     float sharpenWeight = 0.125 + 0.375 * saturate(specularData.a * 0.25);
     ivec2 texelEnd = ivec2(viewSize) - 1;
@@ -87,13 +87,13 @@ void SpecularFilter(inout vec4 specularData, in ivec2 texel, in float roughness,
 
         vec4 sampleData = texelFetch(colortex3, sampleTexel, 0);
 
-        // float sampleLinerDepth = FetchLinearDepth(sampleTexel);
+        float sampleLinerDepth = ScreenToViewDepth(loadDepth0(sampleTexel));
         vec3 sampleWorldNormal = FetchWorldNormal(sampleTexel);
         // vec3 sampleReflectedDir = reflect(-worldDir, sampleWorldNormal);
         float sampleRoughness = sqr(1.0 - loadGbufferData1(sampleTexel).x);
 
         float weight = lobeWeight(worldNormal, sampleWorldNormal, roughness, sampleRoughness, 2.0);
-        // weight *= exp2(abs(specularData.a - sampleData.a) * hitDistPhi);
+        weight *= exp2(-4.0 * NdotV * abs(linearDepth - sampleLinerDepth));
         weight = saturate(weight);
 
         // Sharpen
@@ -134,7 +134,7 @@ void main() {
 
         vec3 f0 = GetMaterialF0(material.metalness, albedo);
         vec3 specular = f0 * brdf.x + brdf.y;
-        sceneOut = mix(sceneOut, specularData.rgb, specular);
+        sceneOut += specularData.rgb * specular;
 
         imageStore(colorimg0, screenTexel, vec4(sceneOut, 1.0));
     #else
