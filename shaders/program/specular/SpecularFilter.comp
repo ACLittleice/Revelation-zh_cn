@@ -87,13 +87,13 @@ void SpecularFilter(inout vec4 specularData, in ivec2 texel, in float roughness,
 
         vec4 sampleData = texelFetch(colortex3, sampleTexel, 0);
 
-        float sampleLinerDepth = ScreenToViewDepth(loadDepth0(sampleTexel));
+        float sampleLinearDepth = ScreenToViewDepth(loadDepth0(sampleTexel));
         vec3 sampleWorldNormal = FetchWorldNormal(sampleTexel);
         // vec3 sampleReflectedDir = reflect(-worldDir, sampleWorldNormal);
         float sampleRoughness = sqr(1.0 - loadGbufferData1(sampleTexel).x);
 
         float weight = lobeWeight(worldNormal, sampleWorldNormal, roughness, sampleRoughness, 2.0);
-        weight *= exp2(-4.0 * NdotV * abs(linearDepth - sampleLinerDepth));
+        weight *= exp2(-4.0 * NdotV * abs(linearDepth - sampleLinearDepth));
         weight = saturate(weight);
 
         // Sharpen
