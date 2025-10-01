@@ -75,8 +75,8 @@ void main() {
     uint index = gl_LocalInvocationIndex;
 
 	// Sample and compute SH coefficients
-	vec3 direction = sampleUniformSphere(Hammersley(index, samples));
-	vec3 skyRadiance = texture(skyViewTex, FromSkyViewLutParams(direction) + vec2(0.0, 0.5)).rgb;
+	vec3 direction = sampleUniformSphere(R2(index));
+	vec3 skyRadiance = textureSmooth(skyViewTex, FromSkyViewLutParams(direction) + vec2(0.0, 0.5)).rgb;
 
 	// Estimate contribution
 	skyRadiance *= saturate(direction.y * 4.0 + 1.0) * 1.5 + 0.5;
