@@ -42,27 +42,28 @@ float SamplePartialSlice(float x, float sin_thVN) {
 
     float kk = k * k;
 
-    float h0 = sqrt(f0 * f0 + kk) - k;
-    float h1 = sqrt(f1 * f1 + kk) - k;
+    float h0 = fastSqrtNR0(f0 * f0 + kk) - k;
+    float h1 = fastSqrtNR0(f1 * f1 + kk) - k;
 
     float hh = (h0 * h1) / (h0 + h1);
 
-    float y = abs_x - sqrt(hh * (hh + 2.0 * k));
+    float y = abs_x - fastSqrtNR0(hh * (hh + 2.0 * k));
 
     return x < 0.0 ? -y : y;
 }
 
 vec2 SamplePartialSliceDir(vec3 vvsN, vec2 dir0) {
-    float l = length(vvsN.xy);
+    float l = sdot(vvsN.xy);
     if (l < EPS) return dir0;
 
-    vec2 n = vvsN.xy / l;
+    float rl = fastRcpSqrtNR0(l);
+    vec2 n = vvsN.xy * rl;
     // align n with x-axis
     dir0 = cmul(dir0, n * vec2(1.0, -1.0));
 
     // sample slice angle
     float x = atan(dir0.x, dir0.y) * rPI;
-    float ang = SamplePartialSlice(x, l) * PI;
+    float ang = SamplePartialSlice(x, l * rl) * PI;
 
     // ray space slice direction
     vec2 dir = vec2(cos(ang), sin(ang));
@@ -124,7 +125,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
                 float frontDistSq = sdot(sampleDiff);
 
                 if (frontDistSq < sampleRadius * sampleRadius * 4.0) {
-                    vec3 sampleDirFront = sampleDiff * inversesqrt(frontDistSq);
+                    vec3 sampleDirFront = sampleDiff * fastRcpSqrtNR0(frontDistSq);
                     vec3 sampleDirBack = normalize(sampleDiff - viewDir * hitThickness);
 
                     vec2 frontBackHorizon = vec2(dot(sampleDirFront, viewDir), dot(sampleDirBack, viewDir));
