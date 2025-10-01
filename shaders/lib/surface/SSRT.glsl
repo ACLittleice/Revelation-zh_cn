@@ -25,7 +25,7 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
     vec3 rayDir = normalize(endPos - rayPos);
     float stepNorm = 1.0 / rayDir.z;
 
-    float stepLength = minOf((fastSign(rayDir) - rayPos) / rayDir) * rSteps;
+	float stepLength = minOf((step(0.0, rayDir) - rayPos) / rayDir) * rSteps;
 
     rayDir.xy *= viewSize;
     rayPos.xy *= viewSize;
