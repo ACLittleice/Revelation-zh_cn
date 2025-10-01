@@ -14,6 +14,63 @@
 
 #include "/lib/utility/ShaderFastMathLib.glsl"
 
+// https://www.shadertoy.com/view/XcdBWf
+// MIT License. Copyright (C) 2024 Mirko Salm.
+vec2 cmul(vec2 c0, vec2 c1) {
+    return vec2(c0.x * c1.x - c0.y * c1.y, c0.y * c1.x + c0.x * c1.y);
+}
+
+float SamplePartialSlice(float x, float sin_thVN) {
+    float abs_x = abs(x);
+    if (abs_x < EPS || abs_x >= 1.0) return x;
+
+    float s = sin_thVN;
+
+    float o = s - s * s;
+    float slp0 = 1.0 / (1.0 + (PI  - 1.0) * (s - o * 0.30546));
+    float slp1 = 1.0 / (1.0 - (1.0 - exp2(-20.0)) * (s + o * mix(0.5, 0.785, s)));
+    float k = mix(0.1, 0.25, s);
+
+    float a = 1.0 - (PI - 2.0) / (PI - 1.0);
+    float b = 1.0 / (PI - 1.0);
+
+    float d0 =   a - slp0 * b;
+    float d1 = 1.0 - slp1;
+
+    float f0 = d0 * (PI * abs_x - asinFast4(clamp(abs_x, -1.0, 1.0)));
+    float f1 = d1 * (abs_x - 1.0);
+
+    float kk = k * k;
+
+    float h0 = sqrt(f0 * f0 + kk) - k;
+    float h1 = sqrt(f1 * f1 + kk) - k;
+
+    float hh = (h0 * h1) / (h0 + h1);
+
+    float y = abs_x - sqrt(hh * (hh + 2.0 * k));
+
+    return x < 0.0 ? -y : y;
+}
+
+vec2 SamplePartialSliceDir(vec3 vvsN, vec2 dir0) {
+    float l = length(vvsN.xy);
+    if (l < EPS) return dir0;
+
+    vec2 n = vvsN.xy / l;
+    // align n with x-axis
+    dir0 = cmul(dir0, n * vec2(1.0, -1.0));
+
+    // sample slice angle
+    float x = atan(dir0.x, dir0.y) * rPI;
+    float ang = SamplePartialSlice(x, l) * PI;
+
+    // ray space slice direction
+    vec2 dir = vec2(cos(ang), sin(ang));
+
+    // align x-axis with n
+    return cmul(dir, n);
+}
+
 // https://cdrinmatane.github.io/posts/ssaovb-code/
 const uint sectorCount = 32u;
 uint updateSectors(float minHorizon, float maxHorizon) {
@@ -23,6 +80,8 @@ uint updateSectors(float minHorizon, float maxHorizon) {
     uint currentBitfield = angleBit << startBit;
     return currentBitfield;
 }
+
+//================================================================================================//
 
 vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in vec2 lightmap) {
 	const uint sliceCount = SSILVB_SLICE_COUNT;
@@ -45,7 +104,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
 
     for (int slice = 0; slice < sliceCount; ++slice) {
         vec2 dir = SampleStbnUnitvec2(ivec2(gl_GlobalInvocationID.xy), frameCounter + slice);
-        dir = normalize(dir * 2.0 - 1.0);
+        dir = SamplePartialSliceDir(viewNormal, normalize(dir * 2.0 - 1.0));
 
         vec3 sliceN = normalize(cross(vec3(dir, 0.0), viewDir));
         vec3 projN = viewNormal - sliceN * dot(viewNormal, sliceN);
