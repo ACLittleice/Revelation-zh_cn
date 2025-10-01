@@ -78,8 +78,8 @@ void main() {
 	vec3 direction = sampleUniformSphere(Hammersley(index, samples));
 	vec3 skyRadiance = texture(skyViewTex, FromSkyViewLutParams(direction) + vec2(0.0, 0.5)).rgb;
 
-	// Ground radiance approximation
-	skyRadiance *= saturate(direction.y * 4.0 + 1.0) * 0.75 + 0.25;
+	// Estimate contribution
+	skyRadiance *= saturate(direction.y * 4.0 + 1.0) * 1.5 + 0.5;
 
 	vec3[9] shCoeff;
 	float[9] basis = BasisSH3(direction);
