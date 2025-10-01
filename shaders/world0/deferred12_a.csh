@@ -1,4 +1,4 @@
-#version 450 core
+#version 460 core
 
 #define SPECULAR_FILTER_SIZE 8.0
 #define SPECULAR_COMBINE_PASS
