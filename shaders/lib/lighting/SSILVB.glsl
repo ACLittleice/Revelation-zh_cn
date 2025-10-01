@@ -42,12 +42,12 @@ float SamplePartialSlice(float x, float sin_thVN) {
 
     float kk = k * k;
 
-    float h0 = fastSqrtNR0(f0 * f0 + kk) - k;
-    float h1 = fastSqrtNR0(f1 * f1 + kk) - k;
+    float h0 = approxSqrt(f0 * f0 + kk) - k;
+    float h1 = approxSqrt(f1 * f1 + kk) - k;
 
     float hh = (h0 * h1) / (h0 + h1);
 
-    float y = abs_x - fastSqrtNR0(hh * (hh + 2.0 * k));
+    float y = abs_x - approxSqrt(hh * (hh + 2.0 * k));
 
     return x < 0.0 ? -y : y;
 }
