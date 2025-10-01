@@ -109,7 +109,7 @@ vec2 ProjectMercator(in vec3 dir) {
 vec3 UnprojectMercator(in vec2 uv) {
     uv = uv * TAU - PI; // Scale to [-π, π]
     float phi = uv.x; // Longitude
-    float theta = atan(fastExp(uv.y)) * 2.0 - hPI; // Latitude
+    float theta = atan(exp(uv.y)) * 2.0 - hPI; // Latitude
 
     vec3 dir = vec3(cos(theta) * cos(phi), sin(theta), cos(theta) * sin(phi));
     return normalize(dir);

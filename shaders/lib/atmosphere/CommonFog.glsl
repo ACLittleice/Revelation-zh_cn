@@ -14,7 +14,7 @@ void RenderVanillaFog(inout vec3 scene, inout float fogTransmittance, in float v
     // Powdered snow fog
 	#ifdef POWDERED_SNOW_FOG
 		if (isEyeInWater == 3) {
-			fogTransmittance = fastExp(-viewDistance);
+			fogTransmittance = exp(-viewDistance);
 
 			vec3 skyIlluminance = global.light.skyIlluminance * PI;
 			scene = mix(skyIlluminance * eyeSkylightSmooth, scene, fogTransmittance);
@@ -23,7 +23,7 @@ void RenderVanillaFog(inout vec3 scene, inout float fogTransmittance, in float v
 
     // Blindness and darkness fog
 	#ifdef BLINDNESS_DARKNESS_FOG
-	    scene *= fastExp(-viewDistance * blindness);
+	    scene *= exp(-viewDistance * blindness);
 	    scene *= smoothstep(12.0, 2.0, darknessFactor * viewDistance);
 	#endif
 }

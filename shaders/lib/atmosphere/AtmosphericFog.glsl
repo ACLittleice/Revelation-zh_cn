@@ -132,7 +132,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither) {
 
 		stepFogmass *= stepLength;
 		vec3 opticalDepth = fogExtinctionCoeff * stepFogmass;
-		vec3 stepTransmittance = fastExp(-opticalDepth);
+		vec3 stepTransmittance = exp(-opticalDepth);
 
 		vec3 stepScattering = transmittance * oms(stepTransmittance) / maxEps(opticalDepth);
 

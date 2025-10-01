@@ -163,12 +163,12 @@ vec3 FresnelConductor(in float cosTheta, in vec3 n, in vec3 k) {
 
 float NDFBeckmann(in float NdotH, in float alpha2) {
     float NdotH2 = NdotH * NdotH;
-    return maxEps(rcp(PI * alpha2 * NdotH2 * NdotH2) * fastExp((NdotH2 - 1.0) / (alpha2 * NdotH2)));
+    return maxEps(rcp(PI * alpha2 * NdotH2 * NdotH2) * exp((NdotH2 - 1.0) / (alpha2 * NdotH2)));
 }
 
 float NDFGaussian(in float NdotH, in float alpha2) {
 	float thetaH = fastAcos(NdotH);
-    return fastExp(-thetaH * thetaH / alpha2);
+    return exp(-thetaH * thetaH / alpha2);
 }
 
 float NDFGGX(in float NdotH, in float alpha) {
