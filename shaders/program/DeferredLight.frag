@@ -189,9 +189,9 @@ void main() {
 		#if AO_ENABLED > 0 && !defined SSILVB_ENABLED
 			vec3 ao = vec3(1.0);
 			#if AO_ENABLED == 1
-				ao.x = CalculateSSAO(screenCoord, viewPos, viewNormal, dither);
+				ao.x = CalculateSSAO(screenCoord, viewPos, viewNormal, SampleStbnUnitvec2(screenTexel, frameCounter));
 			#else
-				ao.x = CalculateGTAO(screenCoord, viewPos, viewNormal, dither);
+				ao.x = CalculateGTAO(screenCoord, viewPos, viewNormal, SampleStbnVec2(screenTexel, frameCounter));
 			#endif
 
 			#ifdef AO_MULTI_BOUNCE

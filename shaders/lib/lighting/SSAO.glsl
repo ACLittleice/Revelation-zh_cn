@@ -5,17 +5,16 @@
 
 //================================================================================================//
 
-float CalculateSSAO(in vec2 coord, in vec3 viewPos, in vec3 normal, in float dither) {
+float CalculateSSAO(in vec2 coord, in vec3 viewPos, in vec3 normal, in vec2 dir) {
 	const float rSteps = 1.0 / float(SSAO_SAMPLES);
 	float maxSqLen = sqr(viewPos.z) * 0.25;
 	float rMaxSqLen = 1.0 / maxSqLen;
 
 	vec2 radius = vec2(0.0);
-	vec2 rayStep = diagonal2(gbufferProjection) / -viewPos.z;
+	vec2 rayStep = diagonal2(gbufferProjection) / viewPos.z * -rSteps;
 
 	const mat2 goldenRotate = mat2(cos(goldenAngle), -sin(goldenAngle), sin(goldenAngle), cos(goldenAngle));
 
-	vec2 dir = sincos(dither * TAU) * rSteps;
 	float sum = 0.0;
 
 	for (uint i = 0u; i < SSAO_SAMPLES; ++i, dir *= goldenRotate) {
