@@ -24,11 +24,6 @@ layout (location = 1) out vec4 shadowcolor1Out;
 
 in vec2 texCoord;
 
-#ifdef RSM_ENABLED
-	in float skyLightmap;
-	flat in vec3 flatNormal;
-#endif
-
 // in vec3 viewPos;
 in vec3 vectorData; // Minecraft position in water, vertColor in other materials
 
@@ -63,13 +58,6 @@ void main() {
 			shadowcolor0Out = mix(vec3(albedo.a), albedo.rgb * vectorData, albedo.a);
 		}
 
-		#ifdef RSM_ENABLED
-			shadowcolor1Out.xy = OctEncodeUnorm(flatNormal);
-		#endif
 		shadowcolor1Out.w = 0.0;
 	}
-
-	#ifdef RSM_ENABLED
-		shadowcolor1Out.z = skyLightmap;
-	#endif
 }

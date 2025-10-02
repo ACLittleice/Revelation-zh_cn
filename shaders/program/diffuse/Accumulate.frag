@@ -6,7 +6,7 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-    Pass: Accumulation for SSPT and variance estimation
+    Pass: Accumulation and variance estimation
 	Reference:  https://research.nvidia.com/sites/default/files/pubs/2017-07_Spatiotemporal-Variance-Guided-Filtering://svgf_preprint.pdf
                 https://cescg.org/wp-content/uploads/2018/04/Dundr-Progressive-Spatiotemporal-Variance-Guided-Filtering-2.pdf
 
@@ -48,7 +48,7 @@ void TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal) {
 
     // Estimate spatial variance
     vec2 currMoments = vec2(luma, luma * luma);
-    {
+    #if 0
 	    for (uint i = 0u; i < 8u; ++i) {
             ivec2 sampleTexel = clamp(texel + offset3x3N[i], ivec2(0), texelEnd);
             vec3 sampleColor = texelFetch(colortex3, sampleTexel, 0).rgb;
@@ -61,7 +61,7 @@ void TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal) {
         }
 
         currMoments *= 1.0 / 9.0;
-    }
+    #endif
     varianceMoments.xy = currMoments;
 
     if (saturate(prevCoord) == prevCoord && !worldTimeChanged) {
@@ -71,6 +71,7 @@ void TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal) {
         vec4 prevDiffuse = vec4(0.0);
         vec2 prevMoments = vec2(0.0);
         float sumWeight = 0.0;
+        float confidence = 0.0;
 
         prevCoord += (prevTaaOffset - taaOffset) * 0.25;
 
@@ -87,20 +88,21 @@ void TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal) {
         };
 
         ivec2 offsetToBR = ivec2(halfViewSize.x, 0);
+		float depthPhi = -16.0 / currViewDistance;
 
         for (uint i = 0u; i < 4u; ++i) {
             ivec2 sampleTexel = floorTexel + offset2x2[i];
             if (clamp(sampleTexel, ivec2(0), texelEnd) == sampleTexel) {
                 vec3 sampleAux = texelFetch(colortex2, sampleTexel + offsetToBR, 0).rgb;
 
-                if (abs((currViewDistance - sampleAux.z) - cameraVelocity) < 0.1 * currViewDistance) {
-                    float weight = bilinearWeight[i];
-                    weight *= pow8(saturate(dot(OctDecodeSnorm(sampleAux.xy), worldNormal)));
+                float weight = pow8(saturate(dot(OctDecodeSnorm(sampleAux.xy), worldNormal)));
+                weight *= exp2(abs(currViewDistance - sampleAux.z) * depthPhi);
+                confidence = max(confidence, weight);
+                weight *= bilinearWeight[i];
 
-                    prevDiffuse += texelFetch(colortex2, sampleTexel, 0) * weight;
-                    prevMoments += texelFetch(colortex14, sampleTexel, 0).xy * weight;
-                    sumWeight += weight;
-                }
+                prevDiffuse += texelFetch(colortex2, sampleTexel, 0) * weight;
+                prevMoments += texelFetch(colortex14, sampleTexel, 0).xy * weight;
+                sumWeight += weight;
             }
         }
 
@@ -109,40 +111,27 @@ void TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal) {
             prevDiffuse *= sumWeight;
             prevMoments *= sumWeight;
 
-            indirectHistory.a = min(prevDiffuse.a + 1.0, SSPT_MAX_ACCUM_FRAMES);
+            indirectHistory.a = min(prevDiffuse.a * confidence + 1.0, SSILVB_MAX_ACCUM_FRAMES);
             float alpha = rcp(indirectHistory.a);
 
             // See section 4.2 of the paper
-            if (indirectHistory.a > 4.5) {
+            // if (indirectHistory.a > 4.5) {
                 varianceMoments.xy = mix(prevMoments, varianceMoments.xy, alpha);
-            }
+            // }
 
-            float mipLevel = 4.0 * saturate(1.0 - indirectHistory.a * rcp(16.0));
+            float mipLevel = 2.0 * saturate(1.0 - indirectHistory.a * rcp(16.0));
             indirectCurrent.rgb = textureLod(colortex3, screenPos.xy * 0.5, mipLevel).rgb;
 
             indirectCurrent.rgb = indirectHistory.rgb = mix(prevDiffuse.rgb, indirectCurrent.rgb, alpha);
 
-            varianceMoments.x *= varianceMoments.x;
-            indirectCurrent.a = maxEps(varianceMoments.y - varianceMoments.x);
-            indirectCurrent.a *= inversesqrt(indirectCurrent.a);
+            indirectCurrent.a = max0(varianceMoments.y - varianceMoments.x * varianceMoments.x);
+            indirectCurrent.a *= inversesqrt(indirectCurrent.a + EPS);
             return;
         }
     }
 
-    indirectCurrent.rgb = textureLod(colortex3, screenPos.xy * 0.5, 4.0).rgb;
+    indirectCurrent.rgb = textureLod(colortex3, screenPos.xy * 0.5, 2.0).rgb;
     indirectCurrent.a = varianceMoments.x;
-}
-
-float GetClosestDepth(in ivec2 texel) {
-    float depth = loadDepth0(texel);
-
-    for (uint i = 0u; i < 8u; ++i) {
-        ivec2 sampleTexel = (offset3x3N[i] << 1) + texel;
-        float sampleDepth = loadDepth0(sampleTexel);
-        depth = min(depth, sampleDepth);
-    }
-
-    return depth;
 }
 
 //======// Main //================================================================================//
@@ -171,7 +160,7 @@ void main() {
 
                 float blocklight = Unpack2x8UX(loadGbufferData0(currentTexel).x);
                 blocklight = pow5(blocklight) * exp2(-64.0 * luminance(indirectCurrent.rgb) * global.exposure.value);
-                indirectCurrent.rgb += blackbody(float(BLOCKLIGHT_TEMPERATURE)) * saturate(blocklight) * SSPT_BLENDED_LIGHTMAP;
+                indirectCurrent.rgb += blackbody(float(BLOCKLIGHT_TEMPERATURE)) * saturate(blocklight) * SSILVB_BLENDED_LIGHTMAP;
             }
         } else {
             ivec2 currentTexel = (screenTexel << 1) - ivec2(viewWidth, 0);

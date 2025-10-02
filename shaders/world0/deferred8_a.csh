@@ -2,4 +2,4 @@
 
 #define ATROUS_FILTER_SIZE 4
 
-#include "/program/SSPT/EAWF.comp"
+#include "/program/diffuse/EAWF.comp"

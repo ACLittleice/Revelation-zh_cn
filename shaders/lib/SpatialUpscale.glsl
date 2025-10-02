@@ -1,6 +1,6 @@
 #if defined PASS_DEFERRED_LIGHTING
-#if (defined SSPT_ENABLED && defined SVGF_ENABLED) || defined RSM_ENABLED
-	vec3 SpatialUpscale5x5(in ivec2 texel, in vec3 worldNormal, in float viewDistance, in float NdotV) {
+#if defined SSILVB_ENABLED && defined SVGF_ENABLED
+	vec3 SpatialUpscale(in ivec2 texel, in vec3 worldNormal, in float viewDistance, in float NdotV) {
 		vec3 sum = texelFetch(colortex3, texel, 0).rgb;
 		float sumWeight = 1.0;
 
@@ -9,8 +9,8 @@
 		ivec2 offsetToBR = ivec2(halfViewSize.x, 0);
         ivec2 texelEnd = ivec2(halfViewEnd);
 
-		for (uint i = 0u; i < 24u; ++i) {
-			ivec2 sampleTexel = clamp(texel + offset5x5N[i], ivec2(0), texelEnd);
+		for (uint i = 0u; i < 8u; ++i) {
+			ivec2 sampleTexel = clamp(texel + offset3x3N[i], ivec2(0), texelEnd);
 
 			vec3 prevData = texelFetch(colortex2, sampleTexel + offsetToBR, 0).rgb;
 
