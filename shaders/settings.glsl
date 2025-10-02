@@ -112,7 +112,7 @@ const ivec2 skyViewRes = ivec2(256, 128);
 	#define NIGHT_BRIGHTNESS 1.0 // Brightness of the night. [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0] [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.7 2.0 2.5 3.0 4.0 5.0 7.0 10.0]
 
 /* Global Illumination */
-	#define SSILVB_ENABLED
+	// #define SSILVB_ENABLED
 	#define SVGF_ENABLED // Enables spatiotemporal variance-guided filtering
 
 	// #define SSPT_ENABLED // Enables screen-space path tracing
