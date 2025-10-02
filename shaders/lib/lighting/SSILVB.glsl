@@ -6,8 +6,8 @@
 //================================================================================================//
 
 #define SSILVB_SLICE_COUNT 1 // [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16]
-#define SSILVB_SAMPLE_COUNT 16 // [4 6 8 10 12 14 16 18 20 22 24 26 28 30 32]
-#define SSILVB_SAMPLE_RADIUS 8.0 // [4.0 6.0 8.0 10.0 12.0 14.0 16.0 18.0 20.0 22.0 24.0 26.0 28.0 30.0 32.0]
+#define SSILVB_SAMPLE_COUNT 24 // [4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 48 50 52 54 56 58 60 62 64]
+#define SSILVB_SAMPLE_RADIUS 16.0 // [4.0 6.0 8.0 10.0 12.0 14.0 16.0 18.0 20.0 22.0 24.0 26.0 28.0 30.0 32.0]
 #define SSILVB_HIT_THICKNESS 1.0 // [0.25 0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0 4.5 5.0 5.5 6.0 6.5 7.0 7.5 8.0]
 
 //================================================================================================//
@@ -101,8 +101,6 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
 
     vec4 irradiance = vec4(0.0);
 
-    vec2 sampleScale = -sampleRadius / viewPos.z * diagonal2(gbufferProjection);
-
     for (int slice = 0; slice < sliceCount; ++slice) {
         vec2 dir = SampleStbnUnitvec2(ivec2(gl_GlobalInvocationID.xy), frameCounter + slice);
         dir = SamplePartialSliceDir(viewNormal, normalize(dir * 2.0 - 1.0));
@@ -114,17 +112,22 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
         float angN = fastSign(dot(projN, cross(viewDir, sliceN))) * acosFast4(clamp(cosN, -1.0, 1.0));
         float angOff = angN * rPI + 0.5;
 
+        vec3 endPos = ViewToScreenSpace(vec3(dir, 0.0) + viewPos);
+        vec2 rayDir = normalize(endPos.xy - fragCoord);
+
+        float stepLength = minOf((step(0.0, rayDir) - fragCoord) / rayDir) * rSampleCount;
+        vec2 rayStep = rayDir * stepLength;
+
         uint bitMask = 0u;
 
         for (uint currentSample = 0u; currentSample < sampleCount; ++currentSample) {
-            float sampleStep = (float(currentSample) + dither) * rSampleCount;
-            vec2 sampleUV = fragCoord + sampleStep * sampleScale * dir;
+            vec2 sampleUV = fragCoord + rayStep * (float(currentSample) + dither);
 
 			if (saturate(sampleUV) == sampleUV) {
 				vec3 sampleDiff = ScreenToViewSpace(sampleUV) - viewPos;
                 float frontDistSq = sdot(sampleDiff);
 
-                if (frontDistSq < sampleRadius * sampleRadius * 4.0) {
+                if (frontDistSq < sampleRadius * sampleRadius) {
                     vec3 sampleDirFront = sampleDiff * fastRcpSqrtNR0(frontDistSq);
                     vec3 sampleDirBack = normalize(sampleDiff - viewDir * hitThickness);
 
