@@ -142,12 +142,12 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
 
                     if (sampleOccludedBit > 0u) {
                         ivec2 sampleTexel = uvToTexel(sampleUV);
-                        // vec3 sampleNormal = mat3(gbufferModelView) * FetchWorldNormal(sampleTexel);
+                        vec3 sampleNormal = mat3(gbufferModelView) * FetchWorldNormal(sampleTexel);
 
                         vec3 sampleRadiance = texelFetch(colortex4, sampleTexel >> 1, 0).rgb;
                         irradiance.rgb += float(bitCount(sampleOccludedBit)) *
                             saturate(dot(viewNormal, sampleDirFront)) *
-                            // saturate(-dot(sampleNormal, sampleDirFront)) *
+                            saturate(0.5 - 0.5 * dot(sampleNormal, sampleDirFront)) *
                             sampleRadiance;
 
                         bitMask |= sBitMask;
