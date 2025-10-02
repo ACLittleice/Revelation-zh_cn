@@ -31,8 +31,8 @@ float SamplePartialSlice(float x, float sin_thVN) {
     float slp1 = 1.0 / (1.0 - (1.0 - exp2(-20.0)) * (s + o * mix(0.5, 0.785, s)));
     float k = mix(0.1, 0.25, s);
 
-    float a = 1.0 - (PI - 2.0) / (PI - 1.0);
-    float b = 1.0 / (PI - 1.0);
+    const float a = 1.0 - (PI - 2.0) / (PI - 1.0);
+    const float b = 1.0 / (PI - 1.0);
 
     float d0 =   a - slp0 * b;
     float d1 = 1.0 - slp1;
@@ -56,7 +56,7 @@ vec2 SamplePartialSliceDir(vec3 vvsN, vec2 dir0) {
     float l = sdot(vvsN.xy);
     if (l < EPS) return dir0;
 
-    float rl = fastRcpSqrtNR0(l);
+    float rl = inversesqrt(l);
     vec2 n = vvsN.xy * rl;
     // align n with x-axis
     dir0 = cmul(dir0, n * vec2(1.0, -1.0));
@@ -74,19 +74,20 @@ vec2 SamplePartialSliceDir(vec3 vvsN, vec2 dir0) {
 
 // https://cdrinmatane.github.io/posts/ssaovb-code/
 const uint sectorCount = 32u;
-uint updateSectors(float minHorizon, float maxHorizon) {
-    uint startBit = uint(minHorizon * float(sectorCount));
-    uint horizonAngle = uint(ceil((maxHorizon - minHorizon) * float(sectorCount)));
+uint updateSectors(in vec2 horizon) {
+    uint startBit = uint(horizon.x * float(sectorCount));
+
+    uint horizonAngle = uint(ceil((horizon.y - horizon.x) * float(sectorCount)));
     uint angleBit = horizonAngle > 0u ? uint(0xFFFFFFFFu >> (sectorCount - horizonAngle)) : 0u;
-    uint currentBitfield = angleBit << startBit;
-    return currentBitfield;
+
+    return angleBit << startBit;
 }
 
 //================================================================================================//
 
 vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in vec2 lightmap) {
-	const uint sliceCount = SSILVB_SLICE_COUNT;
-	const uint sampleCount = SSILVB_SAMPLE_COUNT;
+	const int sliceCount = SSILVB_SLICE_COUNT;
+	const int sampleCount = SSILVB_SAMPLE_COUNT;
 	const float sampleRadius = SSILVB_SAMPLE_RADIUS;
 	const float hitThickness = SSILVB_HIT_THICKNESS;
 
@@ -102,7 +103,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
     vec4 irradiance = vec4(0.0);
 
     for (int slice = 0; slice < sliceCount; ++slice) {
-        vec2 dir = SampleStbnUnitvec2(ivec2(gl_GlobalInvocationID.xy), frameCounter + slice);
+        vec2 dir = SampleStbnUnitvec2(ivec2(gl_GlobalInvocationID.xy), slice + frameCounter * sliceCount);
         dir = SamplePartialSliceDir(viewNormal, normalize(dir * 2.0 - 1.0));
 
         vec3 sliceN = normalize(cross(viewDir, vec3(dir, 0.0)));
@@ -136,7 +137,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
                     frontBackHorizon = acosFast4(clamp(frontBackHorizon, -1.0, 1.0));
                     frontBackHorizon = saturate(frontBackHorizon * rPI + angOff);
 
-                    uint sBitMask = updateSectors(frontBackHorizon.x, frontBackHorizon.y);
+                    uint sBitMask = updateSectors(frontBackHorizon);
                     uint sampleOccludedBit = sBitMask & ~bitMask;
 
                     if (sampleOccludedBit > 0u) {
@@ -159,7 +160,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
     }
 
     irradiance *= rSectorCount * rSliceCount;
-    irradiance = vec4(irradiance.rgb * PI, 1.0 - irradiance.a);
+    irradiance = vec4(irradiance.rgb * PI, saturate(1.0 - irradiance.a));
 
     vec3 skylight = ConvolvedReconstructSH3(global.light.skySH, worldNormal);
     irradiance.rgb += skylight * irradiance.a * cube(lightmap.y);
