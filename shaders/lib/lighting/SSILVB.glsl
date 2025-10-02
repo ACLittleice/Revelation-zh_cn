@@ -107,11 +107,11 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
         vec2 dir = SampleStbnUnitvec2(ivec2(gl_GlobalInvocationID.xy), frameCounter + slice);
         dir = SamplePartialSliceDir(viewNormal, normalize(dir * 2.0 - 1.0));
 
-        vec3 sliceN = normalize(cross(vec3(dir, 0.0), viewDir));
+        vec3 sliceN = normalize(cross(viewDir, vec3(dir, 0.0)));
         vec3 projN = viewNormal - sliceN * dot(viewNormal, sliceN);
         float cosN = dot(projN, viewDir) * inversesqrt(sdot(projN));
 
-        float angN = -fastSign(dot(projN, cross(viewDir, sliceN))) * acosFast4(clamp(cosN, -1.0, 1.0));
+        float angN = fastSign(dot(projN, cross(viewDir, sliceN))) * acosFast4(clamp(cosN, -1.0, 1.0));
         float angOff = angN * rPI + 0.5;
 
         uint bitMask = 0u;
