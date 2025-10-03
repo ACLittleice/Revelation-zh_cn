@@ -195,8 +195,10 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 	// Compute phases for clouds' sunlight multi-scattering
 	#if 0
 		float phase = TripleLobePhase(LdotV, cloudForwardG, cloudBackwardG, cloudLobeMixer, cloudSilverG, cloudSilverI);
+	#elif 1
+		float phase = HgDrainePhase(LdotV, 5.0);
 	#else
-		float phase = HgDrainePhase(LdotV, 16.0);
+		float phase = NumericalMieFit(LdotV);
 	#endif
 	// float phases[cloudMsCount] = SetupParticipatingMediaPhases(phase, cloudMsFalloffC);
 
