@@ -108,6 +108,13 @@ float almostUnitIdentity(in float x) {
     return x * x * (2.0 - x);
 }
 
+// Quadratic polynomial smooth-min function from https://www.iquilezles.org/www/articles/smin/smin.htm
+float smin(in float a, in float b, in float k) {
+    k *= 4.0;
+    float h = max0(k - abs(a - b)) / k;
+    return min(a, b) - h * h * k * 0.25;
+}
+
 float fastSign(in float x) {
     return uintBitsToFloat((floatBitsToUint(x) & 0x80000000u) | 0x3F800000u);
 }

@@ -150,13 +150,6 @@ uniform sampler2D curlNoiseTex;
 
 //================================================================================================//
 
-// Quadratic polynomial smooth-min function from https://www.iquilezles.org/www/articles/smin/smin.htm
-float smin(float a, float b, float k) {
-    k *= 4.0;
-    float h = max0(k - abs(a - b)) / k;
-    return min(a, b) - h * h * k * 0.25;
-}
-
 // From [Schneider, 2015]
 float remap(float value, float orignalMin, float orignalMax, float newMin, float newMax) {
     return newMin + saturate((value - orignalMin) / (orignalMax - orignalMin)) * (newMax - newMin);
