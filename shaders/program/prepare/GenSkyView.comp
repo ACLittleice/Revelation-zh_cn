@@ -26,8 +26,6 @@ const ivec3 workGroups = ivec3(16, 8, 1);
 
 writeonly uniform image2D colorimg5;
 
-uniform sampler3D atmosCombinedLut;
-
 #include "/lib/universal/Uniform.glsl"
 
 //======// SSBO //================================================================================//

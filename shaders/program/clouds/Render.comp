@@ -36,8 +36,6 @@ layout (local_size_x = 16, local_size_y = 16) in;
 writeonly uniform image2D cloudOriginImg;
 writeonly uniform image2D cloudDepthOriginImg;
 
-uniform sampler3D atmosCombinedLut;
-
 #include "/lib/universal/Uniform.glsl"
 
 //======// SSBO //================================================================================//

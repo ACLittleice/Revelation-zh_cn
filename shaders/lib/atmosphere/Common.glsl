@@ -65,7 +65,7 @@ struct AtmosphereParameters {
 //================================================================================================//
 
 const float planetRadius = 6371e3; // The average radius of the Earth: 6,371 kilometers
-const float mie_phase_g = 0.78;
+const float mie_phase_g = 0.8;
 
 float viewerHeight = planetRadius + max(1.0, eyeAltitude + VIEWER_BASE_ALTITUDE);
 float moonlightMult = (abs(moonPhase - 4.0) + 1.0) * (0.0001 * NIGHT_BRIGHTNESS);

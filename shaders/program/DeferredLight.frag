@@ -27,7 +27,6 @@ out vec3 sceneOut;
 
 writeonly uniform image2D colorimg8;
 
-uniform sampler3D atmosCombinedLut;
 uniform sampler2D cloudOriginTex;
 
 #include "/lib/universal/Uniform.glsl"
