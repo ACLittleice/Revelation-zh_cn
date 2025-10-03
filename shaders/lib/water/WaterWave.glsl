@@ -100,7 +100,7 @@ float CalculateWaterHeight(in vec2 position, in bool detail) {
 		sum *= saturate(noise.z * 3.0 - 1.5) * 4.0 + 1.0;
 	#endif
 
-	return sum / sumWeight * 0.05;
+	return sum / sumWeight * 0.075;
 }
 
 #endif
@@ -108,13 +108,13 @@ float CalculateWaterHeight(in vec2 position, in bool detail) {
 //================================================================================================//
 
 vec3 CalculateWaterNormal(in vec2 position) {
-	const float delta = 0.05;
+	const float delta = 0.1;
 
-	float heightCenter = CalculateWaterHeight(position, true);
-	float heightLeft   = CalculateWaterHeight(position + vec2(delta, 0.0), true);
-	float heightUp     = CalculateWaterHeight(position + vec2(0.0, delta), true);
+	float height0 = CalculateWaterHeight(position, true);
+	float height1 = CalculateWaterHeight(position + vec2(delta, 0.0), true);
+	float height2 = CalculateWaterHeight(position + vec2(0.0, delta), true);
 
-	vec2 waveNormal    = vec2(heightCenter - heightLeft, heightCenter - heightUp);
+	vec2 waveNormal = vec2(height0 - height1, height0 - height2);
 	return normalize(vec3(waveNormal * WATER_WAVE_HEIGHT, delta));
 }
 
