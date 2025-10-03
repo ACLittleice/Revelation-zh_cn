@@ -135,7 +135,7 @@ vec3 PercentageCloserFilter(in vec3 shadowScreenPos, in vec3 worldPos, in float 
 
 			float waterDepth = waterData.x * shadowProjectionInverse[2].z * 5.0;
 			vec3 caustics = CalculateWaterCaustics(worldPos, waterDepth, dither);
-			result += waterData.y * rSteps * (caustics - result);
+			result = mix(result, saturate(caustics), waterData.y * rSteps);
 		}
 	#endif
 
