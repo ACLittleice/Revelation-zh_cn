@@ -75,25 +75,25 @@ float CalculateWaterHeight(in vec2 position, in bool detail) {
 	const mat2 rot = mat2(angle, -angle.y, angle.x);
 
 	vec3 noise = FetchSmoothNoise((position + frameTimeCounter) * 2e-3);
-	vec2 dir = sincos(noise.z * 0.08);
+	vec2 dir = sincos(noise.z * 0.1);
 
-	float frequency = 2.0;
+	float frequency = 1.5;
 	float weight = 1.0;
 	float sum = 0.0;
 	float sumWeight = 0.0;
 
 	float waveTime = 0.5 * WATER_WAVE_SPEED * frameTimeCounter;
-	uint steps = detail ? 11u : 4u;
+	uint steps = detail ? 12u : 4u;
 
 	for (uint i = 0u; i < steps; ++i, dir *= rot) {
-		vec2 res = wavedx(position * vec2(1.0, 0.75) + dir * noise.xy * 2.0, dir, frequency, waveTime);
-		position -= dir * res.y * weight * 0.1;
+		vec2 res = wavedx(position + dir * noise.xy * 2.0, dir, frequency, waveTime);
+		position -= dir * res.y * weight * 0.125;
 
 		sum += res.x * weight;
 		sumWeight += weight;
 
-		weight *= 0.75;
-		frequency *= 1.25;
+		weight *= 0.8;
+		frequency *= 1.22;
 	}
 
 	#if !defined PASS_SHADOW
