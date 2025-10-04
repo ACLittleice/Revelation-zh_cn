@@ -217,15 +217,15 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 
 	// Sample cloud map
 	vec2 cloudMap = texture(cloudMapTex, rayPos.xz * rcp(cloudMapCovDist)).xy;
-	cloudMap = saturate(cloudMap + wetness * vec2(0.1, 0.25));
 
 	// Coveage profile
-	float coverage = saturate(cloudMap.x * (4.0 * CLOUD_CU_COVERAGE));
+	float coverage = saturate(mix(cloudMap.x, cloudMap.y + 0.2, sqr(wetness) * 0.75) * (4.0 * CLOUD_CU_COVERAGE));
 	// coverage = pow(coverage, remap(heightFraction, 0.7, 0.8, 1.0, 1.0 - 0.5 * anvilBias));
 	if (coverage < 0.25) return 0.0;
 
 	// Vertical profile
-	float verticalProfile = GetVerticalProfile(heightFraction, cloudMap.y);
+	float cloudType = cloudMap.y * coverage * 0.7;
+	float verticalProfile = GetVerticalProfile(heightFraction, saturate(cloudType));
 
 	dimensionalProfile = saturate(verticalProfile * coverage);
 	// if (dimensionalProfile < cloudEpsilon) return 0.0;
