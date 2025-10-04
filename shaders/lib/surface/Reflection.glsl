@@ -1,14 +1,16 @@
 #include "/lib/surface/SSRT.glsl"
 
-vec4 CalculateSpecularReflections(Material material, in vec3 normal, in vec3 screenPos, in vec3 worldDir, in vec3 viewPos, in float skylight, in float dither) {
+vec4 CalculateSpecularReflections(Material material, in vec3 worldNormal, in vec3 screenPos, in vec3 worldDir, in vec3 viewPos, in float skylight, in float dither) {
 #ifdef ROUGH_REFLECTIONS
 	if (material.isRough) {
-		vec2 stbnVec2 = SampleStbnVec2(ivec2(gl_FragCoord.xy), frameCounter + 1);
-		vec3 halfway = SampleGGXVNDF(stbnVec2, -worldDir, material.roughness, normal);
+		mat3 tbnMatrix = ConstructTBN(worldNormal);
+
+        vec2 noise = SampleStbnVec2(ivec2(gl_FragCoord.xy), frameCounter + 3);
+		vec3 halfway = tbnMatrix * SampleGGXVNDF(-worldDir * tbnMatrix, material.roughness, noise);
 
 		vec3 lightDir = reflect(worldDir, halfway);
 
-		float NdotL = dot(normal, lightDir);
+		float NdotL = dot(worldNormal, lightDir);
 		if (NdotL < EPS) return vec4(0.0);
 
 		bool hit = ScreenSpaceRaytrace(viewPos, mat3(gbufferModelView) * lightDir, dither, uint(SSRT_MAX_SAMPLES * oms(material.roughness)), screenPos);
@@ -25,17 +27,17 @@ vec4 CalculateSpecularReflections(Material material, in vec3 normal, in vec3 scr
 			reflection = vec4(skyRadiance * skylight, far);
 		}
 		// float LdotH = dot(lightDir, halfway);
-		// float NdotV = abs(dot(normal, worldDir));
+		// float NdotV = abs(dot(worldNormal, worldDir));
 
 		return satU16f(reflection);
 	} else
 #endif
 	{
-		float NdotV = abs(dot(normal, worldDir));
+		float NdotV = abs(dot(worldNormal, worldDir));
 		// Unroll the reflect function manually
-		vec3 lightDir = worldDir + normal * NdotV * 2.0;
+		vec3 lightDir = worldDir + worldNormal * NdotV * 2.0;
 
-		float NdotL = dot(normal, lightDir);
+		float NdotL = dot(worldNormal, lightDir);
 		if (NdotL < EPS) return vec4(0.0);
 
 		vec3 reflection = vec3(0.0);

@@ -48,6 +48,22 @@ vec3 SampleGGX(in vec2 Xi, in float a, in vec3 N) {
     return tangent * H.x + bitangent * H.y + N * H.z;
 }
 
+// Sampling Visible GGX Normals with Spherical Caps
+// https://arxiv.org/pdf/2306.05044
+vec3 SampleGGXVNDF(in vec3 viewDir, in float alpha, in vec2 xy) {
+    // Importance sampling bias
+    xy.y *= 1.0 - SPECULAR_IMPORTANCE_SAMPLING_BIAS;
+
+	viewDir = normalize(vec3(alpha * viewDir.xy, viewDir.z));
+
+    float cosTheta = 1.0 - viewDir.z * xy.y - xy.y;
+    float sinTheta = sqrt(saturate(1.0 - cosTheta * cosTheta));
+    float phi = TAU * xy.x;
+    viewDir += vec3(vec2(cos(phi), sin(phi)) * sinTheta, cosTheta);
+
+	return normalize(vec3(alpha * viewDir.xy, viewDir.z));
+}
+
 // From https://ggx-research.github.io/publication/2023/06/09/publication-ggx.html
 // world-space isotropic-only version
 // benefits:
@@ -56,7 +72,7 @@ vec3 SampleGGX(in vec2 Xi, in float a, in vec3 N) {
 // - it's (slightly) faster than the general version
 vec3 SampleGGXVNDF(in vec2 u, in vec3 wi, in float alpha, in vec3 n) {
     // Importance sampling bias
-    u.x = mix(u.x, 1.0, SPECULAR_IMPORTANCE_SAMPLING_BIAS);
+    u.y *= 1.0 - SPECULAR_IMPORTANCE_SAMPLING_BIAS;
 
     // decompose the vector in parallel and perpendicular components
     vec3 wi_z = n * dot(wi, n);
