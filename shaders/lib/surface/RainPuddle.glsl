@@ -7,10 +7,11 @@ void CalculateRainPuddles(inout vec3 albedo, inout vec3 normal, inout vec3 specT
 
     // Puddle noise
 	float noise = texture(noisetex, puddlePos).z;
-	noise += texture(noisetex, puddlePos * 0.5).z;
-	noise = saturate(noise * 0.5) * wetnessCustom;
+	noise += texture(noisetex, puddlePos * 0.7).z;
+	noise += texture(noisetex, puddlePos * 0.4).z * 2.0;
+	noise = saturate(noise * 0.25) * wetnessCustom;
 
-    float puddles = smoothstep(0.4, 0.6, noise);
+    float puddles = smoothstep(0.45, 0.55, noise);
     if (puddles < EPS) return;
 
     // Normal falloff
