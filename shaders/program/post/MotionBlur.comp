@@ -24,35 +24,29 @@ const vec2 workGroupsRender = vec2(1.0, 1.0);
 
 restrict writeonly uniform image2D colorimg0; // Motion blur output
 
-uniform sampler2D colortex1; // TAA output
-uniform sampler2D colortex3; // Motion vector
-
-uniform float frameTime;
-uniform vec2 viewSize;
+#include "/lib/universal/Uniform.glsl"
 
 //======// Function //============================================================================//
 
-float InterleavedGradientNoise(in vec2 coord) {
-    return fract(52.9829189 * fract(0.06711056 * coord.x + 0.00583715 * coord.y));
-}
+#include "/lib/universal/Random.glsl"
 
 vec3 MotionBlur(in ivec2 texel) {
 	vec2 motionVector = texelFetch(colortex3, texel, 0).xy;
-	float r = length(motionVector);
+	float motionNorm = inversesqrt(sdot(motionVector));
 
-	if (r < 1e-7) return texelFetch(colortex1, texel, 0).rgb;
+	if (motionNorm > 1e6) return texelFetch(colortex1, texel, 0).rgb;
+	motionVector *= saturate(motionNorm);
 
 	const float strength = MOTION_BLUR_STRENGTH / float(MOTION_BLUR_SAMPLES) * 0.01;
-	motionVector *= min(r, 0.25) / r;
-	motionVector *= strength / max(frameTime, 5e-3) * viewSize;
+	motionVector *= strength / max(frameTime, 1e-3) * viewSize;
 
-	float dither = InterleavedGradientNoise(vec2(texel) + 0.5);
+	float dither = BlueNoiseTemporal(texel);
 
     vec2 sampleCoord = vec2(texel) + 0.5 + motionVector * dither;
 	sampleCoord -= motionVector * MOTION_BLUR_SAMPLES * 0.5;
 
 	vec3 sum = vec3(0.0);
-	float sumWeight = 1e-6;
+	float sumWeight = 0.0;
 
 	for (uint i = 0u; i < MOTION_BLUR_SAMPLES; ++i, sampleCoord += motionVector) {
 		if (clamp(sampleCoord, vec2(0.0), viewSize - 1.0) == sampleCoord) {
@@ -60,6 +54,8 @@ vec3 MotionBlur(in ivec2 texel) {
 			++sumWeight;
 		}
 	}
+
+	if (sumWeight < EPS) return texelFetch(colortex1, texel, 0).rgb;
 
 	return sum * rcp(sumWeight);
 }
