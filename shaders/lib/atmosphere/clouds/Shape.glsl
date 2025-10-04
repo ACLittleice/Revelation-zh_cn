@@ -217,9 +217,10 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 
 	// Sample cloud map
 	vec2 cloudMap = texture(cloudMapTex, rayPos.xz * rcp(cloudMapCovDist)).xy;
+	cloudMap = saturate(cloudMap + wetness * vec2(0.1, 0.25));
 
 	// Coveage profile
-	float coverage = saturate(cloudMap.x * (4.0 * CLOUD_CU_COVERAGE)) + wetness * 0.5;
+	float coverage = saturate(cloudMap.x * (4.0 * CLOUD_CU_COVERAGE));
 	// coverage = pow(coverage, remap(heightFraction, 0.7, 0.8, 1.0, 1.0 - 0.5 * anvilBias));
 	if (coverage < 0.25) return 0.0;
 
@@ -234,7 +235,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	// Perlin-worley + fBm worley noise for base shape
 	float baseNoise = curve(texture(baseNoiseTex, position).x);
 
-	float cloudDensity = saturate(dimensionalProfile + baseNoise - 1.0);
+	float cloudDensity = ValueErosion(dimensionalProfile, 1.0 - baseNoise);
 	if (cloudDensity < cloudEpsilon) return 0.0;
 
 	// Detail erosion
