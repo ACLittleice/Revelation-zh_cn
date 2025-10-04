@@ -75,7 +75,7 @@ float CalculateWaterHeight(in vec2 position, in bool detail) {
 	const mat2 rot = mat2(angle, -angle.y, angle.x);
 
 	vec3 noise = FetchSmoothNoise((position + frameTimeCounter) * 2e-3);
-	vec2 dir = sincos(noise.z * 0.1);
+	vec2 dir = sincos(32.0 * noise.z * inversesqrt(sdot(position)));
 
 	float frequency = 1.5;
 	float weight = 1.0;
