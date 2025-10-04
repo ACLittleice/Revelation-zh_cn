@@ -100,7 +100,7 @@ float CalculateWaterHeight(in vec2 position, in bool detail) {
 		sum *= saturate(noise.z * 2.0 - 1.0) * 4.0 + 1.0;
 	#endif
 
-	return sum / sumWeight * 0.2;
+	return sum / sumWeight * 0.15;
 }
 
 #endif
