@@ -60,18 +60,18 @@ vec3 FetchSmoothNoise(in vec2 coord) {
 // Based on https://www.shadertoy.com/view/MdXyzX
 // afl_ext 2017-2024
 // MIT License
-
 vec2 wavedx(vec2 position, vec2 direction, float frequency, float time) {
 	float c = approxSqrt(9.8 * frequency);
 
 	float x = dot(direction, position) * frequency + time * c;
-	float wave = exp(sin(x));
+	float wave = sqr(sin(x) * 0.5 + 0.5);
 	float dx = wave * cos(x);
+
 	return vec2(wave, dx);
 }
 
 float CalculateWaterHeight(in vec2 position, in bool detail) {
-	const vec2 angle = cossin(radians(36.46));
+	const vec2 angle = cossin(goldenAngle);
 	const mat2 rot = mat2(angle, -angle.y, angle.x);
 
 	vec3 noise = FetchSmoothNoise((position + frameTimeCounter) * 2e-3);
@@ -83,11 +83,11 @@ float CalculateWaterHeight(in vec2 position, in bool detail) {
 	float sumWeight = 0.0;
 
 	float waveTime = 0.5 * WATER_WAVE_SPEED * frameTimeCounter;
-	uint steps = detail ? 12u : 4u;
+	uint steps = detail ? 12u : 6u;
 
 	for (uint i = 0u; i < steps; ++i, dir *= rot) {
-		vec2 res = wavedx(position + dir * noise.xy * 2.0, dir, frequency, waveTime);
-		position -= dir * res.y * weight * 0.125;
+		vec2 res = wavedx(position + dir * noise.xy * (8.0 * weight), dir, frequency, waveTime);
+		position -= dir * res.y * weight * 0.25;
 
 		sum += res.x * weight;
 		sumWeight += weight;
@@ -97,10 +97,10 @@ float CalculateWaterHeight(in vec2 position, in bool detail) {
 	}
 
 	#if !defined PASS_SHADOW
-		sum *= saturate(noise.z * 3.0 - 1.5) * 4.0 + 1.0;
+		sum *= saturate(noise.z * 2.0 - 1.0) * 4.0 + 1.0;
 	#endif
 
-	return sum / sumWeight * 0.075;
+	return sum / sumWeight * 0.2;
 }
 
 #endif
