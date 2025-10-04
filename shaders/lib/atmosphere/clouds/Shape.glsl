@@ -188,15 +188,13 @@ float CloudHighDensity(in vec2 rayPos) {
 		return texture(verticalLut, vec2(cloudType, heightFraction)).x;
 	}
 #else
-	// Adapted from https://github.com/iamlivehaha/Project-VolumetricCloudRendering
-	float GetVerticalProfile(in float relativeHeight, in float cloudType) {
-		float stratus = remap(0.2, 0.1, relativeHeight);
-		float cumulus = remap(0.7, 0.2, relativeHeight);
-		float altocumulus = remap(1.0, 0.7, relativeHeight);
+	float GetVerticalProfile(in float heightFraction, in float cloudType) {
+		float stratus = saturate(heightFraction * 16.0) * remap(0.2, 0.1, heightFraction);
+		float stratocumulus = saturate(heightFraction * 6.0) * remap(0.7, 0.2, heightFraction);
+		float cumulus = saturate(heightFraction * 8.0) * remap(1.0, 0.7, heightFraction);
 
-		float verticalProfile = mix(stratus, cumulus, saturate(cloudType * 2.0));
-		verticalProfile = mix(verticalProfile, altocumulus, saturate(cloudType * 2.0 - 1.0));
-		return verticalProfile * saturate(relativeHeight * (12.0 - 8.0 * cloudType));
+		float verticalProfile = mix(stratus, stratocumulus, saturate(cloudType * 2.0));
+		return mix(verticalProfile, cumulus, curve(saturate(cloudType * 2.0 - 1.0)));
 	}
 #endif
 
@@ -224,7 +222,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	if (coverage < 0.25) return 0.0;
 
 	// Vertical profile
-	float cloudType = cloudMap.y * coverage * 0.7;
+	float cloudType = cloudMap.y * coverage * 0.65;
 	float verticalProfile = GetVerticalProfile(heightFraction, saturate(cloudType));
 
 	dimensionalProfile = saturate(verticalProfile * coverage);
