@@ -114,16 +114,18 @@ void main() {
 	ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
 
     Material material = GetMaterialData(loadGbufferData1(screenTexel).xy);
-    if (material.specularMask && material.isRough) {
-        vec2 screenCoord = texelToUv(gl_GlobalInvocationID.xy);
+    if (material.specularMask) {
+        vec2 screenCoord = texelToUv(screenTexel);
         vec3 viewDir = ScreenToViewVector(screenCoord);
 
         vec3 worldDir = mat3(gbufferModelViewInverse) * viewDir;
         vec3 worldNormal = FetchWorldNormal(screenTexel);
 
-        vec2 randOffset = SampleStbnVec2(screenTexel, frameCounter) - 0.5;
         vec4 specularData = texelFetch(colortex3, screenTexel, 0);
-        SpecularFilter(specularData, screenTexel, material.roughness, worldNormal, worldDir, SPECULAR_FILTER_SIZE, randOffset);
+        if (material.isRough) {
+            vec2 randOffset = SampleStbnVec2(screenTexel, frameCounter) - 0.5;
+            SpecularFilter(specularData, screenTexel, material.roughness, worldNormal, worldDir, SPECULAR_FILTER_SIZE, randOffset);
+        }
 
     #if defined SPECULAR_COMBINE_PASS
         vec3 sceneOut = loadSceneColor(screenTexel);
