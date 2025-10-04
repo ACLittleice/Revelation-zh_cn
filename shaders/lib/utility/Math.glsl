@@ -179,9 +179,8 @@ float quarticLength(in vec2 v) {
 //================================================================================================//
 
 mat3 ConstructTBN(in vec3 n) {
-	vec3 t = normalize(vec3(abs(n.y) + n.z, 0.0, -n.x));
-	vec3 b = normalize(cross(t, n));
-	return mat3(t, b, n);
+	vec3 b = normalize(vec3(0.0, n.z, -n.y));
+	return mat3(cross(b, n), b, n);
 }
 
 mat2 rotateMat(in float angle) {
