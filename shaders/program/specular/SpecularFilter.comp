@@ -57,8 +57,8 @@ float lobeWeight(in vec3 cNormal, in vec3 sNormal, in float cRoughness, in float
 }
 
 void SpecularFilter(inout vec4 specularData, in ivec2 texel, in float roughness, in vec3 worldNormal, in vec3 worldDir, in float filterSize, in vec2 randOffset) {
-    float offsetScale = filterSize * saturate(16.0 * roughness);
-    offsetScale *= saturate(0.25 + specularData.a * 0.25) * 2.0;
+    float offsetScale = filterSize * saturate(20.0 * roughness);
+    offsetScale *= saturate(0.125 + specularData.a * 0.125) * 2.0;
 
     // Calculate kernel basis
     vec3 reflectedDir = reflect(-worldDir, worldNormal);
@@ -78,6 +78,7 @@ void SpecularFilter(inout vec4 specularData, in ivec2 texel, in float roughness,
     float sharpenWeight = 0.125 + 0.375 * saturate(specularData.a * 0.25);
     ivec2 texelEnd = ivec2(viewSize) - 1;
 
+    // Sharpen
     specularData.rgb *= pow(sdot(specularData.rgb) + EPS, 0.5 * sharpenWeight - 0.5);
     float sumWeight = 1.0;
 
