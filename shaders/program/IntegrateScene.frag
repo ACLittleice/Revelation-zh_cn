@@ -115,7 +115,7 @@ void main() {
 		vec4 gbufferData1 = loadGbufferData1(screenTexel);
 
 		// Particle translucent
-		if (materialID == 1000u) {
+		if (materialID == 500u) {
 			vec3 diffuseLight = texelFetch(colortex3, screenTexel, 0).rgb;
 			vec3 albedo = sRGBtoLinear(gbufferData1.rgb);
 			sceneOut = mix(sceneOut, albedo * diffuseLight, gbufferData1.a);

@@ -144,7 +144,7 @@ void main() {
 			// Compute rain puddles
 			#ifdef RAIN_PUDDLES
 				if (wetnessCustom > 1e-2) {
-					if (clamp(materialID, 9u, 12u) != materialID && materialID != 20u && materialID != 40u) {
+					if (clamp(materialID, 1000u, 1002u) != materialID && materialID != 20u && materialID != 40u) {
 						CalculateRainPuddles(albedo, worldNormal, specularTex.rgb, worldPos, flatNormal, lightmap.y);
 					}
 				}
@@ -160,7 +160,7 @@ void main() {
 		#if SUBSURFACE_SCATTERING_MODE < 2
 			// Hard-coded sss amount for certain materials
 			switch (materialID) {
-				case 9u: case 10u: case 11u: case 12u: case 27u: case 28u: // Plants
+				case 1000u: case 1001u: case 1002u: case 1003u: case 27u: case 28u: // Plants
 					sssAmount = 0.6;
 					break;
 				case 13u: // Leaves

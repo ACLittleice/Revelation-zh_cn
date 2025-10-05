@@ -90,7 +90,7 @@ void main() {
 	uvec4 gbufferData0 = loadGbufferData0(screenTexel);
 
 	uint materialID = gbufferData0.y;
-	bool notParticle = materialID != 1000u;
+	bool notParticle = materialID != 500u;
 
 	// Skip opaque fragments
 	if (clamp(materialID, 2u, 3u) != materialID && notParticle) return;

@@ -31,7 +31,7 @@ void main() {
 	if (albedo.a < 0.1) { discard; return; }
 
 	gbufferOut0.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
-	gbufferOut0.y = 1000u;
+	gbufferOut0.y = 500u;
 
     gbufferOut1 = albedo;
 }

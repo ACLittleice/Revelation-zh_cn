@@ -53,8 +53,8 @@ float bayer2 (vec2 a) { a = 0.5 * floor(a); return fract(1.5 * fract(a.y) + a.x)
 void main() {
 	vec4 albedo = texture(tex, texCoord) * vertColor;
 
-	// if (materialID == 60u) albedo = vec4(skyColor, 1.0);
-	if (materialID == 60u) albedo = vec4(0.7, 0.675, 1.0, 1.0);
+	// if (materialID == 2000u) albedo = vec4(skyColor, 1.0);
+	if (materialID == 2000u) albedo.rgb = vec3(0.7, 0.675, 1.0);
 
 	if (albedo.a < 0.1) { discard; return; }
 
