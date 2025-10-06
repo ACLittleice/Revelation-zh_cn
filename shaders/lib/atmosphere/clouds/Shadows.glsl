@@ -32,9 +32,9 @@
 const float cloudShadowDistortion = 0.75;
 
 const mat4 cloudShadowProj = mat4(
-	1.0 / CLOUD_SHADOW_DISTANCE, 0.0, 0.0, 0.0,
-	0.0, 1.0 / CLOUD_SHADOW_DISTANCE, 0.0, 0.0,
-	0.0, 0.0, -1.0 / CLOUD_SHADOW_DISTANCE, 0.0,
+	0.5 / CLOUD_SHADOW_DISTANCE, 0.0, 0.0, 0.0,
+	0.0, 0.5 / CLOUD_SHADOW_DISTANCE, 0.0, 0.0,
+	0.0, 0.0, -0.5 / CLOUD_SHADOW_DISTANCE, 0.0,
 	0.0, 0.0, 0.0, 1.0
 );
 
@@ -44,7 +44,7 @@ vec3 SetupCloudShadowPos(in vec2 coord) {
 	// To NDC space
 	vec3 shadowPos = vec3(coord * 2.0 - 1.0, 1.0);
 	// Distortion
-	shadowPos.xy *= oms(cloudShadowDistortion) / oms(length(shadowPos.xy) * cloudShadowDistortion);
+	// shadowPos.xy *= oms(cloudShadowDistortion) / oms(length(shadowPos.xy) * cloudShadowDistortion);
 	// To view space
 	shadowPos = projMAD(cloudShadowProjInv, shadowPos);
 	// To world space
@@ -57,14 +57,14 @@ vec3 WorldToCloudShadowScreenPos(in vec3 worldPos) {
 	// To NDC space
 	shadowPos = projMAD(cloudShadowProj, shadowPos);
 	// Distortion
-	shadowPos.xy *= rcp(length(shadowPos.xy) * cloudShadowDistortion + oms(cloudShadowDistortion));
+	// shadowPos.xy *= rcp(length(shadowPos.xy) * cloudShadowDistortion + oms(cloudShadowDistortion));
 	// To screen space
 	return shadowPos * 0.5 + 0.5;
 }
 
 vec2 DistortCloudShadowPos(in vec2 shadowPos) {
 	// Distortion
-	shadowPos *= rcp(length(shadowPos) * cloudShadowDistortion + oms(cloudShadowDistortion));
+	// shadowPos *= rcp(length(shadowPos) * cloudShadowDistortion + oms(cloudShadowDistortion));
 	// To screen space
 	return shadowPos * 0.5 + 0.5;
 }
