@@ -11,8 +11,6 @@
 --------------------------------------------------------------------------------
 */
 
-#extension GL_KHR_shader_subgroup_clustered : enable
-
 //======// Utility //=============================================================================//
 
 #include "/lib/Utility.glsl"
@@ -56,23 +54,15 @@ vec3 ScreenToViewVectorRaw(in vec2 screenCoord) {
 	return normalize(vec3(diagonal2(gbufferProjectionInverse) * NDCCoord, gbufferProjectionInverse[3].z));
 }
 
-#if (defined SUBGROUP_OPS && !(defined MC_GL_RENDERER_INTEL))
-	#define clusteredMax subgroupClusteredMax
-#else
-	shared float sharedClusteredMax[256];
+float SampleDepthMax4x4(in sampler2D depthTex, in vec2 coord) {
+	// 4x4 pixel neighborhood using textureGatherOffset
+	float LL = maxOf(textureGatherOffset(depthTex, coord, ivec2(-2, -2)));
+	float LR = maxOf(textureGatherOffset(depthTex, coord, ivec2(-2,  2)));
+	float UL = maxOf(textureGatherOffset(depthTex, coord, ivec2( 2, -2)));
+	float UR = maxOf(textureGatherOffset(depthTex, coord, ivec2( 2,  2)));
 
-	float clusteredMax(in float value, in uint clusterSize) {
-		sharedClusteredMax[gl_LocalInvocationIndex] = value;
-		barrier();
-		for (uint stride = 1; stride < clusterSize; stride <<= 1) {
-			if (gl_LocalInvocationIndex < 256 / stride) {
-				sharedClusteredMax[gl_LocalInvocationIndex] = max(sharedClusteredMax[gl_LocalInvocationIndex], sharedClusteredMax[gl_LocalInvocationIndex + stride]);
-			}
-			barrier();
-		}
-		return sharedClusteredMax[gl_LocalInvocationIndex & ~(clusterSize - 1)];
-	}
-#endif
+	return max(max(LL, LR), max(UL, UR));
+}
 
 //======// Main //================================================================================//
 void main() {
@@ -89,13 +79,10 @@ void main() {
 	vec4 cloudOut = vec4(0.0, 0.0, 0.0, 1.0);
 	float cloudDepth = -1.0;
 
-	float depthMax = loadDepth2(cloudTexel);
-	#if defined DISTANT_HORIZONS
-		if (depthMax > 1.0 - EPS) depthMax = loadDepth0DH(cloudTexel);
-	#endif
+	float depthMax = SampleDepthMax4x4(depthtex2, cloudUv);
 
-	#ifdef CLOUD_TAAU_ENABLED
-		depthMax = clusteredMax(depthMax, CLOUD_TAAU_SCALE * CLOUD_TAAU_SCALE);
+	#if defined DISTANT_HORIZONS
+		if (depthMax > 1.0 - EPS) depthMax = SampleDepthMax4x4(dhDepthTex, cloudUv);
 	#endif
 
 	if (depthMax > 1.0 - EPS) {
