@@ -76,10 +76,6 @@ option.GALAXY=Galaxy
 option.GALAXY_INTENSITY=Galaxy Intensity
 option.GALAXY_SOLAR_POS=Galaxy Solar Position
 
-option.CREPUSCULAR_RAYS=Crepuscular Rays
-option.CREPUSCULAR_RAYS_INTENSITY=Crepuscular Rays Intensity
-option.CREPUSCULAR_RAYS_SAMPLES=Crepuscular Rays Samples
-
 option.RAINBOWS=Rainbows
 option.RAINBOWS_PRIMARY_INTENSITY=Primary Rainbow Intensity
 option.RAINBOWS_SECONDARY_INTENSITY=Secondary Rainbow Intensity

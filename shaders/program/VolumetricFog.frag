@@ -81,7 +81,7 @@ void main() {
 
 	#ifdef VOLUMETRIC_FOG
 		if (isEyeInWater == 0) {
-			volFogData = RaymarchAtmosphericFog(worldPos, dither);
+			volFogData = RaymarchAtmosphericFog(worldPos, dither, screenPos.z > 1.0 - EPS);
 		}
 	#endif
 	#ifdef UW_VOLUMETRIC_FOG
