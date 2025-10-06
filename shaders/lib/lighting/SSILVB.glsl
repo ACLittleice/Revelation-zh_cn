@@ -7,7 +7,7 @@
 
 #define SSILVB_SLICE_COUNT 1 // [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16]
 #define SSILVB_SAMPLE_COUNT 24 // [4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 48 50 52 54 56 58 60 62 64]
-#define SSILVB_SAMPLE_RADIUS 16.0 // [4.0 6.0 8.0 10.0 12.0 14.0 16.0 18.0 20.0 22.0 24.0 26.0 28.0 30.0 32.0]
+#define SSILVB_SECTOR_COUNT 32 // [4 8 16 32 64 128]
 #define SSILVB_HIT_THICKNESS 1.0 // [0.25 0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0 4.5 5.0 5.5 6.0 6.5 7.0 7.5 8.0]
 
 //================================================================================================//
@@ -73,7 +73,7 @@ vec2 SamplePartialSliceDir(vec3 vvsN, vec2 dir0) {
 }
 
 // https://cdrinmatane.github.io/posts/ssaovb-code/
-const uint sectorCount = 32u;
+const uint sectorCount = SSILVB_SECTOR_COUNT;
 uint updateSectors(in vec2 horizon) {
     uint startBit = uint(horizon.x * float(sectorCount));
 
@@ -88,7 +88,6 @@ uint updateSectors(in vec2 horizon) {
 vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in vec2 lightmap) {
 	const int sliceCount = SSILVB_SLICE_COUNT;
 	const int sampleCount = SSILVB_SAMPLE_COUNT;
-	const float sampleRadius = SSILVB_SAMPLE_RADIUS;
 	const float hitThickness = SSILVB_HIT_THICKNESS;
 
 	const float rSliceCount = 1.0 / float(sliceCount);
@@ -128,7 +127,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
 				vec3 sampleDiff = ScreenToViewSpace(sampleUV) - viewPos;
                 float frontDistSq = sdot(sampleDiff);
 
-                if (frontDistSq < sampleRadius * sampleRadius) {
+                if (frontDistSq < 32.0 * 32.0) {
                     vec3 sampleDirFront = sampleDiff * fastRcpSqrtNR0(frontDistSq);
                     vec3 sampleDirBack = normalize(sampleDiff - viewDir * hitThickness);
 
