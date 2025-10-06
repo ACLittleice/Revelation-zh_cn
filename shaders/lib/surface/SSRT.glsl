@@ -5,7 +5,7 @@
 #define SSRT_MAX_SAMPLES 20 // [4 8 12 16 18 20 24 28 32 36 40 48 64 128 256 512]
 #define SSRT_SKY_TRACING
 
-#define SSRT_REFINEMENT
+// #define SSRT_REFINEMENT
 #define SSRT_REFINEMENT_STEPS 6 // [2 3 4 5 6 7 8 9 10 12 14 16 18 20 22 24 26 28 30 32]
 
 #define SSRT_ADAPTIVE_STEP
@@ -68,6 +68,21 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
         #endif
 
 		if (rayPos.z > sampleDepth) {
+            #ifdef SSRT_REFINEMENT
+                // Refine hit position (binary search)
+                vec3 refineStep = rayStep * 0.5;
+                for (uint i = 0u; i < SSRT_REFINEMENT_STEPS; ++i, refineStep *= 0.5) {
+                    rayPos += refineStep * fastSign(sampleDepth - rayPos.z);
+
+                    sampleDepth = loadDepthMacro(ivec2(rayPos.xy));
+                    #if defined DISTANT_HORIZONS
+                        if (sampleDepth > 1.0 - EPS) sampleDepth = ViewToScreenDepth(ScreenToViewDepthDH(loadDepthMacroDH(ivec2(rayPos.xy))));
+                    #endif
+                }
+
+                if (rayPos.z < sampleDepth) continue;
+            #endif
+
             float ascribedDepth = AscribeDepth(sampleDepth, zThickness);
             if (ascribedDepth > rayPos.z - abs(rayStep.z)) {
                 rayPos.z = sampleDepth;
@@ -79,22 +94,6 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
             rayStep = rayDir * clamp(abs(sampleDepth - rayPos.z) * stepNorm, 1e-2 * rSteps, stepLength);
         #endif
     }
-
-    // Refine hit position (binary search)
-    #ifdef SSRT_REFINEMENT
-	if (hit) {
-        for (uint i = 0u; i < SSRT_REFINEMENT_STEPS; ++i) {
-            rayStep *= 0.5;
-
-            float sampleDepth = loadDepthMacro(ivec2(rayPos.xy));
-            #if defined DISTANT_HORIZONS
-                if (sampleDepth > 1.0 - EPS) sampleDepth = ViewToScreenDepth(ScreenToViewDepthDH(loadDepthMacroDH(ivec2(rayPos.xy))));
-            #endif
-
-            rayPos += rayStep * fastSign(sampleDepth - rayPos.z);
-        }
-    }
-    #endif
 
     return hit;
 }
