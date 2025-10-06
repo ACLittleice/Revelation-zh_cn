@@ -23,7 +23,7 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
 
     vec3 endPos = ViewToScreenSpace(viewDir + viewPos);
     vec3 rayDir = normalize(endPos - rayPos);
-    float stepNorm = 1.0 / rayDir.z;
+    float stepNorm = abs(1.0 / rayDir.z);
 
 	float stepLength = minOf((step(0.0, rayDir) - rayPos) / rayDir) * rSteps;
 
@@ -41,7 +41,7 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
 
 	bool hit = false;
 
-    for (uint i = 0u; i < steps; ++i, rayPos += rayStep) {
+    for (uint i = 0u; i < steps && !hit; ++i, rayPos += rayStep) {
         if (clamp(rayPos.xy, vec2(0.0), viewSize) != rayPos.xy) break;
 
         #ifndef SSRT_SKY_TRACING
@@ -57,14 +57,14 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
 			float sampleViewDepth = ScreenToViewDepth(sampleDepth);
 			float traceViewDepth = ScreenToViewDepth(rayPos.z);
 
-            if (traceViewDepth - sampleViewDepth > 0.2 * traceViewDepth) {
+            if (traceViewDepth - sampleViewDepth > 0.1 * traceViewDepth) {
+                rayPos.z = sampleDepth;
                 hit = true;
-                break;
             }
         }
 
         #ifdef SSRT_ADAPTIVE_STEP
-            rayStep = rayDir * clamp((sampleDepth - rayPos.z) * stepNorm, 1e-2 * rSteps, rSteps);
+            rayStep = rayDir * clamp(abs(sampleDepth - rayPos.z) * stepNorm, 1e-2 * rSteps, stepLength);
         #endif
     }
 
@@ -79,7 +79,7 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
                 if (sampleDepth > 1.0 - EPS) sampleDepth = ViewToScreenDepth(ScreenToViewDepthDH(loadDepthMacroDH(ivec2(rayPos.xy))));
             #endif
 
-            rayPos += rayStep * (step(rayPos.z, sampleDepth) * 2.0 - 1.0);
+            rayPos += rayStep * fastSign(sampleDepth - rayPos.z);
         }
     }
     #endif
