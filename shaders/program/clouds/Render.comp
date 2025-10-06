@@ -82,7 +82,7 @@ void main() {
 	float depthMax = SampleDepthMax4x4(depthtex2, cloudUv);
 
 	#if defined DISTANT_HORIZONS
-		if (depthMax > 1.0 - EPS) depthMax = SampleDepthMax4x4(dhDepthTex, cloudUv);
+		if (depthMax > 1.0 - EPS) depthMax = SampleDepthMax4x4(dhDepthTex1, cloudUv);
 	#endif
 
 	if (depthMax > 1.0 - EPS) {
