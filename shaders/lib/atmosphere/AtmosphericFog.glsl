@@ -138,8 +138,8 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 		#ifdef VF_CLOUD_SHADOWS
 			cloudShadowPos += shadowViewStep.xy;
 			vec2 cloudShadowCoord = DistortCloudShadowPos(cloudShadowPos);
-			vec2 fade = saturate(16.0 - abs(cloudShadowCoord - 0.5) * 32.0);
-			sampleShadow *= mix(1.0, texture(cloudShadowTex, cloudShadowCoord).x, fade.x * fade.y);
+			vec2 fade = saturate(32.0 - abs(cloudShadowCoord - 0.5) * 64.0);
+			sampleShadow *= mix(1.0 - wetness * 0.9, texture(cloudShadowTex, cloudShadowCoord).x, fade.x * fade.y);
 		#endif
 
 		vec2 stepPhase = max(phase, rPI * saturate(stepFogmass));
