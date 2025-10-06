@@ -57,7 +57,7 @@ vec3 CalculateBloomTile(in vec2 uv) {
 	for (int y = -BLOOM_BLUR_SAMPLES; y <= BLOOM_BLUR_SAMPLES; ++y) {
 		for (int x = -BLOOM_BLUR_SAMPLES; x <= BLOOM_BLUR_SAMPLES; ++x) {
 			vec3 sampleTile = loadTile(uv + vec2(x, y) * viewPixelSize);
-			float weight = exp2(-sdot(vec2(x, y)) * 0.25);
+			float weight = saturate(1.0 - sdot(vec2(x, y)) * 0.25);
 
 			#if DOWNSAMPLE_LEVEL == 0
 				weight *= karisAverage(sampleTile);
