@@ -1,46 +1,6 @@
 #if !defined INCLUDE_WATER_WATERWAVE
 #define INCLUDE_WATER_WATERWAVE
 
-#if WATER_WAVE_STYLE == 0
-
-float FetchNoise(in vec2 coord, in float t) {
-	coord.y *= 0.5;
-	return sqr(1.0 - texture(noisetex, coord + t).z);
-}
-
-// fBm water wave
-float CalculateWaterHeight(in vec2 position, in bool detail) {
-	const vec2 angle = 2.0 * cossin(goldenAngle);
-	const mat2 rot = mat2(angle, -angle.y, angle.x);
-
-	float waveTime = 0.01 * WATER_WAVE_SPEED * frameTimeCounter;
-	vec2 pos = 0.015 * position + waveTime;
-	float waves = FetchNoise(pos, waveTime);
-
-	pos = rot * pos + waves * 0.05;
-	waves += FetchNoise(pos, waveTime) * 0.75;
-
-	if (detail) {
-		pos = pos * rot + waves * 0.05;
-		waves += FetchNoise(pos, waveTime) * 0.15;
-
-		pos = rot * pos;
-		waves += FetchNoise(pos, waveTime) * 0.05;
-
-		pos = pos * rot;
-		waves += FetchNoise(pos, waveTime) * 0.03;
-	}
-
-	#if !defined PASS_SHADOW
-		float localHeight = texture(noisetex, position * 2e-3 + waveTime * 0.125).z;
-		waves *= saturate(localHeight * 3.0 - 1.5) * 4.0 + 1.0;
-	#endif
-
-	return waves * 0.5;
-}
-
-#else
-
 vec3 FetchSmoothNoise(in vec2 coord) {
 	coord *= 256.0;
 
@@ -63,7 +23,12 @@ vec3 FetchSmoothNoise(in vec2 coord) {
 vec2 wavedx(vec2 position, vec2 direction, float frequency, float time) {
 	float c = approxSqrt(9.8 * frequency);
 
-	float x = dot(direction, position) * frequency + time * c;
+	#if WATER_WAVE_STYLE == 0
+		float x = time * c - dot(direction, position) * frequency;
+	#else
+		float x = time * c + dot(direction, position) * frequency;
+	#endif
+
 	float wave = sqr(sin(x) * 0.5 + 0.5);
 	float dx = wave * cos(x);
 
@@ -102,8 +67,6 @@ float CalculateWaterHeight(in vec2 position, in bool detail) {
 
 	return sum / sumWeight * 0.15;
 }
-
-#endif
 
 //================================================================================================//
 
