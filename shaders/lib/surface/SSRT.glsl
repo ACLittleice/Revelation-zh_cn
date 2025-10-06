@@ -1,3 +1,7 @@
+// Reference:
+// Morgan McGuire, Michael Mara. "Efficient GPU Screen-Space Ray Tracing". JCGT, 2014.
+// https://jcgt.org/published/0003/04/04/paper.pdf
+
 #define SSRT_MAX_SAMPLES 20 // [4 8 12 16 18 20 24 28 32 36 40 48 64 128 256 512]
 #define SSRT_SKY_TRACING
 
@@ -15,6 +19,14 @@
 #define loadDepthMacro loadDepth1
 #define loadDepthMacroDH loadDepth1DH
 #endif
+
+// Referred from https://github.com/zombye/spectrum/blob/master/shaders/include/fragment/raytracer.fsh
+// MIT License
+float AscribeDepth(in float depth, in float zThickness) {
+    depth = depth * 2.0 - 1.0;
+    depth = (depth - zThickness * gbufferProjection[2].z) / (1.0 + zThickness);
+    return depth * 0.5 + 0.5;
+}
 
 bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in uint steps, inout vec3 rayPos) {
 	if (viewDir.z > max0(-viewPos.z)) return false;
@@ -39,6 +51,8 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
         #define screenDepthMax 1.0
     #endif
 
+	float zThickness = 8.0 * viewPixelSize.y * gbufferProjectionInverse[1].y;
+
 	bool hit = false;
 
     for (uint i = 0u; i < steps && !hit; ++i, rayPos += rayStep) {
@@ -54,10 +68,8 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
         #endif
 
 		if (rayPos.z > sampleDepth) {
-			float sampleViewDepth = ScreenToViewDepth(sampleDepth);
-			float traceViewDepth = ScreenToViewDepth(rayPos.z);
-
-            if (traceViewDepth - sampleViewDepth > 0.1 * traceViewDepth) {
+            float ascribedDepth = AscribeDepth(sampleDepth, zThickness);
+            if (ascribedDepth > rayPos.z - abs(rayStep.z)) {
                 rayPos.z = sampleDepth;
                 hit = true;
             }
