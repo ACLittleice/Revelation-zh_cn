@@ -84,8 +84,7 @@ void main() {
 		vec2 encodedNormal = OctEncodeUnorm(worldNormal);
 		gbufferOut0.w = Packup2x8U(encodedNormal);
 
-		vec2 waterData = vec2(distance(worldPos, worldPos1) * rcp(64.0), lightmap.y);
-		waterOut = vec4(Packup2x8(waterData), Packup2x8(encodedNormal), 0.0, 1.0);
+		waterOut = vec4(distance(worldPos, worldPos1) * r255, Packup2x8(encodedNormal), 0.0, 1.0);
 	} else {
 		gbufferOut1 = vertColor;
 		gbufferOut0.w = gbufferOut0.z;

@@ -110,18 +110,20 @@ void main() {
 	vec3 worldDir = worldPos * inversesqrt(worldDistSquared);
 	worldPos += gbufferModelViewInverse[3].xyz;
 
-	vec2 waterData = Unpack2x8(texelFetch(colortex12, screenTexel, 0).x);
+	vec2 waterData = texelFetch(colortex12, screenTexel, 0).xy;
 	bool waterMask = waterData.x > 0.0;
+
+	vec2 lightmap = Unpack2x8U(gbufferData0.x);
 
 	// Process water
 	if (waterMask && isEyeInWater == 0) {
-		mat2x3 waterFog = AnalyticWaterFog(waterData.y, waterData.x * 64.0, dot(worldLightVector, worldDir));
+		mat2x3 waterFog = AnalyticWaterFog(lightmap.y, waterData.x * 255.0, dot(worldLightVector, worldDir));
 
 		vec3 sceneOut = ApplyFog(imageLoad(colorimg0, screenTexel).rgb, waterFog);
 
 		// Skybox reflection for occluded water
 		if (materialID == 2u) {
-			vec3 worldNormal = OctDecodeUnorm(Unpack2x8(texelFetch(colortex12, screenTexel, 0).y));
+			vec3 worldNormal = OctDecodeUnorm(Unpack2x8(waterData.y));
 
 			float NdotV = abs(dot(worldNormal, worldDir));
 			vec3 rayDir = worldDir + worldNormal * NdotV * 2.0;
@@ -129,7 +131,7 @@ void main() {
 			vec2 skyViewCoord = FromSkyViewLutParams(rayDir) + vec2(0.0, 0.5);
 			vec3 skyRadiance = textureBicubic(skyViewTex, skyViewCoord).rgb;
 
-			vec3 reflection = skyRadiance * remap(0.3, 0.7, cube(waterData.y));
+			vec3 reflection = skyRadiance * remap(0.3, 0.7, cube(lightmap.y));
 			float fresnel = FresnelDielectricN(NdotV, WATER_IOR);
 
 			sceneOut = mix(sceneOut, reflection, fresnel);
@@ -143,7 +145,6 @@ void main() {
 	// Translucent lighting
 	vec4 lightingOut = vec4(0.0);
 
-	vec2 lightmap = Unpack2x8U(gbufferData0.x);
 	vec3 worldNormal = FetchWorldNormal(gbufferData0.w);
 
 	float dither = SampleStbnVec1(screenTexel, frameCounter + 4);
