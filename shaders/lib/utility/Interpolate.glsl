@@ -1,6 +1,6 @@
 // From https://iquilezles.org/www/articles/texture/texture.htm
 vec4 textureSmoothFilter(in sampler2D tex, in vec2 coord) {
-	vec2 res = textureSize(tex, 0);
+	vec2 res = vec2(textureSize(tex, 0));
 
 	coord = coord * res + 0.5;
 
@@ -24,7 +24,7 @@ vec4 cubic(in float v) {
 }
 
 vec4 textureBicubic(in sampler2D tex, in vec2 coord) {
-	vec2 res = textureSize(tex, 0);
+	vec2 res = vec2(textureSize(tex, 0));
 
 	coord = coord * res - 0.5;
 
@@ -51,8 +51,8 @@ vec4 textureBicubic(in sampler2D tex, in vec2 coord) {
     return mix(mix(sample3, sample2, sx), mix(sample1, sample0, sx), sy);
 }
 
-vec4 textureBicubicLod(in sampler2D tex, in vec2 coord, in int lod) {
-	vec2 res = textureSize(tex, 0);
+vec4 textureBicubicLod(in sampler2D tex, in vec2 coord, in float lod) {
+	vec2 res = vec2(textureSize(tex, 0));
 
 	coord = coord * res - 0.5;
 
@@ -80,7 +80,7 @@ vec4 textureBicubicLod(in sampler2D tex, in vec2 coord, in int lod) {
 }
 
 vec4 textureSmooth(in sampler2D tex, in vec2 coord) {
-	vec2 res = textureSize(tex, 0);
+	vec2 res = vec2(textureSize(tex, 0));
 
 	coord = coord * res - 0.5;
 
@@ -107,10 +107,10 @@ vec4 catmullRom(in float f) {
 
 // Approximation from SMAA presentation [Jimenez 2016]
 vec4 textureCatmullRomFast(in sampler2D tex, in vec2 coord) {
-    vec2 resolution = textureSize(tex, 0);
-    vec2 pixelSize = 1.0 / resolution;
+	vec2 res = vec2(textureSize(tex, 0));
+    vec2 pixelSize = 1.0 / res;
 
-    vec2 pos = coord * resolution;
+    vec2 pos = coord * res;
     vec2 tc1 = floor(pos - 0.5) + 0.5;
     vec2 f  = pos - tc1;
     vec2 f2 = f * f;
@@ -167,7 +167,7 @@ float lanczos2(in float x) {
 vec4 textureLanczos(in sampler2D tex, in vec2 coord) {
 	const int radius = 2;
 
-	vec2 res = textureSize(tex, 0);
+	vec2 res = vec2(textureSize(tex, 0));
 	coord = coord * res - 0.5;
 
     vec2 p = floor(coord);
