@@ -83,7 +83,7 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
         }
 
         #ifdef SSRT_ADAPTIVE_STEP
-            rayStep = rayDir * clamp(abs(sampleDepth - rayPos.z) * stepNorm, 1e-2 * rSteps, stepLength);
+            rayStep = rayDir * clamp(abs(sampleDepth - rayPos.z) * stepNorm, 1e-2 * rSteps, rSteps);
         #endif
     }
 
