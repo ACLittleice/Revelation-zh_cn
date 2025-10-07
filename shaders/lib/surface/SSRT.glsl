@@ -63,7 +63,7 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
             #ifdef SSRT_REFINEMENT
                 // Refine hit position (binary search)
                 vec3 refineStep = rayStep * 0.5;
-                for (uint i = 0u; i < SSRT_REFINEMENT_STEPS; ++i, refineStep *= 0.5) {
+                for (uint j = 0u; j < SSRT_REFINEMENT_STEPS; ++j, refineStep *= 0.5) {
                     rayPos += refineStep * fastSign(sampleDepth - rayPos.z);
 
                     sampleDepth = loadDepth1(ivec2(rayPos.xy));
