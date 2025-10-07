@@ -21,10 +21,12 @@ float AscribeDepth(in float depth, in float zThickness) {
 }
 
 bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in uint steps, inout vec3 rayPos) {
+	if (viewDir.z > max0(-viewPos.z)) return false;
+
     float rSteps = 1.0 / float(steps);
 
     vec3 endPos = ViewToScreenSpace(viewDir + viewPos);
-    vec3 rayDir = endPos - rayPos;
+    vec3 rayDir = normalize(endPos - rayPos);
     float stepNorm = abs(1.0 / rayDir.z);
 
 	float stepLength = minOf((step(0.0, rayDir) - rayPos) / rayDir) * rSteps;
