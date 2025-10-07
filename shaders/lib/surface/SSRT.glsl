@@ -12,14 +12,6 @@
 
 //================================================================================================//
 
-#if defined PASS_SPECULAR_LIGHTING
-#define loadDepthMacro loadDepth0
-#define loadDepthMacroDH loadDepth0DH
-#else
-#define loadDepthMacro loadDepth1
-#define loadDepthMacroDH loadDepth1DH
-#endif
-
 // Referred from https://github.com/zombye/spectrum/blob/master/shaders/include/fragment/raytracer.fsh
 // MIT License
 float AscribeDepth(in float depth, in float zThickness) {
@@ -62,9 +54,9 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
             if (rayPos.z >= screenDepthMax) break;
         #endif
 
-        float sampleDepth = loadDepthMacro(ivec2(rayPos.xy));
+        float sampleDepth = loadDepth1(ivec2(rayPos.xy));
         #if defined DISTANT_HORIZONS
-            if (sampleDepth > 1.0 - EPS) sampleDepth = ViewToScreenDepth(ScreenToViewDepthDH(loadDepthMacroDH(ivec2(rayPos.xy))));
+            if (sampleDepth > 1.0 - EPS) sampleDepth = ViewToScreenDepth(ScreenToViewDepthDH(loadDepth1DH(ivec2(rayPos.xy))));
         #endif
 
 		if (rayPos.z > sampleDepth) {
@@ -74,9 +66,9 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
                 for (uint i = 0u; i < SSRT_REFINEMENT_STEPS; ++i, refineStep *= 0.5) {
                     rayPos += refineStep * fastSign(sampleDepth - rayPos.z);
 
-                    sampleDepth = loadDepthMacro(ivec2(rayPos.xy));
+                    sampleDepth = loadDepth1(ivec2(rayPos.xy));
                     #if defined DISTANT_HORIZONS
-                        if (sampleDepth > 1.0 - EPS) sampleDepth = ViewToScreenDepth(ScreenToViewDepthDH(loadDepthMacroDH(ivec2(rayPos.xy))));
+                        if (sampleDepth > 1.0 - EPS) sampleDepth = ViewToScreenDepth(ScreenToViewDepthDH(loadDepth1DH(ivec2(rayPos.xy))));
                     #endif
                 }
 
