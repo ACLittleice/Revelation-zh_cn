@@ -132,7 +132,7 @@ void main() {
 
 			// Apply specular lighting
 			vec4 specularLight = texelFetch(colortex3, screenTexel, 0);
-			sceneOut = mix(sceneOut, specularLight.rgb, specularLight.a);
+			sceneOut = sceneOut * specularLight.a + specularLight.rgb;
 		}
 
 		// Border fog

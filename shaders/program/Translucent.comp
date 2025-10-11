@@ -80,7 +80,7 @@ vec4 CalculateSpecularReflections(in vec3 screenPos, in vec3 viewPos, in vec3 wo
 		reflection += (texture(colortex4, screenPos.xy * 0.5).rgb - reflection) * saturate(edgeFade);
 	}
 
-	return satU16f(vec4(reflection, fresnel));
+	return vec4(reflection * fresnel, 1.0 - fresnel);
 }
 
 //======// Main //================================================================================//
