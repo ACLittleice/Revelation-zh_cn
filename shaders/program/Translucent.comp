@@ -75,7 +75,6 @@ vec4 CalculateSpecularReflections(in vec3 screenPos, in vec3 viewPos, in vec3 wo
 	uint raySteps = uint(SSRT_MAX_SAMPLES * (fresnel * 0.5 + 0.5));
 
 	if (ScreenSpaceRaytrace(viewPos, mat3(gbufferModelView) * rayDir, dither, raySteps, screenPos)) {
-		screenPos.xy *= viewPixelSize;
 		float edgeFade = screenPos.x * screenPos.y * oms(screenPos.x) * oms(screenPos.y);
 		edgeFade *= 1e2 + cube(saturate(1.0 - gbufferModelViewInverse[2].y)) * 4e3;
 		reflection += (texture(colortex4, screenPos.xy * 0.5).rgb - reflection) * saturate(edgeFade);
@@ -97,15 +96,15 @@ void main() {
 
 	float depth = loadDepth0(screenTexel);
 	vec3 screenPos = vec3(texelToUv(screenTexel), depth);
-	vec3 viewPos = ScreenToViewSpace(screenPos);
 	#if defined DISTANT_HORIZONS
 		if (depth > 1.0 - EPS) {
-			depth = screenPos.z = loadDepth0DH(screenTexel);
-			viewPos = ScreenToViewSpaceDH(screenPos);
+			screenPos.z = ViewToScreenDepth(ScreenToViewDepthDH(loadDepth0DH(screenTexel)));
 		}
 	#endif
 
+	vec3 viewPos = ScreenToViewSpace(screenPos);
 	vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
+
 	float worldDistSquared = sdot(worldPos);
 	vec3 worldDir = worldPos * inversesqrt(worldDistSquared);
 	worldPos += gbufferModelViewInverse[3].xyz;

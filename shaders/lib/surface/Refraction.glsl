@@ -7,8 +7,6 @@ vec2 CalculateRefractedCoord(in bool waterMask, in vec3 viewPos, in vec3 viewNor
 	vec3 rayPos = screenPos;
 	float dither = InterleavedGradientNoiseTemporal(gl_FragCoord.xy);
 	if (ScreenSpaceRaytrace(viewPos, rayDir, dither, 16, rayPos)) {
-		rayPos.xy = saturate(rayPos.xy * viewPixelSize);
-
 		float refractedDepth = loadDepth1(uvToTexel(rayPos.xy));
 		return mix(rayPos.xy, screenPos.xy, step(refractedDepth, screenPos.z));
 	}

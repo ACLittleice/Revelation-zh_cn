@@ -6,9 +6,7 @@
 #define SSRT_SKY_TRACING
 
 // #define SSRT_REFINEMENT
-#define SSRT_REFINEMENT_STEPS 6 // [2 3 4 5 6 7 8 9 10 12 14 16 18 20 22 24 26 28 30 32]
-
-#define SSRT_ADAPTIVE_STEP
+#define SSRT_REFINEMENT_STEPS 4 // [2 3 4 5 6 7 8 9 10 12 14 16 18 20 22 24 26 28 30 32]
 
 //================================================================================================//
 
@@ -20,39 +18,41 @@ float AscribeDepth(in float depth, in float zThickness) {
     return depth * 0.5 + 0.5;
 }
 
-bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in uint steps, inout vec3 rayPos) {
-	if (viewDir.z > max0(-viewPos.z)) return false;
+bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in uint steps, inout vec3 screenPos) {
+    vec3 origin = screenPos;
 
-    float rSteps = 1.0 / float(steps);
-
-    vec3 endPos = ViewToScreenSpace(viewDir + viewPos);
-    vec3 rayDir = normalize(endPos - rayPos);
-    float stepNorm = abs(1.0 / rayDir.z);
-
-	float stepLength = minOf((step(0.0, rayDir) - rayPos) / rayDir) * rSteps;
+    float fixZ = step(viewDir.z, 0.0) * 1e23 - (viewPos.z + near) / viewDir.z;
+    vec3 rayDir = ViewToScreenSpace(viewDir * fixZ + viewPos) - origin;
 
     rayDir.xy *= viewSize;
-    rayPos.xy *= viewSize;
+    origin.xy *= viewSize;
 
-    vec3 rayStep = rayDir * stepLength;
-    rayPos += rayStep * dither;
-
-    #if defined DISTANT_HORIZONS
-        float screenDepthMax = ViewToScreenDepth(ScreenToViewDepthDH(1.0));
-    #else
-        #define screenDepthMax 1.0
-    #endif
+    float rSteps = 1.0 / float(steps);
+    vec3 rayStep = rayDir * rSteps;
 
 	float zThickness = 8.0 * viewPixelSize.y * gbufferProjectionInverse[1].y;
+    float invDirZ = 1.0 / abs(rayDir.z);
+
+    #if defined DISTANT_HORIZONS
+        float screenDepthSky = ViewToScreenDepth(ScreenToViewDepthDH(1.0));
+    #else
+        #define screenDepthSky 1.0
+    #endif
 
 	bool hit = false;
 
-    for (uint i = 0u; i < steps && !hit; ++i, rayPos += rayStep) {
-        if (clamp(rayPos.xy, vec2(0.0), viewSize) != rayPos.xy) break;
+    float t = dither * rSteps;
+    for (uint i = 0u; i < steps; ++i) {
+        vec3 rayPos = origin + rayDir * t;
 
-        #ifndef SSRT_SKY_TRACING
-            if (rayPos.z >= screenDepthMax) break;
+        if (clamp(rayPos.xy, vec2(0.0), viewSize - 1.0) != rayPos.xy) break;
+        if (rayPos.z >= screenDepthSky) {
+        #ifdef SSRT_SKY_TRACING
+            screenPos = rayPos;
+            hit = true;
         #endif
+            break;
+        }
 
         float sampleDepth = loadDepth1(ivec2(rayPos.xy));
         #if defined DISTANT_HORIZONS
@@ -60,32 +60,36 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
         #endif
 
 		if (rayPos.z > sampleDepth) {
-            #ifdef SSRT_REFINEMENT
-                // Refine hit position (binary search)
-                vec3 refineStep = rayStep * 0.5;
-                for (uint j = 0u; j < SSRT_REFINEMENT_STEPS; ++j, refineStep *= 0.5) {
-                    rayPos += refineStep * fastSign(sampleDepth - rayPos.z);
-
-                    sampleDepth = loadDepth1(ivec2(rayPos.xy));
-                    #if defined DISTANT_HORIZONS
-                        if (sampleDepth > 1.0 - EPS) sampleDepth = ViewToScreenDepth(ScreenToViewDepthDH(loadDepth1DH(ivec2(rayPos.xy))));
-                    #endif
-                }
-
-                if (rayPos.z < sampleDepth) continue;
-            #endif
-
             float ascribedDepth = AscribeDepth(sampleDepth, zThickness);
             if (ascribedDepth > rayPos.z - abs(rayStep.z)) {
-                rayPos.z = sampleDepth;
+                screenPos = rayPos;
                 hit = true;
+                break;
             }
-        }
 
-        #ifdef SSRT_ADAPTIVE_STEP
-            rayStep = rayDir * clamp(abs(sampleDepth - rayPos.z) * stepNorm, 1e-2 * rSteps, rSteps);
-        #endif
+            t += rSteps;
+        } else {
+            t += clamp(distance(sampleDepth, rayPos.z) * invDirZ, rSteps * 0.05, rSteps * 1.25);
+        }
     }
+
+    #ifdef SSRT_REFINEMENT
+    if (hit) {
+        // Refine hit position (binary search)
+        for (uint i = 0u; i < SSRT_REFINEMENT_STEPS; ++i) {
+            rayStep *= 0.5;
+
+            float sampleDepth = loadDepth1(ivec2(screenPos.xy));
+            #if defined DISTANT_HORIZONS
+                if (sampleDepth > 1.0 - EPS) sampleDepth = ViewToScreenDepth(ScreenToViewDepthDH(loadDepth1DH(ivec2(screenPos.xy))));
+            #endif
+
+            screenPos += rayStep * fastSign(sampleDepth - screenPos.z);
+        }
+    }
+    #endif
+
+    screenPos.xy *= viewPixelSize;
 
     return hit;
 }
