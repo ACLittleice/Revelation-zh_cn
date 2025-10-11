@@ -62,10 +62,10 @@ float CalculateWaterHeight(in vec2 position, in bool detail) {
 	}
 
 	#if !defined PASS_SHADOW
-		sum *= saturate(noise.z * 2.0 - 1.0) * 4.0 + 1.0;
+		sum *= saturate(noise.z * 2.0 - 1.0) * 3.0 + 1.0;
 	#endif
 
-	return sum / sumWeight * 0.15;
+	return sum / sumWeight * 0.125;
 }
 
 //================================================================================================//

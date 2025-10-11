@@ -78,7 +78,8 @@ void main() {
 		#endif
 
 		// Water normal clamp
-		worldNormal = normalize(worldNormal + flatNormal * inversesqrt(4.0 * abs(dot(flatNormal, worldDir)) + 1e-2));
+		float clampWeight = saturate(5.0 * abs(dot(tbnMatrix[2], worldDir)));
+		worldNormal = normalize(mix(flatNormal, worldNormal, clampWeight));
 
 		float depth1 = loadDepth1DH(texel);
 		vec3 viewPos1 = ScreenToViewSpace(vec3(gl_FragCoord.xy * viewPixelSize, depth1));
