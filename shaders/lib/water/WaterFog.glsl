@@ -28,7 +28,7 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 		vec3 refractDir = refract(vec3(0.0, 1.0, 0.0), waveNormal, 1.0 / WATER_IOR);
 
 		vec3 projectPos = vec3(0.0, 1.0, 0.0) - refractDir * rcp(refractDir.y);
-		return saturate(1.0 - 64.0 * sdot(projectPos)) * exp2(-rLOG2 * waterExtinction * max(waterDepth, 4.0));
+		return saturate(1.0 - 8.0 * length(projectPos)) * exp2(-rLOG2 * waterExtinction * max(waterDepth, 4.0));
 	}
 
 	mat2x3 RaymarchWaterFog(in vec3 worldPos, in float dither) {
@@ -38,34 +38,24 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 
 		vec3 worldDir = worldPos * norm;
 
-		uint steps = uint(float(UW_VF_MAX_SAMPLES) * saturate(0.5 + 0.5 * rayLength));
+		const float rSteps = 1.0 / float(UW_VF_MAX_SAMPLES);
 
-		float rSteps = 1.0 / float(steps);
-
-		float stepLength = min(rayLength, 48.0) * rSteps;
-
-		vec3 rayStart = gbufferModelViewInverse[3].xyz,
-			 rayStep  = worldDir * stepLength;
-		vec3 rayPos = rayStart + rayStep * dither + cameraPosition;
+		float stepLength = min(rayLength, 32.0) * rSteps;
 
 		vec3 shadowStep = mat3(shadowModelView) * worldDir * stepLength;
 			 shadowStep = diagonal3(shadowProjection) * shadowStep;
 
-		vec3 shadowStart = transMAD(shadowModelView, rayStart);
+		vec3 shadowStart = transMAD(shadowModelView, gbufferModelViewInverse[3].xyz);
 			 shadowStart = projMAD(shadowProjection, shadowStart);
 		vec3 shadowPos = shadowStart + shadowStep * dither;
 
 		vec3 stepTransmittance = exp2(-rLOG2 * waterExtinction * stepLength);
 		// vec3 lightVector = refract(worldLightVector, vec3(0.0, -1.0, 0.0), 1.0 / WATER_IOR);
-		vec3 transmittance = vec3(1.0);
 
 		vec3 scatteringSun = vec3(0.0);
+		vec3 transmittance = vec3(1.0);
 
-		uint i = 0u;
-		while (++i < steps) {
-			rayPos += rayStep;
-			shadowPos += shadowStep;
-
+		for (uint i = 0u; i < UW_VF_MAX_SAMPLES; ++i, shadowPos += shadowStep) {
 			vec3 shadowScreenPos = DistortShadowSpace(shadowPos) * 0.5 + 0.5;
 			if (saturate(shadowScreenPos) != shadowScreenPos) continue;
 
