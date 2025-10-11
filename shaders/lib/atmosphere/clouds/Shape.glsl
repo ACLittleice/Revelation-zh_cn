@@ -189,12 +189,12 @@ float CloudHighDensity(in vec2 rayPos) {
 	}
 #else
 	float GetVerticalProfile(in float heightFraction, in float cloudType) {
-		float stratus = saturate(heightFraction * 16.0) * remap(0.2, 0.1, heightFraction);
+		float stratus = sqr(remap(0.25, 0.1, heightFraction));
 		float stratocumulus = saturate(heightFraction * 6.0) * remap(0.7, 0.2, heightFraction);
-		float cumulus = saturate(heightFraction * 8.0) * remap(1.0, 0.7, heightFraction);
+		float cumulus = saturate(heightFraction * 8.0) * remap(1.0, 0.6, heightFraction);
 
 		float verticalProfile = mix(stratus, stratocumulus, saturate(cloudType * 2.0));
-		return mix(verticalProfile, cumulus, curve(saturate(cloudType * 2.0 - 1.0)));
+		return mix(verticalProfile, cumulus, saturate(cloudType * 2.0 - 1.0));
 	}
 #endif
 
@@ -222,8 +222,8 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	if (coverage < 0.25) return 0.0;
 
 	// Vertical profile
-	float cloudType = cloudMap.y * coverage * 0.65;
-	float verticalProfile = GetVerticalProfile(heightFraction, saturate(cloudType));
+	float cloudType = smoothstep(0.0, 1.25, cloudMap.y * coverage);
+	float verticalProfile = GetVerticalProfile(heightFraction, cloudType);
 
 	dimensionalProfile = saturate(verticalProfile * coverage);
 	// if (dimensionalProfile < cloudEpsilon) return 0.0;
