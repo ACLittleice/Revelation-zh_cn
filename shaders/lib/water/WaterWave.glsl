@@ -81,14 +81,14 @@ vec3 CalculateWaterNormal(in vec2 position) {
 	return normalize(vec3(waveNormal * WATER_WAVE_HEIGHT, delta));
 }
 
-vec3 CalculateWaterNormal(in vec2 position, in vec3 tangentViewDir, in float dither) {
+vec3 CalculateWaterNormal(in vec3 position, in vec3 direction, in float dither) {
 	const uint steps = 32u;
 	const float rSteps = rcp(float(steps));
 
-	vec3 rayStep = vec3(tangentViewDir.xy * WATER_WAVE_HEIGHT, rSteps);
-	rayStep.xy *= rSteps / tangentViewDir.z;
+	vec3 rayStep = vec3(direction.xy * WATER_WAVE_HEIGHT, rSteps);
+	rayStep.xy *= rSteps / direction.z;
 
-    vec3 samplePos = vec3(position, 1.0) - rayStep * dither;
+    vec3 samplePos = vec3(position.xz, 1.0) - rayStep * dither;
 	float sampleHeight = CalculateWaterHeight(samplePos.xy, false);
 
 	while (sampleHeight < samplePos.z) {

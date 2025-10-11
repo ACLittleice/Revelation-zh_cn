@@ -44,7 +44,7 @@ uniform sampler2D tex;
 //======// Main //================================================================================//
 void main() {
 	if (isWater == 1u) {
-		vec3 waveNormal = CalculateWaterNormal(vectorData.xz - vectorData.y);
+		vec3 waveNormal = CalculateWaterNormal(vectorData.xz);
 		shadowcolor1Out.xy = OctEncodeUnorm(waveNormal.xzy);
 		shadowcolor1Out.w = 1.0;
 	} else {
