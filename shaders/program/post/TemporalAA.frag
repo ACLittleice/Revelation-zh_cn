@@ -115,8 +115,8 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
     float blendWeight = min(frameIndex, TAA_MAX_ACCUM_FRAMES);
     blendWeight /= blendWeight + 1.0;
 
-    float subpixelSharpen = sdot(fract(prevCoord * viewSize) * 2.0 - 1.0);
-    blendWeight *= 1.0 - approxSqrt(saturate(subpixelSharpen)) * 0.125;
+    float subpixelSharpen = sdot(fract(prevCoord * viewSize) - 0.5);
+    blendWeight *= 1.0 - saturate(subpixelSharpen) * 0.2;
 
     currData = mix(perceptualWeight(currData), perceptualWeight(prevData), blendWeight);
     return vec4(YCoCgToSRGB(perceptualWeightInv(currData)), frameIndex);
