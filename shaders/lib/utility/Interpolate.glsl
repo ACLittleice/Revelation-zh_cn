@@ -193,3 +193,19 @@ vec4 textureLanczos(in sampler2D tex, in vec2 coord) {
 
     return sum * rcp(sumWeight);
 }
+
+vec4 textureTiling(in sampler2D tex, in vec2 coord) {
+	vec2 p = coord - 0.5;
+
+    vec2 weight0 = curve(abs(fract(p) * 2.0 - 1.0));
+    vec2 weight1 = curve(abs(fract(p + vec2(0.5, 0.5)) * 2.0 - 1.0));
+    vec2 weight2 = curve(abs(fract(p + vec2(1.0, 0.5)) * 2.0 - 1.0));
+    vec2 weight3 = curve(abs(fract(p + vec2(0.5, 1.0)) * 2.0 - 1.0));
+
+    vec4 sample0 = texture(tex, coord) * weight0.x * weight0.y;
+    vec4 sample1 = texture(tex, coord + vec2(0.5, 0.5)) * weight1.x * weight1.y;
+    vec4 sample2 = texture(tex, coord + vec2(1.0, 0.5)) * weight2.x * weight2.y;
+    vec4 sample3 = texture(tex, coord + vec2(0.5, 1.0)) * weight3.x * weight3.y;
+
+    return sample0 + sample1 + sample2 + sample3;
+}

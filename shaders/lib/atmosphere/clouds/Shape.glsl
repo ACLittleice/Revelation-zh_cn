@@ -88,7 +88,7 @@ float CloudMidDensity(in vec2 rayPos) {
 	}
 }
 
-#if 1
+#if 0
 float CloudHighDensity(in vec2 rayPos) {
 	// Wind field
 	const float windAngle = radians(30.0);
@@ -167,17 +167,22 @@ float CloudHighDensity(in vec2 rayPos) {
 
 	vec2 position = (rayPos - windOffset) * 1e-4;
 
-	float coverage = saturate(texture(noisetex, position * 0.002).y * 2.0 - 0.25);
-	coverage = remap(coverage, 1.0, texture(noisetex, position * 0.05).z);
-	float cloudType = saturate(texture(noisetex, position * 2e-4).z * 2.0 - 0.5);
+	// Curl noise to simulate wind, makes the positioning of the clouds more natural
+	vec2 curlNoise = texture(curlNoiseTex, position).xy * 0.01;
 
-	vec3 cirroCloud = texture(cirroClouds, position * 0.5).xyz;
+	float cloudType = texture(noisetex, position * 0.01).z;
+	vec3 cirroClouds = textureTiling(nubisCirroTex, position * (0.4 + 0.1 * cloudType) + curlNoise).xyz;
 
-	float density = remap(cloudType, 0.5, 1.0, remap(cloudType, 0.0, 0.5, cirroCloud.r, cirroCloud.g), cirroCloud.b);
-	density = pow(density, 2.0 - coverage * 1.75);
-	density *= saturate(2.0 * cube(coverage));
+	float density = mix(cirroClouds.x, cirroClouds.y, curve(saturate(cloudType * 2.0)));
+	density = mix(density, cirroClouds.z, curve(saturate(cloudType * 2.0 - 1.0)));
 
-	return sqr(4.0 * density);
+	float coverage = texture(cloudMapTex, position * 0.01 + 0.3).x * 0.7;
+	coverage = saturate(coverage + texture(noisetex, position * 0.02).z - 0.5);
+
+	density = mix(density * density, density, coverage) * 2.0;
+	density *= saturate(2.0 * cube(coverage)) * mix(1.0, density, cloudType);
+
+	return density * remap(2e5, 1e5, distance(rayPos, cameraPosition.xz));
 }
 #endif
 
