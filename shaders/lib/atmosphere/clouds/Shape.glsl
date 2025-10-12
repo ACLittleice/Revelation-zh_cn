@@ -88,76 +88,6 @@ float CloudMidDensity(in vec2 rayPos) {
 	}
 }
 
-#if 0
-float CloudHighDensity(in vec2 rayPos) {
-	// Wind field
-	const float windAngle = radians(30.0);
-	const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_HIGH_WIND_SPEED;
-	vec2 windOffset = windVelocity * worldTimeCounter;
-
-	// Curl noise to simulate wind, makes the positioning of the clouds more natural
-	vec2 curlNoise = texture(curlNoiseTex, rayPos * 1e-4).xy * 0.03;
-
-	float localCoverage = GetSmoothNoise((rayPos - windOffset * 0.25) * 2e-5 + curlNoise);
-	float density = 0.0;
-
-	#ifdef CLOUD_CIRROCUMULUS
-	if (localCoverage > 0.5) {
-		/* Cirrocumulus clouds */
-		vec2 position = (rayPos - windOffset) * 1e-4 - curlNoise - localCoverage;
-
-		float baseCoverage = saturate(texture(noisetex, position * 0.002).y * 2.0 - 0.3);
-		baseCoverage = remap(baseCoverage, 1.0, texture(noisetex, position * 0.06).z);
-
-		if (baseCoverage > cloudEpsilon) {
-			windOffset *= 5e-5;
-			position -= windOffset;
-
-			float cirrocumulus = 0.4 * texture(noisetex, position * vec2(0.5, 0.2)).z;
-			cirrocumulus += 0.75 * texture(noisetex, position - windOffset + cirrocumulus * 0.125).z;
-			cirrocumulus *= cirrocumulus * cirrocumulus;
-
-			float coverage = saturate((baseCoverage + localCoverage) * (1.0 + CLOUD_CC_COVERAGE) - 1.0);
-			cirrocumulus = mix(cirrocumulus * cirrocumulus, cirrocumulus, coverage);
-			cirrocumulus *= sqr(saturate(coverage * 2.0));
-
-			density += cube(cirrocumulus) * 8.0;
-		}
-	}
-	#endif
-	#ifdef CLOUD_CIRRUS
-	if (localCoverage < 0.6) {
-		/* Cirrus clouds */
-		vec2 position = (rayPos - windOffset) * 3e-7 + curlNoise * 1e-3;
-		windOffset *= 2e-7;
-
-		const vec2 angle = cossin(goldenAngle);
-		const mat2 rot = mat2(angle, -angle.y, angle.x);
-		vec2 scale = vec2(2.5, 2.0);
-
-		float weight = 0.55;
-		float cirrus = 1.0 - texture(noisetex, position * vec2(0.75, 1.25)).x;
-
-		// Cirrus FBM
-		for (uint i = 0u; i < 5u; ++i, scale *= vec2(0.75, 1.25)) {
-			position += (cirrus + curlNoise) * 2e-3 - windOffset;
-
-			position = rot * position * scale;
-			cirrus += oms(texture(noisetex, position).x) * weight;
-			weight *= 0.55;
-		}
-		cirrus -= saturate(localCoverage * 2.0 - 0.75);
-		cirrus = saturate(cirrus * (1.0 + CLOUD_CI_COVERAGE) - 1.5);
-
-		density += pow4(cirrus);
-	}
-	#endif
-
-	return density;
-}
-
-#else
-
 // Adapted from [Schneider, 2022]
 float CloudHighDensity(in vec2 rayPos) {
 	// Wind field
@@ -165,26 +95,48 @@ float CloudHighDensity(in vec2 rayPos) {
 	const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_HIGH_WIND_SPEED;
 	vec2 windOffset = windVelocity * worldTimeCounter;
 
-	vec2 position = (rayPos - windOffset) * 1e-4;
-
 	// Curl noise to simulate wind, makes the positioning of the clouds more natural
-	vec2 curlNoise = texture(curlNoiseTex, position).xy * 0.01;
+	vec2 curlNoise = texture(curlNoiseTex, rayPos * 1e-4).xy * 0.02;
+	vec2 position = (rayPos - windOffset) * 1e-4 + curlNoise;
 
-	float cloudType = texture(noisetex, position * 0.01).z;
-	vec3 cirroClouds = textureTiling(nubisCirroTex, position * (0.4 + 0.1 * cloudType) + curlNoise).xyz;
+	float density = 0.0;
 
-	float density = mix(cirroClouds.x, cirroClouds.y, curve(saturate(cloudType * 2.0)));
-	density = mix(density, cirroClouds.z, curve(saturate(cloudType * 2.0 - 1.0)));
+	#ifdef CLOUD_CIRRUS
+	/* Cirrus clouds */
+	{
+		float coverage = CLOUD_CI_COVERAGE - 1.25 + texture(cloudMapTex, position * 0.01).x;
+		coverage = saturate(coverage + texture(noisetex, position * 0.02).z);
+		position -= coverage * 0.25;
 
-	float coverage = texture(cloudMapTex, position * 0.01 + 0.3).x * 0.7;
-	coverage = saturate(coverage + texture(noisetex, position * 0.02).z - 0.5);
+		if (coverage > cloudEpsilon) {
+			float cirrus = textureTiling(nubisCirroTex, (position - windOffset * 1e-4) * 0.3).x;
+			cirrus *= cirrus * saturate(cirrus + coverage) * 2.0;
+			cirrus *= smoothstep(0.1, 0.9, coverage);
 
-	density = mix(density * density, density, coverage) * 2.0;
-	density *= saturate(2.0 * cube(coverage)) * density;
+			density += cirrus;
+		}
+	}
+	#endif
+	#ifdef CLOUD_CIRROCUMULUS
+	/* Cirrocumulus clouds */
+	{
+		float coverage = CLOUD_CC_COVERAGE - saturate(texture(noisetex, position * 0.01).z * 1.75);
+		coverage = saturate(texture(noisetex, position * 0.05).z + coverage);
 
-	return density/*  * remap(2e5, 1e5, distance(rayPos, cameraPosition.xz)) */;
+		if (coverage > cloudEpsilon) {
+			float cirrocumulus = textureTiling(nubisCirroTex, (position - windOffset * 1e-4) * 0.3).z;
+			cirrocumulus += texture(noisetex, position).z * 0.7 - 0.25;
+
+			cirrocumulus *= cirrocumulus * saturate(cirrocumulus + coverage) * 2.0;
+			cirrocumulus *= smoothstep(0.2, 0.8, coverage);
+
+			density += sqr(saturate(cirrocumulus));
+		}
+	}
+	#endif
+
+	return density * 4.0;
 }
-#endif
 
 //================================================================================================//
 
