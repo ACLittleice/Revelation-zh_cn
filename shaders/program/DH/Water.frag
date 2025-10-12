@@ -77,10 +77,6 @@ void main() {
 			worldNormal = tbnMatrix * worldNormal;
 		#endif
 
-		// Water normal clamp
-		float clampWeight = saturate(5.0 * abs(dot(tbnMatrix[2], worldDir)));
-		worldNormal = normalize(mix(flatNormal, worldNormal, clampWeight));
-
 		float depth1 = loadDepth1DH(texel);
 		vec3 viewPos1 = ScreenToViewSpace(vec3(gl_FragCoord.xy * viewPixelSize, depth1));
 		vec3 worldPos1 = transMAD(gbufferModelViewInverse, viewPos1);

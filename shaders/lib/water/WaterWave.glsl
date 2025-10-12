@@ -78,7 +78,8 @@ vec3 CalculateWaterNormal(in vec2 position) {
 	float height2 = CalculateWaterHeight(position + vec2(0.0, delta), true);
 
 	vec2 waveNormal = vec2(height0 - height1, height0 - height2);
-	return normalize(vec3(waveNormal * WATER_WAVE_HEIGHT, delta));
+	waveNormal *= WATER_WAVE_HEIGHT / (1.0 + dot(fwidth(position), vec2(0.15)));
+	return normalize(vec3(waveNormal, delta));
 }
 
 vec3 CalculateWaterNormal(in vec3 position, in vec3 direction, in float dither) {
