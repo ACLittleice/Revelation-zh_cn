@@ -30,7 +30,7 @@ vec2 CalculateFogDensity(in vec3 rayPos) {
 	return density;
 }
 
-#if !defined VF_CLOUD_SHADOWS || defined PASS_SKY_VIEW
+#if !defined CLOUD_SHADOWS || defined PASS_SKY_VIEW
 	#undef VF_CLOUD_SHADOWS
 #endif
 
