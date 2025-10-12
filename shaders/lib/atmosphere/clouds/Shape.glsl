@@ -180,9 +180,9 @@ float CloudHighDensity(in vec2 rayPos) {
 	coverage = saturate(coverage + texture(noisetex, position * 0.02).z - 0.5);
 
 	density = mix(density * density, density, coverage) * 2.0;
-	density *= saturate(2.0 * cube(coverage)) * mix(1.0, density, cloudType);
+	density *= saturate(2.0 * cube(coverage)) * density;
 
-	return density * remap(2e5, 1e5, distance(rayPos, cameraPosition.xz));
+	return density/*  * remap(2e5, 1e5, distance(rayPos, cameraPosition.xz)) */;
 }
 #endif
 
