@@ -142,7 +142,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 			sampleShadow *= mix(1.0 - wetness * 0.9, texture(cloudShadowTex, cloudShadowCoord).x, fade.x * fade.y);
 		#endif
 
-		vec2 stepPhase = max(phase, rPI * saturate(stepFogmass));
+		vec2 stepPhase = max(phase, uniformPhase * saturate(stepFogmass));
 		stepFogmass *= stepLength;
 
 		vec3 opticalDepth = fogExtinctionCoeff * stepFogmass;
