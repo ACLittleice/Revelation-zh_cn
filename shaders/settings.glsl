@@ -12,7 +12,7 @@
 #if !defined INCLUDE_SETTINGS
 #define INCLUDE_SETTINGS
 
-#define RENDER_MODE 0 // [0 1]
+#define RENDER_MODE 1 // [0 1]
 
 #define INFO   Alpha // Development stage of the shaderpack. [Alpha Beta Release]
 #define AUTHOR HaringPro // Copyright holder of the shaderpack. [HaringPro]
