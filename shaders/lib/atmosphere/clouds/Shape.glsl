@@ -146,7 +146,7 @@ float CloudHighDensity(in vec2 rayPos) {
 	}
 #else
 	float GetVerticalProfile(in float heightFraction, in float cloudType) {
-		float stratus = sqr(remap(0.25, 0.1, heightFraction));
+		float stratus = remap(0.25, 0.05, heightFraction);
 		float stratocumulus = saturate(heightFraction * 6.0) * remap(0.7, 0.2, heightFraction);
 		float cumulus = saturate(heightFraction * 8.0) * remap(1.0, 0.6, heightFraction);
 
@@ -204,13 +204,14 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 		detailNoise = texture(detailNoiseTex, position * 8.0).x;
 
 		// Transition from wispy shapes to billowy shapes over height
-		detailNoise = mix(1.0 - detailNoise, detailNoise, saturate(heightFraction * 8.0));
+		// detailNoise = mix(1.0 - detailNoise, detailNoise, saturate(heightFraction * 8.0));
 	}
 	#endif
-	cloudDensity = remap(detailNoise * 0.25, 1.0, cloudDensity);
+	cloudDensity = remap(sqr(detailNoise) * sqr(0.75 - heightFraction * 0.5), 1.0, cloudDensity);
 
 	// Density profile
-	float densityProfile = saturate(heightFraction * 2.5) * saturate(5.0 - heightFraction * 5.0);
+	float densityProfile = sqr(saturate(heightFraction * 4.0));
+	densityProfile *= saturate(5.0 - heightFraction * 5.0);
 	return approxSqrt(cloudDensity) * densityProfile;
 }
 
