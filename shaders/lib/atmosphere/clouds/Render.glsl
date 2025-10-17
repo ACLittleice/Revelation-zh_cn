@@ -31,7 +31,7 @@
 
 float CloudVolumeOpticalDepth(in vec3 rayPos, in vec3 rayDir, in float noise, in uint steps) {
 	float rSteps = 1.0 / float(steps);
-	const float rayLength = CLOUD_CU_THICKNESS;
+	const float rayLength = cumulusThickness;
 	float stepLength = rayLength * rSteps * rSteps;
 
 	vec3 rayStep = rayDir * stepLength;
@@ -79,12 +79,12 @@ float CloudMultiScatteringApproximation(in float opticalDepth, in float phase, i
 vec3 RenderCloudMid(in vec2 rayPos, in vec3 rayDir, in float noise, in float phase) {
 	float density = CloudMidDensity(rayPos);
 	if (density > EPS) {
-		float opticalDepth = density * CLOUD_MID_THICKNESS / abs(rayDir.y);
+		float opticalDepth = density * cloudMidThickness / abs(rayDir.y);
 		float integral = oms(exp2(-rLOG2 * stratusExtinction * opticalDepth));
 
 		float opticalDepthSun = 0.0; {
 			const float rSteps = 1.0 / float(CLOUD_MID_SUNLIGHT_SAMPLES);
-			const float rayLength = CLOUD_MID_THICKNESS * 0.5;
+			const float rayLength = cloudMidThickness * 0.5;
 			const float stepLength = rayLength * rSteps * rSteps;
 
 			vec2 rayStep = worldLightVector.xz * stepLength;
@@ -105,7 +105,7 @@ vec3 RenderCloudMid(in vec2 rayPos, in vec3 rayDir, in float noise, in float pha
 		float msVolume = 1.0 - exp2(-8.0 * density);
 		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phase, msVolume);
 
-		float opticalDepthSky = density * (CLOUD_MID_THICKNESS * 0.5 * stratusExtinction * -rLOG2);
+		float opticalDepthSky = density * (cloudMidThickness * 0.5 * stratusExtinction * -rLOG2);
 
 		// Compute skylight multi-scattering
 		// See slide 85 of [Schneider, 2017]
@@ -132,12 +132,12 @@ vec3 RenderCloudMid(in vec2 rayPos, in vec3 rayDir, in float noise, in float pha
 vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float noise, in float phase) {
 	float density = CloudHighDensity(rayPos);
 	if (density > EPS) {
-		float opticalDepth = density * CLOUD_HIGH_THICKNESS / abs(rayDir.y);
+		float opticalDepth = density * cloudHighThickness / abs(rayDir.y);
 		float integral = oms(exp2(-rLOG2 * cirrusExtinction * opticalDepth));
 
 		float opticalDepthSun = 0.0; {
 			const float rSteps = 1.0 / float(CLOUD_HIGH_SUNLIGHT_SAMPLES);
-			const float rayLength = CLOUD_HIGH_THICKNESS * 0.5;
+			const float rayLength = cloudHighThickness * 0.5;
 			const float stepLength = rayLength * rSteps * rSteps;
 
 			vec2 rayStep = worldLightVector.xz * stepLength;
@@ -158,7 +158,7 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float noise, in float ph
 		float msVolume = 1.0 - exp2(-4.0 * density);
 		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phase, msVolume);
 
-		float opticalDepthSky = density * (CLOUD_HIGH_THICKNESS * 0.5 * cirrusExtinction * -rLOG2);
+		float opticalDepthSky = density * (cloudHighThickness * 0.5 * cirrusExtinction * -rLOG2);
 
 		// Compute skylight multi-scattering
 		// See slide 85 of [Schneider, 2017]
@@ -233,7 +233,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 			// Intersect the volume
 			if (intersection.y > 0.0) {
-				float withinVolumeSmooth = remap(CLOUD_CU_THICKNESS + 32.0, CLOUD_CU_THICKNESS - 64.0, abs(r * 2.0 - (cumulusBottomRadius + cumulusTopRadius)));
+				float withinVolumeSmooth = remap(cumulusThickness + 32.0, cumulusThickness - 64.0, abs(r * 2.0 - (cumulusBottomRadius + cumulusTopRadius)));
 
 				float rayLength = clamp(intersection.y - intersection.x, 0.0, 1e5 - withinVolumeSmooth * 6e4);
 
@@ -291,7 +291,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 						#endif
 
 						// Estimate the light optical depth of the ground from the cloud volume
-						float opticalDepthGround = stepDensity * heightFraction * (CLOUD_CU_THICKNESS * cumulusExtinction * -rLOG2);
+						float opticalDepthGround = stepDensity * heightFraction * (cumulusThickness * cumulusExtinction * -rLOG2);
 						float scatteringGround = exp2(max(opticalDepthGround, opticalDepthGround * 0.25 - 0.5)) * rPI;
 
 						// Compute In-Scatter Probability

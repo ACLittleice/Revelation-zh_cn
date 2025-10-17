@@ -158,7 +158,7 @@ float CloudHighDensity(in vec2 rayPos) {
 float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dimensionalProfile, in bool detail) {
 	// Remap the height of the clouds to the range of [0, 1]
 	float rayRadius = sdot(rayPos); rayRadius *= inversesqrt(rayRadius);
-	heightFraction = saturate((rayRadius - cumulusBottomRadius) * rcp(CLOUD_CU_THICKNESS));
+	heightFraction = saturate((rayRadius - cumulusBottomRadius) * rcp(cumulusThickness));
 
 	// Wind field
 	const float windAngle = radians(45.0);

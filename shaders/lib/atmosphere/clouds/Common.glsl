@@ -99,11 +99,17 @@ const float cloudLobeMixer          = 0.25;
 const float cloudSilverG 		    = 0.95;
 const float cloudSilverI 	        = 0.20;
 
-const float cumulusTopAltitude 		= CLOUD_CU_ALTITUDE + CLOUD_CU_THICKNESS;
+const float cumulusThickness 		= CLOUD_CU_THICKNESS;
+const float cumulusBottomAltitude 	= CLOUD_CU_ALTITUDE;
+
+const float cumulusTopAltitude 		= cumulusBottomAltitude + cumulusThickness;
 const float cumulusTopOffset        = 200.0;
 
-const float cumulusBottomRadius     = planetRadius + CLOUD_CU_ALTITUDE;
+const float cumulusBottomRadius     = planetRadius + cumulusBottomAltitude;
 const float cumulusTopRadius        = planetRadius + cumulusTopAltitude;
+
+const float cloudMidThickness       = CLOUD_MID_THICKNESS;
+const float cloudHighThickness      = CLOUD_HIGH_THICKNESS;
 
 const float cloudMidRadius          = planetRadius + CLOUD_MID_ALTITUDE;
 const float cloudHighRadius         = planetRadius + CLOUD_HIGH_ALTITUDE;
