@@ -108,7 +108,7 @@ float CloudHighDensity(in vec2 rayPos) {
 		coverage = saturate(coverage + texture(noisetex, position * 0.02).z);
 		position -= coverage * 0.25;
 
-		if (coverage > cloudEpsilon) {
+		if (coverage > 0.1) {
 			float cirrus = textureTiling(nubisCirroTex, (position - windOffset * 1e-4) * 0.3).x;
 			cirrus *= cirrus * saturate(cirrus + coverage) * 2.0;
 			cirrus *= smoothstep(0.1, 0.9, coverage);
@@ -123,7 +123,7 @@ float CloudHighDensity(in vec2 rayPos) {
 		float coverage = CLOUD_CC_COVERAGE - saturate(texture(noisetex, position * 0.01).z * 1.75);
 		coverage = saturate(texture(noisetex, position * 0.05).z + coverage);
 
-		if (coverage > cloudEpsilon) {
+		if (coverage > 0.2) {
 			float cirrocumulus = textureTiling(nubisCirroTex, (position - windOffset * 1e-4) * 0.3).z;
 			cirrocumulus += texture(noisetex, position).z * 0.7 - 0.25;
 
