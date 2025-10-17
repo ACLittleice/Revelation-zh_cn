@@ -44,7 +44,7 @@ uniform usampler2D colortex11; // Volumetric Fog, linear depth
 #include "/lib/universal/Random.glsl"
 
 #include "/lib/atmosphere/Common.glsl"
-#include "/lib/atmosphere/PrecomputedAtmosphericScattering.glsl"
+#include "/lib/atmosphere/Bruneton08.glsl"
 
 #include "/lib/atmosphere/Rainbow.glsl"
 #include "/lib/atmosphere/CommonFog.glsl"

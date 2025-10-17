@@ -46,7 +46,7 @@ uniform sampler2D cloudOriginTex;
 #include "/lib/universal/Random.glsl"
 
 #include "/lib/atmosphere/Common.glsl"
-#include "/lib/atmosphere/PrecomputedAtmosphericScattering.glsl"
+#include "/lib/atmosphere/Bruneton08.glsl"
 #include "/lib/atmosphere/Celestial.glsl"
 
 #ifdef CLOUD_SHADOWS
