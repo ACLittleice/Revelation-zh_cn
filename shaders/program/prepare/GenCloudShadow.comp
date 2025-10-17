@@ -42,17 +42,17 @@ writeonly uniform image2D cloudShadowImg;
 //======// Main //================================================================================//
 void main() {
 	ivec2 mapTexel = ivec2(gl_GlobalInvocationID.xy);
-	bool frameUpdate = viewSizeChanged || worldTimeChanged;
+	bool historyReset = viewSizeChanged || worldTimeChanged;
 
     // Checkerboard render cloud shadow map
 	ivec2 offset = checkerboardOffset4x4[frameCounter % 16];
-	if (mapTexel % 4 == offset || frameUpdate) {
+	if (mapTexel % 4 == offset || historyReset) {
 		vec2 mapCoord = (vec2(mapTexel) + 0.5) * rcp(textureSize(cloudShadowTex, 0));
         vec3 rayPos = SetupCloudShadowPos(mapCoord);
         float cloudShadow = CalculateCloudShadows(rayPos);
 
 		// Accumulate
-		float accumFactor = frameUpdate ? 1.0 : 0.125;
+		float accumFactor = historyReset ? 1.0 : 0.125;
 		float cloudShadowPrev = texelFetch(cloudShadowTex, mapTexel, 0).x;
 		cloudShadow = mix(cloudShadowPrev, cloudShadow, accumFactor);
 

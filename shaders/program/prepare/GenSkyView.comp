@@ -45,18 +45,18 @@ writeonly uniform image2D colorimg5;
 //======// Main //================================================================================//
 void main() {
 	ivec2 viewTexel = ivec2(gl_GlobalInvocationID.xy);
-	bool frameUpdate = viewSizeChanged || worldTimeChanged;
+	bool historyReset = viewSizeChanged || worldTimeChanged;
 
     // Checkerboard render
 	ivec2 offset = checkerboardOffset2x2[frameCounter % 4];
-	if (viewTexel % 2 == offset || frameUpdate) {
+	if (viewTexel % 2 == offset || historyReset) {
 		// Render sky and transmittance view LUTs
 		vec2 viewCoord = (vec2(gl_GlobalInvocationID.xy) + 0.5) * rcp(skyViewRes);
 		vec3 worldDir = ToSkyViewLutParams(viewCoord);
 		vec3 skyViewOut = GetSkyRadiance(worldDir, worldSunVector) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
 
 		// Accumulate
-		float accumFactor = frameUpdate ? 1.0 : 0.25;
+		float accumFactor = historyReset ? 1.0 : 0.25;
 		vec3 skyViewPrev = texelFetch(skyViewTex, viewTexel, 0).rgb;
 		skyViewOut = mix(skyViewPrev, skyViewOut, accumFactor);
 
