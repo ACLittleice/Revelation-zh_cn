@@ -132,6 +132,9 @@ float approxSqrt(in float x) { return uintBitsToFloat((floatBitsToUint(x) >> 1) 
 float sqrtNewton(float x, float guess) { return 0.5 * (guess + x / guess); }
 float approxSqrtN1(in float x) { return sqrtNewton(x, approxSqrt(x)); }
 
+vec2 approxSqrt(in vec2 x) { return vec2(approxSqrt(x.x), approxSqrt(x.y)); }
+vec3 approxSqrt(in vec3 x) { return vec3(approxSqrt(x.x), approxSqrt(x.y), approxSqrt(x.z)); }
+
 float fastAcos(in float x) {
     float a = abs(x);
 	float r = (hPI - 0.175394 * a) * sqrt(1.0 - a);
