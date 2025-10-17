@@ -91,7 +91,7 @@ const float cloudMsFalloffA 	    = CLOUD_MS_FALLOFF_S;
 const float cloudMsFalloffB 	    = CLOUD_MS_FALLOFF_E;
 const float cloudMsFalloffC 	    = CLOUD_MS_FALLOFF_P;
 
-const float cloudMapSize 		    = 128e3; // m
+const float cloudMapExtend 		    = 128e3; // m
 
 const float cloudForwardG 		    = 0.65;
 const float cloudBackwardG 		    = -0.3;
@@ -100,7 +100,7 @@ const float cloudSilverG 		    = 0.95;
 const float cloudSilverI 	        = 0.20;
 
 const float cumulusTopAltitude 		= CLOUD_CU_ALTITUDE + CLOUD_CU_THICKNESS;
-const float cumulusTopOffset        = 400.0;
+const float cumulusTopOffset        = 200.0;
 
 const float cumulusBottomRadius     = planetRadius + CLOUD_CU_ALTITUDE;
 const float cumulusTopRadius        = planetRadius + cumulusTopAltitude;

@@ -25,6 +25,7 @@ out vec3 finalOut;
 
 //======// Uniform //=============================================================================//
 
+uniform sampler2D cloudMapTex;
 #include "/lib/universal/Uniform.glsl"
 
 //======// SSBO //================================================================================//
@@ -166,6 +167,17 @@ void main() {
 	#ifdef DEBUG_CLOUD_SHADOWS
 		if (all(lessThan(screenTexel, textureSize(cloudShadowTex, 0)))) {
 			finalOut = vec3(texelFetch(cloudShadowTex, screenTexel, 0).x);
+		}
+	#endif
+
+	#ifdef DEBUG_CLOUD_MAP
+		ivec2 tempTexel = screenTexel;
+		if (all(lessThan(tempTexel, textureSize(cloudMapTex, 0)))) {
+			finalOut = vec3(texelFetch(cloudMapTex, tempTexel, 0).x);
+		}
+		tempTexel -= ivec2(textureSize(cloudMapTex, 0).x, 0);
+		if (all(greaterThanEqual(tempTexel, ivec2(0)) && lessThan(tempTexel, textureSize(cloudMapTex, 0)))) {
+			finalOut = vec3(texelFetch(cloudMapTex, tempTexel, 0).y);
 		}
 	#endif
 

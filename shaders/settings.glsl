@@ -270,7 +270,7 @@ const ivec2 skyViewRes = ivec2(256, 128);
 	// #define DEBUG_DEPTH 0 // [0 1 2]
 	// #define DEBUG_SKYVIEW
 	// #define DEBUG_BLOOM_TILES
-	// #define DEBUG_GI
+	// #define DEBUG_CLOUD_MAP
 	// #define DEBUG_CLOUD_SHADOWS
 	// #define DEBUG_SKY_COLOR
 	// #define DEBUG_RESHADING
