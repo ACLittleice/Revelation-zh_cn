@@ -15,7 +15,7 @@
 	const int 	colortex2Format 			= RGBA16F;
 	const int 	colortex3Format 			= RGBA16F;
 	const int 	colortex4Format 			= R11F_G11F_B10F;
-	const int 	colortex5Format 			= R11F_G11F_B10F;
+	const int 	colortex5Format 			= RGBA16F;
 	const int 	colortex6Format 			= RGBA8;
 	const int 	colortex7Format 			= RGBA16UI;
 	const int 	colortex8Format 			= RGBA8;
@@ -67,7 +67,7 @@
 	|	colortex2	|   rgba16f         |	Full res	|	Indirect diffuse lighting history
 	|	colortex3	|   rgba16f         |	Full res  	|	Indirect diffuse lighting -> Indirect specular lighting -> Motion vector
 	|	colortex4	|   r11f_g11f_b10f  |	Full res  	|	Reprojected scene history -> Bloom tiles
-	|	colortex5	|   r11f_g11f_b10f  |	256, 256   	|	Sky-View LUT
+	|	colortex5	|   rgba16f  		|	256, 256   	|	Sky environment map
 	|	colortex6	|   rgba8           |	Full res  	|	Solid albedo, rain alpha
 	|	colortex7	|   rgba16ui        |	Full res  	|	Gbuffer data 0
 	|	colortex8	|   rgba8           |	Full res  	|	Gbuffer data 1

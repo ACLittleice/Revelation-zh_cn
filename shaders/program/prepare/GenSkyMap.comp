@@ -6,17 +6,15 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-    Pass: Compute Sky-View LUT
-
 --------------------------------------------------------------------------------
 */
 
-#define PASS_SKY_VIEW
+#define PASS_SKY_MAP
 
 //======// Input //===============================================================================//
 
 layout (local_size_x = 16, local_size_y = 16) in;
-const ivec3 workGroups = ivec3(16, 8, 1);
+const ivec3 workGroups = ivec3(16, 16, 1);
 
 //======// Utility //=============================================================================//
 
@@ -24,7 +22,7 @@ const ivec3 workGroups = ivec3(16, 8, 1);
 
 //======// Uniform //=============================================================================//
 
-writeonly uniform image2D colorimg5;
+writeonly uniform image2D skyMapImg;
 
 #include "/lib/universal/Uniform.glsl"
 
@@ -44,40 +42,37 @@ writeonly uniform image2D colorimg5;
 
 //======// Main //================================================================================//
 void main() {
-	ivec2 viewTexel = ivec2(gl_GlobalInvocationID.xy);
+	ivec2 gid = ivec2(gl_GlobalInvocationID.xy);
 	bool historyReset = viewSizeChanged || worldTimeChanged;
 
     // Checkerboard render
 	ivec2 offset = checkerboardOffset2x2[frameCounter % 4];
-	if (viewTexel % 2 == offset || historyReset) {
-		// Render sky and transmittance view LUTs
-		vec2 viewCoord = (vec2(gl_GlobalInvocationID.xy) + 0.5) * rcp(skyViewRes);
-		vec3 worldDir = ToSkyViewLutParams(viewCoord);
-		vec3 skyViewOut = GetSkyRadiance(worldDir, worldSunVector) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
+	if (gid % 2 == offset || historyReset) {
+		vec2 uv = (vec2(gid) + 0.5) * rcp(skyMapRes);
 
-		// Accumulate
-		float accumFactor = historyReset ? 1.0 : 0.25;
-		vec3 skyViewPrev = texelFetch(skyViewTex, viewTexel, 0).rgb;
-		skyViewOut = mix(skyViewPrev, skyViewOut, accumFactor);
+		vec3 worldDir = UnprojectSky(uv);
+		vec3 skyRadiance = GetSkyRadiance(worldDir, worldSunVector) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
 
-		// Raw sky-view LUT
-		imageStore(colorimg5, viewTexel, vec4(skyViewOut, 1.0));
+		vec2 noise = SampleStbnVec2(gid, frameCounter);
 
 		#ifdef CLOUDS
 			float cloudDepth;
-			vec4 cloudData = RenderClouds(worldDir, vec2(0.5), cloudDepth);
-			skyViewOut = skyViewOut * cloudData.a + cloudData.rgb;
+			vec4 cloudData = RenderClouds(worldDir, noise, cloudDepth);
+			skyRadiance = skyRadiance * cloudData.a + cloudData.rgb;
 		#endif
 
 		#ifdef VOLUMETRIC_FOG
 			if (isEyeInWater == 0) {
-				mat2x3 volFogData = RaymarchAtmosphericFog(worldDir * far, 0.5, true);
-				skyViewOut = ApplyFog(skyViewOut, volFogData);
+				mat2x3 volFogData = RaymarchAtmosphericFog(worldDir * far, noise.x, true);
+				skyRadiance = ApplyFog(skyRadiance, volFogData);
 			}
 		#endif
 
-		// Sky-view LUT with clouds
-		viewTexel.y += skyViewRes.y;
-		imageStore(colorimg5, viewTexel, vec4(skyViewOut, 1.0));
+		// Accumulate
+		vec4 history = texelFetch(skyMapTex, gid, 0);
+		history.a *= float(!historyReset);
+
+		skyRadiance = mix(history.rgb, skyRadiance, rcp(++history.a));
+		imageStore(skyMapImg, gid, vec4(skyRadiance, min(history.a, 128.0)));
 	}
 }

@@ -27,10 +27,6 @@ layout (location = 1) out float bloomyFogMask;
 
 uniform usampler2D colortex11; // Volumetric Fog, linear depth
 
-#if defined DEPTH_OF_FIELD && CAMERA_FOCUS_MODE == 0
-    uniform float centerDepthSmooth;
-#endif
-
 #include "/lib/universal/Uniform.glsl"
 
 //======// SSBO //================================================================================//
@@ -48,6 +44,8 @@ uniform usampler2D colortex11; // Volumetric Fog, linear depth
 #include "/lib/universal/Random.glsl"
 
 #include "/lib/atmosphere/Common.glsl"
+#include "/lib/atmosphere/PrecomputedAtmosphericScattering.glsl"
+
 #include "/lib/atmosphere/Rainbow.glsl"
 #include "/lib/atmosphere/CommonFog.glsl"
 
@@ -145,7 +143,7 @@ void main() {
 				float density = saturate(1.0 - exp2(-pow8(sdot(worldPos.xz) * rcp(far * far)) * BORDER_FOG_FALLOFF));
 				density *= exp2(-4.0 * curve(saturate(worldDir.y * 3.0)));
 
-				vec3 skyRadiance = textureBicubic(skyViewTex, FromSkyViewLutParams(worldDir)).rgb;
+				vec3 skyRadiance = GetSkyRadiance(worldDir, worldSunVector);
 				sceneOut = mix(sceneOut, skyRadiance, density);
 			}
 		#endif

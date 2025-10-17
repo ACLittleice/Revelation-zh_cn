@@ -30,7 +30,7 @@ vec2 CalculateFogDensity(in vec3 rayPos) {
 	return density;
 }
 
-#if !defined CLOUD_SHADOWS || defined PASS_SKY_VIEW
+#if !defined CLOUD_SHADOWS || defined PASS_SKY_MAP
 	#undef VF_CLOUD_SHADOWS
 #endif
 
@@ -110,7 +110,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 
 		if (dot(stepFogmass, vec2(1.0)) < EPS) continue; // Faster than maxOf()
 
-    #if defined PASS_SKY_VIEW
+    #if defined PASS_SKY_MAP
         const float sampleShadow = 1.0;
     #else
 		vec3 shadowScreenPos = DistortShadowSpace(shadowPos) * 0.5 + 0.5;

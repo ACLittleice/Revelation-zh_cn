@@ -8,6 +8,9 @@
 
 #define VIEWER_BASE_ALTITUDE        64.0 // [0.0 32.0 64.0 128.0 256.0 512.0 1024.0 2048.0 4096.0 8192.0 16384.0 32768.0 65536.0 131072.0 262144.0 524288.0 1048576.0 2097152.0 4194304.0 8388608.0 16777216.0 33554432.0 67108864.0 134217728.0 268435456.0 536870912.0 1073741824.0]
 
+#define ProjectSky      OctEncodeUnorm
+#define UnprojectSky    OctDecodeUnorm
+
 //================================================================================================//
 
 struct AtmosphereParameters {
@@ -186,48 +189,4 @@ vec2 RaySphericalShellIntersection(in float r, in float mu, in float bottomRad, 
 	} else {
 		return vec2(-1.0);
 	}
-}
-
-//================================================================================================//
-
-#define UnitToSubUv(uv, res) (uv + 0.5 / res) * (res / (res + 2.0))
-#define SubToUnitUv(uv, res) (uv - 0.5 / res) * (res / (res - 2.0))
-
-// Reference: https://sebh.github.io/publications/egsr2020.pdf
-vec3 ToSkyViewLutParams(in vec2 coord) {
-	// To unit UV
-	coord = SubToUnitUv(coord, vec2(skyViewRes));
-
-	// Non-linear mapping of the altitude angle
-	coord.y = coord.y < 0.5 ? -sqr(1.0 - 2.0 * coord.y) : sqr(2.0 * coord.y - 1.0);
-
-    float horizonCos = rcp(viewerHeight * inversesqrt(viewerHeight * viewerHeight - atmosphere_bottom_radius_sq));
-    float horizonAngle = fastAcos(horizonCos);
-
-	float azimuthAngle = coord.x * TAU - PI;
-	float altitudeAngle = (coord.y + 1.0) * hPI - horizonAngle;
-
-	float altitudeCos = cos(altitudeAngle);
-
-	return vec3(altitudeCos * sin(azimuthAngle), sin(altitudeAngle), -altitudeCos * cos(azimuthAngle));
-}
-
-vec2 FromSkyViewLutParams(in vec3 direction) {
-	vec2 coord = normalize(direction.xz);
-
-    float horizonCos = rcp(viewerHeight * inversesqrt(viewerHeight * viewerHeight - atmosphere_bottom_radius_sq));
-    float horizonAngle = fastAcos(horizonCos);
-
-	float azimuthAngle = atan(coord.x, -coord.y);
-	float altitudeAngle = horizonAngle - fastAcos(direction.y);
-
-	coord.x = (azimuthAngle + PI) * rTAU;
-
-	// Non-linear mapping of the altitude angle
-	coord.y = fastSign(altitudeAngle) * sqrt(2.0 * rPI * abs(altitudeAngle)) * 0.5 + 0.5;
-
-	// To sub UV
-	coord = UnitToSubUv(coord, vec2(skyViewRes));
-
-	return saturate(coord) * vec2(1.0, 0.5);
 }

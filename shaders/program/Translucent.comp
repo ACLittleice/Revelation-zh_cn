@@ -63,8 +63,7 @@ vec4 CalculateSpecularReflections(in vec3 screenPos, in vec3 viewPos, in vec3 wo
 
 	vec3 reflection = vec3(0.0);
 	if (skylight > 1e-3 && (isEyeInWater == 0 || !waterMask)) {
-		vec2 skyViewCoord = FromSkyViewLutParams(rayDir) + vec2(0.0, 0.5);
-		vec3 skyRadiance = textureBicubic(skyViewTex, skyViewCoord).rgb;
+		vec3 skyRadiance = textureBicubic(skyMapTex, ProjectSky(rayDir)).rgb;
 
 		skylight = remap(0.3, 0.7, cube(skylight));
 		reflection = skyRadiance * skylight;
@@ -127,8 +126,8 @@ void main() {
 			float NdotV = abs(dot(worldNormal, worldDir));
 			vec3 rayDir = worldDir + worldNormal * NdotV * 2.0;
 
-			vec2 skyViewCoord = FromSkyViewLutParams(rayDir) + vec2(0.0, 0.5);
-			vec3 skyRadiance = textureBicubic(skyViewTex, skyViewCoord).rgb;
+			vec2 skyViewCoord = OctEncodeUnorm(rayDir);
+			vec3 skyRadiance = textureBicubic(skyMapTex, skyViewCoord).rgb;
 
 			vec3 reflection = skyRadiance * remap(0.3, 0.7, cube(lightmap.y));
 			float fresnel = FresnelDielectricN(NdotV, WATER_IOR);

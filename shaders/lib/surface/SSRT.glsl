@@ -54,7 +54,7 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
             break;
         }
 
-        float sampleDepth = loadDepth1(ivec2(rayPos.xy));
+        float sampleDepth = loadDepth2(ivec2(rayPos.xy));
         #if defined DISTANT_HORIZONS
             if (sampleDepth > 1.0 - EPS) sampleDepth = ViewToScreenDepth(ScreenToViewDepthDH(loadDepth1DH(ivec2(rayPos.xy))));
         #endif
@@ -79,7 +79,7 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
         for (uint i = 0u; i < SSRT_REFINEMENT_STEPS; ++i) {
             rayStep *= 0.5;
 
-            float sampleDepth = loadDepth1(ivec2(screenPos.xy));
+            float sampleDepth = loadDepth2(ivec2(screenPos.xy));
             #if defined DISTANT_HORIZONS
                 if (sampleDepth > 1.0 - EPS) sampleDepth = ViewToScreenDepth(ScreenToViewDepthDH(loadDepth1DH(ivec2(screenPos.xy))));
             #endif

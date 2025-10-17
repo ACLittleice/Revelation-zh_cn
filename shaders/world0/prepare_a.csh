@@ -1,3 +1,3 @@
 #version 460 core
 
-#include "/program/prepare/GenSkyView.comp"
+#include "/program/prepare/GenSkyMap.comp"

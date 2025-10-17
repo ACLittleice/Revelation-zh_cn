@@ -77,7 +77,7 @@ vec3 CalculateSSPT(in vec3 screenPos, in vec3 viewPos, in vec3 worldNormal, in v
 				sum += sampleRadiance;
 			} else if (dot(lightmap, vec2(1.0)) > EPS) {
 				// vec3 rayDirWorld = mat3(gbufferModelViewInverse) * rayDir;
-				// vec3 skyRadiance = texture(skyViewTex, FromSkyViewLutParams(rayDirWorld) + vec2(0.0, 0.5)).rgb;
+				// vec3 skyRadiance = texture(skyMapTex, ProjectSky(rayDirWorld)).rgb;
 
 				float occulusion = saturate(dot(viewNormal, rayDir));
 				vec3 skyRadiance = ConvolvedReconstructSH3(global.light.skySH, worldNormal);

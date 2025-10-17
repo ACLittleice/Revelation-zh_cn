@@ -237,7 +237,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 				float rayLength = clamp(intersection.y - intersection.x, 0.0, 1e5 - withinVolumeSmooth * 6e4);
 
-				#if defined PASS_SKY_VIEW
+				#if defined PASS_SKY_MAP
 					uint raySteps = CLOUD_LOW_SAMPLES >> 1u;
 					// Reduce ray steps for vertical rays
 					raySteps = uint(float(raySteps) * oms(abs(mu) * 0.5));

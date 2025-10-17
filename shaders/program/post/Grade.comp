@@ -42,7 +42,7 @@ uniform sampler2D colortex4; // Bloom tiles
 uniform sampler2D colortex6; // Rain alpha
 uniform sampler2D colortex12; // Bloomy fog mask
 
-uniform sampler2D skyViewTex;
+uniform sampler2D skyMapTex;
 
 uniform float aspectRatio;
 uniform float rainStrength;
@@ -223,10 +223,10 @@ void main() {
 		HDRImage *= exp2(-0.5 * sdot(clipCoord) * VIGNETTE_STRENGTH);
 	#endif
 
-	// Debug sky-view
-	#ifdef DEBUG_SKYVIEW
-		if (all(lessThan(screenTexel, ivec2(skyViewRes.x, skyViewRes.y << 1)))) {
-			HDRImage = texelFetch(skyViewTex, screenTexel, 0).rgb;
+	// Debug sky environment map
+	#ifdef DEBUG_SKY_MAP
+		if (all(lessThan(screenTexel, skyMapRes))) {
+			HDRImage = texelFetch(skyMapTex, screenTexel, 0).rgb;
 		}
 	#endif
 

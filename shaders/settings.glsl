@@ -20,7 +20,7 @@ const float	shadowDistance 	  = 192.0; // [64.0 80.0 96.0 112.0 128.0 160.0 192.
 
 //======// Environment //=========================================================================//
 
-const ivec2 skyViewRes = ivec2(256, 128);
+const ivec2 skyMapRes = ivec2(256, 256);
 
 /* Clouds */
 	#define CLOUDS
@@ -268,7 +268,7 @@ const ivec2 skyViewRes = ivec2(256, 128);
 	// #define WHITE_WORLD
 	#define DEBUG_NORMALS 0 // [0 1 2]
 	// #define DEBUG_DEPTH 0 // [0 1 2]
-	// #define DEBUG_SKYVIEW
+	// #define DEBUG_SKY_MAP
 	// #define DEBUG_BLOOM_TILES
 	// #define DEBUG_CLOUD_MAP
 	// #define DEBUG_CLOUD_SHADOWS
