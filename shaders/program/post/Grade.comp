@@ -208,6 +208,13 @@ void main() {
 		CombineBloomAndFog(HDRImage, screenTexel, exposure);
 	#endif
 
+	// Debug sky environment map
+	#ifdef DEBUG_SKY_MAP
+		if (all(lessThan(screenTexel, skyMapRes))) {
+			HDRImage = texelFetch(skyMapTex, screenTexel, 0).rgb;
+		}
+	#endif
+
 	// Apply exposure
 	HDRImage *= exposure;
 
@@ -221,13 +228,6 @@ void main() {
 		vec2 clipCoord = texelToUv(screenTexel) * 2.0 - 1.0;
 		clipCoord.x *= mix(1.0, aspectRatio, VIGNETTE_ROUNDNESS);
 		HDRImage *= exp2(-0.5 * sdot(clipCoord) * VIGNETTE_STRENGTH);
-	#endif
-
-	// Debug sky environment map
-	#ifdef DEBUG_SKY_MAP
-		if (all(lessThan(screenTexel, skyMapRes))) {
-			HDRImage = texelFetch(skyMapTex, screenTexel, 0).rgb;
-		}
 	#endif
 
 	// Tone mapping
