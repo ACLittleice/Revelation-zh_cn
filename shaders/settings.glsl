@@ -12,6 +12,8 @@
 #if !defined INCLUDE_SETTINGS
 #define INCLUDE_SETTINGS
 
+#define RENDER_MODE 0 // [0 1]
+
 #define INFO   Alpha // Development stage of the shaderpack. [Alpha Beta Release]
 #define AUTHOR HaringPro // Copyright holder of the shaderpack. [HaringPro]
 
@@ -186,7 +188,8 @@ const ivec2 skyMapRes = ivec2(256, 256);
 
 	#define REFLECTION_FILTER // Enables reflection filter
 
-	#ifdef REFLECTION_FILTER
+	#if RENDER_MODE == 0
+		#undef REFLECTION_FILTER
 	#endif
 
 	#define SPECULAR_IMPORTANCE_SAMPLING_BIAS 0.3 // [0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
@@ -235,6 +238,10 @@ const ivec2 skyMapRes = ivec2(256, 256);
 	#define MOTION_BLUR // Enables motion blur
 	#define MOTION_BLUR_SAMPLES 6 // Sample count of motion blur. [2 3 4 5 6 7 8 9 10 12 14 16 18 20 22 24]
 	#define MOTION_BLUR_STRENGTH 0.5 // Strength of the motion blur. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.6 0.7 0.8 0.9 1.0 1.2 1.4 1.5 1.7 2.0 2.5 3.0 3.5 4.0 4.5 5.0 7.0 10.0 12.0 14.0 16.0 18.0 20.0]
+
+	#if RENDER_MODE == 0
+		#undef MOTION_BLUR
+	#endif
 
 /* Bloom */
 	#define BLOOM_ENABLED // Enables bloom
