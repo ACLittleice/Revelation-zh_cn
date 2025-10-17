@@ -408,8 +408,8 @@ vec3 GetSkyRadiance(
                 vec3 sun_irradiance, moon_irradiance;
                 vec3 sky_irradiance = GetSunAndSkyIrradiance(planet_point, planet_normal, sun_direction, sun_irradiance, moon_irradiance);
 
-                // sun_irradiance *= saturate(dot(planet_normal, sun_direction));
-                // moon_irradiance *= saturate(dot(planet_normal, -sun_direction));
+                sun_irradiance *= saturate(dot(planet_normal, sun_direction));
+                moon_irradiance *= saturate(dot(planet_normal, -sun_direction));
                 vec3 diffuse = (sun_irradiance + moon_irradiance) * (SUN_SPECTRAL_RADIANCE_TO_LUMINANCE / SKY_SPECTRAL_RADIANCE_TO_LUMINANCE);
                 ground = atmosphereModel.ground_albedo * rPI * (sky_irradiance + diffuse);
 
@@ -417,8 +417,6 @@ vec3 GetSkyRadiance(
                 vec3 scatterAP = GetSkyRadianceToPoint(planet_point, sun_direction, transmitAP);
                 ground = ground * transmitAP + scatterAP;
             }
-        #else
-            ray_r_mu_intersects_ground = false;
         #endif
 
         sun_scattering = GetCombinedScattering(r, mu, mu_s, nu, ray_r_mu_intersects_ground, sun_single_mie_scattering);
@@ -467,10 +465,10 @@ vec3 GetSkyRadiance(
         vec3 moon_single_mie_scattering;
         vec3 moon_scattering;
 
+        bool ray_r_mu_intersects_ground = RayIntersectsGround(r, mu);
+
         vec3 ground = vec3(0.0);
         #ifdef PLANET_GROUND
-            bool ray_r_mu_intersects_ground = RayIntersectsGround(r, mu);
-
             if (ray_r_mu_intersects_ground) {
                 vec3 planet_point = camera + view_ray * DistanceToBottomAtmosphereBoundary(r, mu);
                 vec3 planet_normal = normalize(planet_point);
@@ -478,8 +476,8 @@ vec3 GetSkyRadiance(
                 vec3 sun_irradiance, moon_irradiance;
                 vec3 sky_irradiance = GetSunAndSkyIrradiance(planet_point, planet_normal, sun_direction, sun_irradiance, moon_irradiance);
 
-                // sun_irradiance *= saturate(dot(planet_normal, sun_direction));
-                // moon_irradiance *= saturate(dot(planet_normal, -sun_direction));
+                sun_irradiance *= saturate(dot(planet_normal, sun_direction));
+                moon_irradiance *= saturate(dot(planet_normal, -sun_direction));
                 vec3 diffuse = (sun_irradiance + moon_irradiance) * (SUN_SPECTRAL_RADIANCE_TO_LUMINANCE / SKY_SPECTRAL_RADIANCE_TO_LUMINANCE);
                 ground = atmosphereModel.ground_albedo * rPI * (sky_irradiance + diffuse);
 
@@ -487,8 +485,6 @@ vec3 GetSkyRadiance(
                 vec3 scatterAP = GetSkyRadianceToPoint(planet_point, sun_direction, transmitAP);
                 ground = ground * transmitAP + scatterAP;
             }
-        #else
-            bool ray_r_mu_intersects_ground = false;
         #endif
 
         sun_scattering = GetCombinedScattering(r, mu, mu_s, nu, ray_r_mu_intersects_ground, sun_single_mie_scattering);
