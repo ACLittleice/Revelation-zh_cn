@@ -123,10 +123,12 @@ void main() {
         vec3 worldNormal = FetchWorldNormal(screenTexel);
 
         vec4 specularData = texelFetch(colortex3, screenTexel, 0);
+    #ifdef REFLECTION_FILTER
         if (material.isRough) {
             vec2 randOffset = SampleStbnVec2(screenTexel, frameCounter) - 0.5;
             SpecularFilter(specularData, screenTexel, material.roughness, worldNormal, worldDir, SPECULAR_FILTER_SIZE, randOffset);
         }
+    #endif
 
     #if defined SPECULAR_COMBINE_PASS
         vec3 sceneOut = loadSceneColor(screenTexel);
