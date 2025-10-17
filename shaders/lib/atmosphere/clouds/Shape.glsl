@@ -171,7 +171,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	rayPos.xz += cameraPosition.xz;
 
 	// Sample cloud map
-	vec2 cloudMap = texture(cloudMapTex, rayPos.xz * rcp(cloudMapCovDist)).xy;
+	vec2 cloudMap = texture(cloudMapTex, rayPos.xz * rcp(cloudMapSize)).xy;
 
 	// Coveage profile
 	float coverage = saturate(mix(cloudMap.x, cloudMap.y + 0.2, sqr(wetness) * 0.75) * (4.0 * CLOUD_CU_COVERAGE));

@@ -91,9 +91,8 @@ const float cloudMsFalloffA 	    = CLOUD_MS_FALLOFF_S;
 const float cloudMsFalloffB 	    = CLOUD_MS_FALLOFF_E;
 const float cloudMsFalloffC 	    = CLOUD_MS_FALLOFF_P;
 
-const float cloudMapCovDist 		= 128e3; // m
+const float cloudMapSize 		    = 128e3; // m
 
-// TODO: Provide adjustable options for these parameters
 const float cloudForwardG 		    = 0.65;
 const float cloudBackwardG 		    = -0.3;
 const float cloudLobeMixer          = 0.25;
@@ -125,7 +124,7 @@ const float cumulusAlbedo 		    = cumulusScattering / cumulusExtinction;
 const float stratusAlbedo 		    = stratusScattering / stratusExtinction;
 const float cirrusAlbedo 		    = cirrusScattering / cirrusExtinction;
 
-const float cloudEpsilon            = 0.0001;
+const float cloudEpsilon            = 0.001;
 const float cloudMinTransmittance   = 0.05;
 
 //================================================================================================//
@@ -148,15 +147,6 @@ uniform sampler2D nubisCirroTex;
 // From [Schneider, 2015]
 float remap(float value, float orignalMin, float orignalMax, float newMin, float newMax) {
     return newMin + saturate((value - orignalMin) / (orignalMax - orignalMin)) * (newMax - newMin);
-}
-
-// Triple-Lobe CS phase function for clouds
-float MiePhaseClouds(in float mu, in vec3 g, in vec3 w) {
-	vec3 gg = g * g;
-  	vec3 pa = oms(gg) * (1.5 / (2.0 + gg));
-	vec3 pb = (1.0 + sqr(mu)) / pow1d5(1.0 + gg - 2.0 * g * mu);
-
-	return uniformPhase * dot(pa * pb, w);
 }
 
 // Dual-Lobe HG phase function
