@@ -43,16 +43,12 @@ writeonly uniform image2D cloudDepthOriginImg;
 //======// Function //============================================================================//
 
 #include "/lib/universal/Random.glsl"
+#include "/lib/universal/Transform.glsl"
 
 #include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/PrecomputedAtmosphericScattering.glsl"
 
 #include "/lib/atmosphere/clouds/Render.glsl"
-
-vec3 ScreenToViewVectorRaw(in vec2 screenCoord) {
-	vec2 NDCCoord = screenCoord * 2.0 - 1.0;
-	return normalize(vec3(diagonal2(gbufferProjectionInverse) * NDCCoord, gbufferProjectionInverse[3].z));
-}
 
 float SampleDepthMax4x4(in sampler2D depthTex, in vec2 coord) {
 	// 4x4 pixel neighborhood using textureGatherOffset
@@ -67,43 +63,32 @@ float SampleDepthMax4x4(in sampler2D depthTex, in vec2 coord) {
 //======// Main //================================================================================//
 void main() {
     ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
+	vec2 screenCoord = texelToUv(screenTexel);
 
 	#ifdef CLOUD_TAAU_ENABLED
-		vec2 ditheredTexel = vec2(screenTexel) + R2(frameCounter + 11);
-		ivec2 cloudTexel = ivec2(ditheredTexel * CLOUD_TAAU_SCALE);
+		vec2 renderCoord = (screenCoord + taaOffset * 0.5) * CLOUD_TAAU_SCALE;
+		ivec2 renderTexel = uvToTexel(renderCoord);
 	#else
-		#define cloudTexel screenTexel
+		#define renderCoord screenCoord
+		#define renderTexel screenTexel
 	#endif
-	vec2 cloudUv = texelToUv(cloudTexel);
 
 	vec4 cloudOut = vec4(0.0, 0.0, 0.0, 1.0);
 	float cloudDepth = -1.0;
 
-	float depthMax = SampleDepthMax4x4(depthtex2, cloudUv);
+	float depthMax = SampleDepthMax4x4(depthtex2, renderCoord);
 
 	#if defined DISTANT_HORIZONS
-		if (depthMax > 1.0 - EPS) depthMax = SampleDepthMax4x4(dhDepthTex1, cloudUv);
+		if (depthMax > 1.0 - EPS) depthMax = SampleDepthMax4x4(dhDepthTex1, renderCoord);
 	#endif
 
 	if (depthMax > 1.0 - EPS) {
-		vec2 noise = SampleStbnVec2(cloudTexel, frameCounter + 11);
+		vec2 noise = SampleStbnVec2(renderTexel, frameCounter + 11);
 
-		vec3 viewDir  = ScreenToViewVectorRaw(cloudUv);
+		vec3 viewDir  = ScreenToViewVectorRaw(renderCoord);
 		vec3 worldDir = mat3(gbufferModelViewInverse) * viewDir;
 
 		cloudOut = RenderClouds(worldDir, noise, cloudDepth);
-
-		// Crepuscular rays
-		#ifdef CREPUSCULAR_RAYS
-			#ifdef CLOUD_SHADOWS
-			if (viewerHeight < cumulusBottomRadius) {
-				vec4 crepuscularRays = RaymarchCrepuscular(worldDir, noise.x);
-
-				cloudOut *= crepuscularRays.a;
-				cloudOut.rgb += crepuscularRays.rgb;
-			}
-			#endif
-		#endif
 	}
 
 	imageStore(cloudOriginImg, screenTexel, cloudOut);
