@@ -204,7 +204,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 		detailNoise = texture(detailNoiseTex, position * 8.0).x;
 
 		// Transition from wispy shapes to billowy shapes over height
-		// detailNoise = mix(detailNoise, 1.0 - detailNoise, saturate(heightFraction * 8.0));
+		detailNoise = mix(1.0 - detailNoise, detailNoise, saturate(heightFraction * 8.0));
 	}
 	#endif
 	cloudDensity = remap(detailNoise * 0.25, 1.0, cloudDensity);
