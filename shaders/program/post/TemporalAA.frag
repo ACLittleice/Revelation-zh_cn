@@ -131,20 +131,33 @@ void main() {
     float depth = loadDepth0(screenTexel);
 	vec2 screenCoord = gl_FragCoord.xy * viewPixelSize;
 
-    #ifdef TAA_CLOSEST_FRAGMENT
-        vec3 closestFragment = GetClosestFragment(screenTexel, depth);
-        vec2 motionVector = closestFragment.xy - Reproject(closestFragment).xy;
-    #else
-        vec2 motionVector = screenCoord - Reproject(vec3(screenCoord, depth)).xy;
-    #endif
+    #if RENDER_MODE == 1
+        #ifdef TAA_CLOSEST_FRAGMENT
+            vec3 closestFragment = GetClosestFragment(screenTexel, depth);
+            vec2 motionVector = closestFragment.xy - Reproject(closestFragment).xy;
+        #else
+            vec2 motionVector = screenCoord - Reproject(vec3(screenCoord, depth)).xy;
+        #endif
 
-    #ifdef MOTION_BLUR
-        motionVectorOut = depth < 0.56 ? motionVector * 0.25 : motionVector;
-    #endif
+        #ifdef MOTION_BLUR
+            motionVectorOut = depth < 0.56 ? motionVector * 0.25 : motionVector;
+        #endif
 
-    #ifdef TAA_ENABLED
-        temporalOut = TemporalReprojection(screenCoord, motionVector);
+        #ifdef TAA_ENABLED
+            temporalOut = TemporalReprojection(screenCoord, motionVector);
+        #else
+            temporalOut = vec4(loadSceneColor(screenTexel), 1.0);
+        #endif
     #else
-        temporalOut = vec4(loadSceneColor(screenTexel), 1.0);
+        ivec2 srcTexel = uvToTexel(screenCoord + taaOffset * 0.5);
+        temporalOut = vec4(loadSceneColor(srcTexel), 1.0);
+
+        vec2 prevCoord = Reproject(vec3(screenCoord, depth)).xy;
+        if (distance(prevCoord, screenCoord) < EPS && saturate(prevCoord) == prevCoord) {
+            vec4 prevData = texture(colortex1, prevCoord);
+
+            temporalOut.rgb = mix(prevData.rgb, temporalOut.rgb, rcp(++prevData.a));
+            temporalOut.a = prevData.a;
+        }
     #endif
 }
