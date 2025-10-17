@@ -99,9 +99,6 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
         vec3 clipAvg2 = sqrMean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
         vec3 clipStdDev = sqrt(abs(clipAvg2 - clipAvg * clipAvg)) * TAA_AGGRESSION;
 
-        // float currLum = currData.x, prevLum = prevData.x;
-        // float temporalContrast = saturate(abs(currLum - prevLum) / max(currLum, prevLum));
-
         // Ellipsoid intersection clipping
         prevData -= clipAvg;
         prevData *= saturate(inversesqrt(sdot(prevData / clipStdDev)));
@@ -112,11 +109,14 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
     // frameIndex *= 1.0 - saturate(cameraVelocity * 0.02);
     // frameIndex *= 1.0 - saturate(length(motionVector * viewSize) * 0.02);
 
+    float currLum = currData.x, prevLum = prevData.x;
+    float temporalContrast = saturate(abs(currLum - prevLum) / max(currLum, prevLum));
+
     float blendWeight = min(frameIndex, TAA_MAX_ACCUM_FRAMES);
-    blendWeight /= blendWeight + 1.0;
+    blendWeight *= 1.0 + sqr(temporalContrast) * TAA_ANTIFLICKER;
 
     float subpixelSharpen = sdot(fract(prevCoord * viewSize) - 0.5);
-    blendWeight *= 1.0 - saturate(subpixelSharpen) * 0.2;
+    blendWeight *= oms(saturate(subpixelSharpen) * 0.25) / (blendWeight + 1.0);
 
     currData = mix(perceptualWeight(currData), perceptualWeight(prevData), blendWeight);
     return vec4(YCoCgToSRGB(perceptualWeightInv(currData)), frameIndex);

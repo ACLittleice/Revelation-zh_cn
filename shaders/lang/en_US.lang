@@ -327,11 +327,12 @@ option.SELECTION_BOX_COLOR_B=Selection Box Color §1Blue
 
 # Post-Processing
 option.TAA_ENABLED=Temporal Anti-Aliasing
-option.TAA_CLOSEST_FRAGMENT=TAA Closest Fragment
-option.TAA_CLIPPING=TAA Clipping
-option.TAA_AGGRESSION=TAA Aggression
+option.TAA_CLOSEST_FRAGMENT=Closest Fragment
+option.TAA_SHARPEN=Sharpen
+option.TAA_CLIPPING=Clipping
+option.TAA_AGGRESSION=Clipping Aggression
 option.TAA_MAX_ACCUM_FRAMES=Max Accumulated Frames
-option.TAA_SHARPEN=TAA Sharpen
+option.TAA_ANTIFLICKER=Anti-flicker
 
 option.MOTION_BLUR=Motion Blur
 option.MOTION_BLUR_SAMPLES=Motion Blur Samples
