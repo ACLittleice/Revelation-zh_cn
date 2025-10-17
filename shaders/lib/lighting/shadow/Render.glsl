@@ -78,23 +78,23 @@ vec2 BlockerSearchSSS(in vec3 shadowScreenPos, in float dither, in float searchS
 }
 
 vec3 CalculateWaterCaustics(in vec3 worldPos, in float waterDepth, in float dither) {
-	vec3 surfacePos = worldPos + vec3(0.0, 1.0, 0.0);
+	vec3 surfacePos = worldPos - vec3(0.0, 1.0, 0.0);
 
 	float caustics = 0.0;
-	for (int i = 0; i < 16; ++i) {
-		vec3 samplePos = surfacePos;
+	for (uint i = 0u; i < 16u; ++i) {
+		vec3 samplePos = worldPos;
 		samplePos.xz += sampleVogelDisk(i, 16, dither) * 0.15;
 
-		vec2 sampleCoord = WorldToShadowScreenSpace(samplePos - vec3(0.0, 1.0, 0.0)).xy;
+		vec2 sampleCoord = WorldToShadowScreenSpace(samplePos).xy;
 		vec3 waveNormal = OctDecodeUnorm(texture(shadowcolor1, sampleCoord).xy);
 
 		vec3 refractDir = refract(vec3(0.0, 1.0, 0.0), waveNormal, 1.0 / WATER_IOR);
-		vec3 refractedPos = samplePos - refractDir * rcp(refractDir.y);
+		vec3 refractedPos = samplePos + refractDir * abs(1.0 / refractDir.y);
 
-		caustics += saturate(1.0 - 16.0 * distance(worldPos, refractedPos));
+		caustics += saturate(1.0 - 20.0 * distance(surfacePos, refractedPos));
 	}
 
-	return -smin(-caustics, -0.2, 0.25) * saturate(exp2(-rLOG2 * waterExtinction * waterDepth));
+	return -smin(-caustics, -0.2, 0.2) * saturate(exp2(-rLOG2 * waterExtinction * waterDepth));
 }
 
 vec3 PercentageCloserFilter(in vec3 shadowScreenPos, in vec3 worldPos, in float dither, in float penumbraScale) {
