@@ -16,16 +16,16 @@ screen.Weather=Weather
 screen.Foliage=Foliage
 
 screen.Clouds=Clouds
-screen.CrepuscularRays=Crepuscular Rays
-screen.Rainbows=Rainbows
-
+screen.CloudUpsampling=Cloud Upsampling
 screen.CloudLighting=Cloud Lighting
+
 screen.LowLevelClouds=Low-level Clouds
 screen.MidLevelClouds=Mid-level Clouds
 screen.HighLevelClouds=High-level Clouds
 
 screen.Fog=Fog
 screen.Volumetric=Volumetric Fog
+screen.Rainbows=Rainbows
 
 screen.GlobalIllumination=Global Illumination
 screen.AmbientOcclusion=Ambient Occlusion
@@ -88,7 +88,7 @@ suffix.CLOUD_TAAU_SCALE=x
 
 option.CLOUD_TAAU_CLIPPING=Upsampling Clipping
 option.CLOUD_MAX_ACCUM_FRAMES=Max Accumulated Frames
-option.CLOUD_AERIAL_PERSPECTIVE=Aerial Perspective
+option.CLOUD_TAAU_ANTIFLICKER=Anti-flicker
 
 option.CLOUD_MS_COUNT=Multi-scattering Count
 option.CLOUD_MS_FALLOFF_E=Extinction Falloff

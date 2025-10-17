@@ -16,16 +16,16 @@ screen.Weather=天气
 screen.Foliage=植物
 
 screen.Clouds=云设置
-screen.CrepuscularRays=云隙光
-screen.Rainbows=彩虹
+screen.CloudUpsampling=升采样
+screen.CloudLighting=光照
 
-screen.CloudLighting=云光照
 screen.LowLevelClouds=低云族
 screen.MidLevelClouds=中云族
 screen.HighLevelClouds=高云族
 
 screen.Fog=雾
 screen.Volumetric=体积雾
+screen.Rainbows=彩虹
 
 screen.GlobalIllumination=全局光照
 screen.AmbientOcclusion=环境光遮蔽
@@ -88,7 +88,7 @@ suffix.CLOUD_TAAU_SCALE=x
 
 option.CLOUD_TAAU_CLIPPING=椭球交裁切
 option.CLOUD_MAX_ACCUM_FRAMES=最大累积帧数
-option.CLOUD_AERIAL_PERSPECTIVE=大气透视
+option.CLOUD_TAAU_ANTIFLICKER=抗闪烁
 
 option.CLOUD_MS_COUNT=多重散射次数
 option.CLOUD_MS_FALLOFF_E=消光衰减

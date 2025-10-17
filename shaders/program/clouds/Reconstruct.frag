@@ -140,17 +140,18 @@ void main() {
 
 		// Ellipsoid intersection clipping
 		#ifdef CLOUD_TAAU_CLIPPING
-			float currLum = luminance(currData.rgb), prevLum = luminance(prevData.rgb);
-			float temporalContrast = saturate(abs(currLum - prevLum) / max(currLum, prevLum)) * 0.75;
-
 			vec4 clipStdDevInv = inversesqrt(abs(moment2 - moment1 * moment1) + EPS);
 			prevData -= moment1;
-			prevData *= pow(saturate(inversesqrt(sdot(prevData * clipStdDevInv * 0.25))), 1.0 - temporalContrast);
+			prevData *= saturate(inversesqrt(sdot(prevData * clipStdDevInv * 0.25)));
 			prevData += moment1;
 		#endif
 
 		// Accumulate
+		float currLum = luminance(currData.rgb), prevLum = luminance(prevData.rgb);
+		float temporalContrast = saturate(abs(currLum - prevLum) / max(currLum, prevLum));
+		float antiFlicker = 1.0 + sqr(temporalContrast) * CLOUD_TAAU_ANTIFLICKER;
+
 		frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
-		cloudOut = satU16f(mix(prevData, currData, rcp(float(frameOut))));
+		cloudOut = satU16f(mix(prevData, currData, rcp(antiFlicker * float(frameOut))));
 	}
 }
