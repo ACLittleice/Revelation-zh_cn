@@ -6,7 +6,8 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-	Pass: Temporal reconstruct clouds
+	Reference: https://publications.lib.chalmers.se/records/fulltext/241770/241770.pdf
+			   https://www.advances.realtimerendering.com/s2019/slides_public_release.pptx
 
 --------------------------------------------------------------------------------
 */
@@ -41,12 +42,14 @@ uniform sampler2D cloudDepthOriginTex;
 #include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/clouds/Common.glsl"
 
-vec3 ReprojectClouds(in vec2 coord, in float radius) {
-	vec3 cloudPos = ScreenToViewVectorRaw(coord) * radius;
+vec3 ReprojectClouds(in vec2 coord, in float depth) {
+	vec3 cloudPos = ScreenToViewVectorRaw(coord) * depth;
 	cloudPos = transMAD(gbufferModelViewInverse, cloudPos); // To world space
 
-	// Apply wind
 	vec3 motionVector = vec3(0.0);
+
+	// Apply wind
+	float radius = depth + viewerHeight;
 	if (radius < cloudMidRadius) {
 		// Low clouds
 		const float windAngle = radians(45.0);
@@ -65,7 +68,7 @@ vec3 ReprojectClouds(in vec2 coord, in float radius) {
 		motionVector.xz -= windVelocity;
 	}
 	motionVector *= (worldTime - global.prevWorldTime) * 0.05;
-	motionVector += cameraPosition - previousCameraPosition;
+	motionVector += cameraMovement;
 
 	cloudPos += motionVector; // To previous frame's world space
     cloudPos = transMAD(gbufferPreviousModelView, cloudPos); // To previous frame's view space
