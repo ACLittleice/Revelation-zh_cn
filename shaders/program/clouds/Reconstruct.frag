@@ -109,7 +109,8 @@ void main() {
 		// Return smoothed origin
 		cloudOut = textureBicubic(cloudOriginTex, currCoord);
 	} else {
-		vec4 prevData = max0(textureLanczos(cloudReconstructTex, prevCoord));
+		// vec4 prevData = max0(textureLanczos(cloudReconstructTex, prevCoord));
+		vec4 prevData = max0(textureCatmullRom(cloudReconstructTex, prevCoord));
 
 		vec2 centerPixel = currCoord * viewSize - 0.5;
 		vec2 floorPixel = floor(centerPixel);
