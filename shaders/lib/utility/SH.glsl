@@ -23,7 +23,7 @@ float[9] BasisSH3(in vec3 dir) {
 		sqrt(3.0 / (4.0 * PI)) * dir.x,
 		sqrt(15.0 / (4.0 * PI)) * dir.x * dir.y,
 		sqrt(15.0 / (4.0 * PI)) * dir.y * dir.z,
-		sqrt( 5.0 / (4.0 * PI)) * (3.0 * dir.z * dir.z - 1.0),
+		sqrt(5.0 / (16.0 * PI)) * (3.0 * dir.z * dir.z - 1.0),
 		sqrt(15.0 / (4.0 * PI)) * dir.x * dir.z,
 		sqrt(15.0 / (16.0 * PI)) * (dir.x * dir.x - dir.y * dir.y)
 	);
