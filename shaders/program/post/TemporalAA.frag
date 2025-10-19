@@ -153,7 +153,7 @@ void main() {
         temporalOut = vec4(loadSceneColor(srcTexel), 1.0);
 
         vec2 prevCoord = Reproject(vec3(screenCoord, depth)).xy;
-        if (distance(prevCoord, screenCoord) < EPS && saturate(prevCoord) == prevCoord) {
+        if (distance(prevCoord, screenCoord) < EPS) {
             vec4 prevData = texture(colortex1, prevCoord);
 
             temporalOut.rgb = mix(prevData.rgb, temporalOut.rgb, rcp(++prevData.a));
