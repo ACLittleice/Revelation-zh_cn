@@ -181,7 +181,7 @@ void main() {
 		#endif
 
 		// Remap sss amount to [0, 1] range
-		sssAmount = remap(64.0 * r255, 1.0, sssAmount) * eyeSkylightSmooth * SUBSURFACE_SCATTERING_STRENGTH;
+		sssAmount = linearstep(64.0 * r255, 1.0, sssAmount) * eyeSkylightSmooth * SUBSURFACE_SCATTERING_STRENGTH;
 
 		// Ambient occlusion
 		#if AO_ENABLED > 0 && !defined SSILVB_ENABLED

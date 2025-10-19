@@ -29,7 +29,7 @@ void SampleHorizonCos(in vec2 coord, in vec2 offset, in vec3 viewPos, in vec3 vi
 	float sNormV = inversesqrt(sLenV);
 
 	float sHorizonCos = dot(sHorizonV, viewDir) * sNormV;
-	sHorizonCos = mix(sHorizonCos, cHorizonCos, remap(falloff.x, falloff.y, sLenV));
+	sHorizonCos = mix(sHorizonCos, cHorizonCos, linearstep(falloff.x, falloff.y, sLenV));
 	cHorizonCos = max(sHorizonCos, cHorizonCos);
 }
 

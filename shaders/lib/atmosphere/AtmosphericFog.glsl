@@ -106,7 +106,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 
 	for (uint i = 0u; i < steps; ++i, rayPos += rayStep, shadowPos += shadowStep) {
 		vec2 stepFogmass = CalculateFogDensity(rayPos);
-		stepFogmass += remap(cumulusTopAltitude, CLOUD_CU_ALTITUDE, rayPos.y) * uniformFog;
+		stepFogmass += linearstep(cumulusTopAltitude, CLOUD_CU_ALTITUDE, rayPos.y) * uniformFog;
 
 		if (dot(stepFogmass, vec2(1.0)) < EPS) continue; // Faster than maxOf()
 

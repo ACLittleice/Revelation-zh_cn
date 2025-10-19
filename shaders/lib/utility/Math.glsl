@@ -88,10 +88,23 @@ float sdot(vec4 x) 	 	 { return dot(x, x); }
 vec2  sincos(float x)    { return vec2(sin(x), cos(x)); }
 vec2  cossin(float x)    { return vec2(cos(x), sin(x)); }
 
+float mean(vec2 v)       { return dot(v, vec2(1.0 / 3.0)); }
 float mean(vec3 v)       { return dot(v, vec3(1.0 / 3.0)); }
+float mean(vec4 v)       { return dot(v, vec4(1.0 / 3.0)); }
 
-float remap(float e0, float e1, float x) { return saturate((x - e0) * rcp(e1 - e0)); }
-vec3  remap(float e0, float e1, vec3 x)  { return saturate((x - e0) * rcp(e1 - e0)); }
+//================================================================================================//
+
+float linearstep(float a, float b, float x) {
+	return saturate((x - a) / (b - a));
+}
+
+vec2 linearstep(vec2 a, vec2 b, vec2 x) {
+	return saturate((x - a) / (b - a));
+}
+
+vec3 linearstep(vec3 a, vec3 b, vec3 x) {
+	return saturate((x - a) / (b - a));
+}
 
 //================================================================================================//
 
@@ -146,31 +159,18 @@ float fastAsin(float x) {
     return hPI - fastAcos(x);
 }
 
-/*
-// Handbook of Mathematical Functions
-// M. Abramowitz and I.A. Stegun, Ed.
-// Absolute error <= 6.7e-5
-// Source: https://web.archive.org/web/20161223122122/http://http.developer.nvidia.com:80/Cg/acos.html
-float FastAcos(in float x) {
-	float negate = float(x < 0.0);
-	x = abs(x);
-	float ret = -0.0187293;
-	ret = ret * x;
-	ret = ret + 0.0742610;
-	ret = ret * x;
-	ret = ret - 0.2121144;
-	ret = ret * x;
-	ret = ret + 1.5707288;
-	ret = ret * sqrt(1.0 - x);
-	ret = ret - 2.0 * negate * ret;
-	return negate * PI + ret;
+vec2 fastAcos(in vec2 x) {
+    return vec2(fastAcos(x.x), fastAcos(x.y));
 }
-*/
+
+vec2 fastAsin(in vec2 x) {
+    return vec2(fastAsin(x.x), fastAsin(x.y));
+}
 
 // https://www.desmos.com/calculator/cd3mvg1gfo
 float approxExp(in float x) { return rcp(x * x - x + 1.0); }
 
-float cubeLength(in vec2 v) {
+float cubicLength(in vec2 v) {
     vec2 t = abs(cube(v));
     return pow(t.x + t.y, 1.0 / 3.0);
 }

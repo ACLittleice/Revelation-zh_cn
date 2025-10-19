@@ -235,7 +235,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 			// Intersect the volume
 			if (intersection.y > 0.0) {
-				float withinVolumeSmooth = remap(cumulusThickness + 32.0, cumulusThickness - 64.0, abs(r * 2.0 - (cumulusBottomRadius + cumulusTopRadius)));
+				float withinVolumeSmooth = linearstep(cumulusThickness + 32.0, cumulusThickness - 64.0, abs(r * 2.0 - (cumulusBottomRadius + cumulusTopRadius)));
 
 				float rayLength = clamp(intersection.y - intersection.x, 0.0, 1e5 - withinVolumeSmooth * 6e4);
 
@@ -320,7 +320,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 				}
 
 				// Remap to [0, 1]
-				transmittance = remap(cloudMinTransmittance, 1.0, transmittance);
+				transmittance = linearstep(cloudMinTransmittance, 1.0, transmittance);
 
 				// Update integral data
 				if (transmittance < 1.0 - cloudEpsilon) {

@@ -97,7 +97,7 @@ float CalculateCloudShadows(in vec3 rayPos) {
 
 	float cloudShadow = exp2(-rLOG2 * cumulusExtinction * opticalDepth * stepLength);
 
-	float timeFade = remap(0.05, 0.1, worldLightVector.y);
+	float timeFade = linearstep(0.05, 0.1, worldLightVector.y);
 	return oms(timeFade) + cloudShadow * timeFade;
 }
 #endif
