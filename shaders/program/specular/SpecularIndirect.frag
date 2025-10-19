@@ -80,7 +80,7 @@ void main() {
 			vec3 worldNormal = FetchWorldNormal(gbufferData0);
 
 			vec2 lightmap = Unpack2x8U(gbufferData0.x);
-			lightmap.y = remap(0.3, 0.7, lightmap.y);
+			lightmap.y = linearstep(0.3, 0.7, lightmap.y);
 
 			float dither = BlueNoiseTemporal(screenTexel);
 			specularOut = CalculateSpecularReflections(material, worldNormal, screenPos, worldDir, viewPos, lightmap.y, dither);
