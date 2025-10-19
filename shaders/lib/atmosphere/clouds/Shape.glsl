@@ -210,9 +210,9 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	cloudDensity = linearstep(sqr(detailNoise) * sqr(0.75 - heightFraction * 0.5), 1.0, cloudDensity);
 
 	// Density profile
-	float densityProfile = sqr(saturate(heightFraction * 4.0));
+	float densityProfile = sqr(saturate(heightFraction * 5.0));
 	densityProfile *= saturate(5.0 - heightFraction * 5.0);
-	return approxSqrt(cloudDensity) * densityProfile;
+	return cloudDensity * (2.0 - cloudDensity) * densityProfile;
 }
 
 #endif
