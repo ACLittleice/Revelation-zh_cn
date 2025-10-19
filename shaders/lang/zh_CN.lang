@@ -86,7 +86,7 @@ option.CLOUD_TAAU_ENABLED=时域升采样
 option.CLOUD_TAAU_SCALE=升采样缩放比
 suffix.CLOUD_TAAU_SCALE=x
 
-option.CLOUD_TAAU_CLIPPING=椭球交裁切
+option.CLOUD_TAAU_CLIPPING=方差裁切
 option.CLOUD_MAX_ACCUM_FRAMES=最大累积帧数
 option.CLOUD_TAAU_ANTIFLICKER=抗闪烁
 
@@ -329,7 +329,7 @@ option.SELECTION_BOX_COLOR_B=选择框颜色-§1蓝
 option.TAA_ENABLED=时域抗锯齿(TAA)
 option.TAA_CLOSEST_FRAGMENT=片元择邻
 option.TAA_SHARPEN=锐化
-option.TAA_CLIPPING=椭球交裁切
+option.TAA_CLIPPING=方差裁切
 option.TAA_AGGRESSION=裁切容差
 option.TAA_MAX_ACCUM_FRAMES=最大累积帧数
 option.TAA_ANTIFLICKER=抗闪烁
