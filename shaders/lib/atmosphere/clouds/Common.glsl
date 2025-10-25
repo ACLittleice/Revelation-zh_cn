@@ -103,7 +103,7 @@ const float cumulusThickness 		= CLOUD_CU_THICKNESS;
 const float cumulusBottomAltitude 	= CLOUD_CU_ALTITUDE;
 
 const float cumulusTopAltitude 		= cumulusBottomAltitude + cumulusThickness;
-const float cumulusTopOffset        = 200.0;
+const float cumulusTopOffset        = 500.0;
 
 const float cumulusBottomRadius     = planetRadius + cumulusBottomAltitude;
 const float cumulusTopRadius        = planetRadius + cumulusTopAltitude;
@@ -118,9 +118,9 @@ const float cumulusScattering 		= 0.06;
 const float stratusScattering 		= 0.04;
 const float cirrusScattering 		= 0.01;
 
-const float cumulusAbsorption 		= 0.0;
-const float stratusAbsorption 		= 0.0;
-const float cirrusAbsorption 		= 0.0;
+const float cumulusAbsorption 		= 0.002;
+const float stratusAbsorption 		= 0.002;
+const float cirrusAbsorption 		= 0.002;
 
 const float cumulusExtinction 		= cumulusScattering + cumulusAbsorption;
 const float stratusExtinction 		= stratusScattering + stratusAbsorption;

@@ -105,7 +105,7 @@ vec3 RenderCloudMid(in vec2 rayPos, in vec3 rayDir, in float noise, in float pha
 
 		// Approximate sunlight multi-scattering
 		float msVolume = 1.0 - exp2(-64.0 * density);
-		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phase, msVolume * 0.85);
+		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phase, msVolume * stratusAlbedo);
 
 		float opticalDepthSky = density * (cloudMidThickness * 0.5 * stratusExtinction * -rLOG2);
 
@@ -158,7 +158,7 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float noise, in float ph
 
 		// Approximate sunlight multi-scattering
 		float msVolume = 1.0 - exp2(-64.0 * density);
-		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phase, msVolume * 0.85);
+		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phase, msVolume * cirrusAlbedo);
 
 		float opticalDepthSky = density * (cloudHighThickness * 0.5 * cirrusExtinction * -rLOG2);
 
@@ -278,7 +278,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 						// Approximate sunlight multi-scattering
 						float msVolume = 1.0 - exp2(-2.0 * (curve(stepDensity) * 4.0 + dimensionalProfile));
-						float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phase, msVolume * 0.95);
+						float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phase, msVolume * cumulusAlbedo);
 
 						#if CLOUD_CU_SKYLIGHT_SAMPLES > 0
 							// Compute the optical depth of skylight through clouds
