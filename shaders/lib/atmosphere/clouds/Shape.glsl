@@ -178,7 +178,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	if (coverage < 0.25) return 0.0;
 
 	// Vertical profile
-	float cloudType = min(cloudMap.x, cloudMap.y);
+	float cloudType = cloudMap.y * coverage;
 	float verticalProfile = GetVerticalProfile(heightFraction, cloudType);
 
 	dimensionalProfile = saturate(verticalProfile * coverage);
