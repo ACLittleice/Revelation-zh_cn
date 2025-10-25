@@ -62,10 +62,8 @@ option.PLANET_GROUND=Planet Ground
 option.VIEWER_BASE_ALTITUDE=Viewer Base Altitude
 suffix.VIEWER_BASE_ALTITUDE=m
 
-option.ATMOSPHERE_BOTTOM_ALTITUDE=Atmosphere Bottom Altitude
-suffix.ATMOSPHERE_BOTTOM_ALTITUDE=m
-option.ATMOSPHERE_TOP_ALTITUDE=Atmosphere Top Altitude
-suffix.ATMOSPHERE_TOP_ALTITUDE=m
+option.ATMOSPHERE_THICKNESS=Atmosphere Thickness
+suffix.ATMOSPHERE_THICKNESS=m
 
 option.SUN_RADIUS_MULT=Sun Radius Multiplier
 
