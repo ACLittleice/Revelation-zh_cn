@@ -50,8 +50,8 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 
 	vec3 worldDir = worldPos * norm;
 
-	if (skyMask && viewerHeight < cumulusBottomRadius) {
-		vec2 intersection = RaySphericalShellIntersection(viewerHeight, worldDir.y, planetRadius - 128.0, cumulusBottomRadius);
+	if (skyMask && viewerHeight < cumulusTopRadius) {
+		vec2 intersection = RaySphericalShellIntersection(viewerHeight, worldDir.y, planetRadius - 128.0, cumulusTopRadius);
 
 		// Not intersecting the volume
 		if (intersection.y < 0.0) return mat2x3(vec3(0.0), vec3(1.0));
@@ -106,7 +106,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 
 	for (uint i = 0u; i < steps; ++i, rayPos += rayStep, shadowPos += shadowStep) {
 		vec2 stepFogmass = CalculateFogDensity(rayPos);
-		stepFogmass += linearstep(cumulusTopAltitude, CLOUD_CU_ALTITUDE, rayPos.y) * uniformFog;
+		stepFogmass += linearstep(cumulusTopAltitude, cumulusBottomAltitude, rayPos.y) * uniformFog;
 
 		if (dot(stepFogmass, vec2(1.0)) < EPS) continue; // Faster than maxOf()
 
