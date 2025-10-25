@@ -175,14 +175,6 @@ void main() {
 		bloomyFogMask = mean(waterFog[1]);
 	}
 
-	// Rainbows
-	#ifdef RAINBOWS
-		float rainbowVis = wetness * oms(rainStrength);
-		if (rainbowVis > EPS) {
-			sceneOut += RenderRainbows(LdotV, viewDistance) * global.light.directIlluminance * rainbowVis;
-		}
-	#endif
-
 	// Vanilla fog
 	RenderVanillaFog(sceneOut, bloomyFogMask, viewDistance);
 

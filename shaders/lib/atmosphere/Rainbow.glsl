@@ -9,7 +9,7 @@ vec3 RainbowPhase(in float angle, in vec3 angleDev, in float falloff) {
     return exp2(-falloff * sqr(angle - angleDev * (PI / 180.0)));
 }
 
-vec3 RenderRainbows(in float mu, in float d) {
+vec3 RenderRainbows(in float mu) {
     float theta = fastAcos(saturate(-mu));
 
 	// Primary Rainbow
@@ -18,8 +18,5 @@ vec3 RenderRainbows(in float mu, in float d) {
 	// Secondary Rainbow
     phase += RainbowPhase(theta, vec3(50.1 + 0.75, 51.5, 53.7 - 1.0), 2048.0) * (RAINBOWS_SECONDARY_INTENSITY * rPI);
 
-	// Distance Fade
-    phase *= smoothstep(256.0, 384.0, d);
-
-    return phase * 1e-2;
+    return phase * 0.25;
 }

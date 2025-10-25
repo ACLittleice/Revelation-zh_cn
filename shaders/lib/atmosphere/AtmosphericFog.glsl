@@ -1,3 +1,5 @@
+#include "/lib/atmosphere/Rainbow.glsl"
+
 uniform vec3 fogMieExtinction;
 uniform vec3 fogMieScattering;
 uniform vec3 fogRayleighExtinction;
@@ -5,6 +7,8 @@ uniform vec3 fogRayleighScattering;
 
 uniform float biomeSandstorm;
 uniform float biomeSnowstorm;
+
+//================================================================================================//
 
 // x: Mie y: Rayleigh
 const vec2 falloffScale = -1.0 / vec2(8.0, 32.0);
@@ -29,6 +33,8 @@ vec2 CalculateFogDensity(in vec3 rayPos) {
 	density.x *= sqr(noise) * (2.0 + biomeSandstorm + biomeSnowstorm);
 	return density;
 }
+
+//================================================================================================//
 
 #if !defined CLOUD_SHADOWS || defined PASS_SKY_MAP
 	#undef VF_CLOUD_SHADOWS
@@ -165,6 +171,14 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 	vec3 scattering = scatteringSun * global.light.directIlluminance;
 	scattering += scatteringSky * uniformPhase * global.light.skyIlluminance;
 	scattering *= eyeSkylightSmooth;
+
+	// Apply rainbows
+	#ifdef RAINBOWS
+		float visibility = wetness * oms(rainStrength);
+		if (visibility > EPS) {
+			scattering *= 1.0 + RenderRainbows(LdotV) * visibility;
+		}
+	#endif
 
 	return mat2x3(scattering, transmittance);
 }
