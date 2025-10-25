@@ -60,7 +60,7 @@ float CloudMultiScatteringApproximation(in float opticalDepth, in float phase, i
 	for (uint ms = 1u; ms < cloudMsCount; ++ms) {
 		phase = mix(uniformPhase, phase, cloudMsFalloffC);
 
-	#if 0
+	#if 1
 		float transmittance = exp2(-rLOG2 * extinctionFalloff * opticalDepth);
 	#else
 		float transmittance = rcp(1.0 + 2.718 * extinctionFalloff * opticalDepth);
@@ -72,7 +72,7 @@ float CloudMultiScatteringApproximation(in float opticalDepth, in float phase, i
 		extinctionFalloff *= extinctionFalloff;
 	}
 
-	float energyEstimate = msVolume / oms(msVolume);
+	float energyEstimate = 0.25 + 0.75 * msVolume / oms(msVolume);
 	return single + multiple * energyEstimate;
 }
 
