@@ -30,7 +30,6 @@ layout (local_size_x = 16, local_size_y = 16) in;
 //======// Uniform //=============================================================================//
 
 writeonly uniform image2D cloudOriginImg;
-writeonly uniform image2D cloudDepthOriginImg;
 
 #include "/lib/universal/Uniform.glsl"
 
@@ -90,5 +89,5 @@ void main() {
 	}
 
 	imageStore(cloudOriginImg, screenTexel, cloudOut);
-	imageStore(cloudDepthOriginImg, screenTexel, vec4(cloudDepth));
+	imageStore(cloudOriginImg, screenTexel + ivec2(viewSize * 0.5), vec4(cloudDepth));
 }

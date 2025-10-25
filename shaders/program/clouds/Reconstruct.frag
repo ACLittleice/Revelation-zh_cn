@@ -25,7 +25,6 @@ layout (location = 1) out uint frameOut;
 //======// Uniform //=============================================================================//
 
 uniform sampler2D cloudOriginTex;
-uniform sampler2D cloudDepthOriginTex;
 
 #include "/lib/universal/Uniform.glsl"
 
@@ -90,7 +89,7 @@ void main() {
 	currCoord = min(currCoord, currScale - viewPixelSize);
 
 	// Fetch closest cloud depth
-	float cloudDepth = minOf(textureGather(cloudDepthOriginTex, currCoord));
+	float cloudDepth = minOf(textureGather(cloudOriginTex, currCoord + 0.5));
 
 	// Skip ground
 	if (cloudDepth < EPS) return;
