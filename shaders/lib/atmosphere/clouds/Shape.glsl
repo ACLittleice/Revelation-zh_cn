@@ -167,7 +167,6 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	vec3 windOffset = windVelocity * worldTimeCounter;
 
 	rayPos -= windOffset;
-	rayPos -= windDir * cumulusTopOffset * heightFraction;
 	rayPos.xz += cameraPosition.xz;
 
 	// Sample cloud map
@@ -185,6 +184,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	dimensionalProfile = saturate(verticalProfile * coverage);
 	// if (dimensionalProfile < cloudEpsilon) return 0.0;
 
+	rayPos -= windDir * cumulusTopOffset * heightFraction;
 	vec3 position = rayPos * 4e-4;
 	float baseNoise = 1.0 - texture(baseNoiseTex, position).x;
 
