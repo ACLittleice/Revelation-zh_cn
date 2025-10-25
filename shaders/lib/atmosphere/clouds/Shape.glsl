@@ -158,7 +158,7 @@ float CloudHighDensity(in vec2 rayPos) {
 float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dimensionalProfile, in bool detail) {
 	// Remap the height of the clouds to the range of [0, 1]
 	float rayRadius = sdot(rayPos); rayRadius *= inversesqrt(rayRadius);
-	heightFraction = (rayRadius - cumulusBottomRadius) * rcp(cumulusThickness);
+	heightFraction = saturate((rayRadius - cumulusBottomRadius) * rcp(cumulusThickness));
 
 	// Wind field
 	const float windAngle = radians(45.0);
@@ -191,7 +191,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	// Transition from wispy shapes to billowy shapes over height
 	// baseNoise = mix(baseNoise, 1.0 - baseNoise, saturate(heightFraction * 8.0));
 
-	float cloudDensity = ValueErosion(dimensionalProfile, baseNoise);
+	float cloudDensity = ValueErosion(dimensionalProfile, baseNoise * 0.5);
 	if (cloudDensity < cloudEpsilon) return 0.0;
 
 	// Detail erosion
@@ -207,7 +207,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 		// detailNoise = mix(1.0 - detailNoise, detailNoise, saturate(heightFraction * 8.0));
 	}
 	#endif
-	cloudDensity = ValueErosion(cloudDensity, sqr(detailNoise * (0.7 - heightFraction * 0.5)));
+	cloudDensity = ValueErosion(cloudDensity, sqr(detailNoise * verticalProfile));
 
 	// Density profile
 	cloudDensity *= remap(heightFraction, 0.1, 0.25, 0.1, 1.0) * (2.0 - cloudDensity);

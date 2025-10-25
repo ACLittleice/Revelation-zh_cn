@@ -135,16 +135,6 @@ const float cloudMinTransmittance   = 0.05;
 
 //================================================================================================//
 
-uniform sampler3D baseNoiseTex; // 3D perlin-alligator noise
-uniform sampler3D detailNoiseTex; // 3D perlin-worley noise
-
-uniform sampler2D cloudMapTex;
-// uniform sampler2D verticalLut;
-uniform sampler2D curlNoiseTex;
-uniform sampler2D nubisCirroTex;
-
-//================================================================================================//
-
 // From [Schneider, 2015]
 float remap(float value, float orignalMin, float orignalMax, float newMin, float newMax) {
     return newMin + saturate((value - orignalMin) / (orignalMax - orignalMin)) * (newMax - newMin);

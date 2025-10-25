@@ -6,7 +6,6 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-	Pass: Generate BRDF LUT
 	Reference: https://www.gamedevs.org/uploads/real-shading-in-unreal-engine-4.pdf
                https://ggx-research.github.io/publication/2023/06/09/publication-ggx.html
 
@@ -71,9 +70,9 @@ vec2 IntegrateBRDF(in float roughness, in float NdotV) {
 
 //======// Main //================================================================================//
 void main() {
-	ivec2 lookupTexel = ivec2(gl_GlobalInvocationID.xy);
-	vec2 lookupCoord = (vec2(lookupTexel) + 0.5) / vec2(imageSize(brdfLutImg));
+	ivec2 gid = ivec2(gl_GlobalInvocationID.xy);
+	vec2 uv = (vec2(gid) + 0.5) / vec2(imageSize(brdfLutImg));
 
-    vec2 brdf = IntegrateBRDF(lookupCoord.x, lookupCoord.y);
-	imageStore(brdfLutImg, lookupTexel, vec4(brdf, 0.0, 1.0));
+    vec2 brdf = IntegrateBRDF(uv.x, uv.y);
+	imageStore(brdfLutImg, gid, vec4(brdf, 0.0, 1.0));
 }
