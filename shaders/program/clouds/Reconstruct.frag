@@ -86,7 +86,7 @@ void main() {
 
 	const float currScale = rcp(float(CLOUD_TAAU_SCALE));
 	vec2 currCoord = screenCoord * currScale - taaOffset * 0.5;
-	currCoord = min(currCoord, currScale - viewPixelSize);
+	currCoord = min(currCoord, currScale - viewPixelSize * 2.0);
 
 	// Fetch closest cloud depth
 	float cloudDepth = minOf(textureGather(cloudOriginTex, currCoord + 0.5));
