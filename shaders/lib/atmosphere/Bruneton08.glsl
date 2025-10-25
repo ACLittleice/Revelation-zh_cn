@@ -299,7 +299,7 @@ vec3 GetSkyRadianceToPoint(
         // Compute the distance to the top atmosphere boundary along the view ray,
         // assuming the viewer is in space (or NaN if the view ray does not intersect
         // the atmosphere).
-        vec3 view_ray = normalize(point);
+        vec3 view_ray = normalize(point - camera);
         float r = length(camera);
         float rmu = dot(camera, view_ray);
         float distance_to_top_atmosphere_boundary = -rmu - sqrt(rmu * rmu - r * r + atmosphere_top_radius_sq);
@@ -316,7 +316,7 @@ vec3 GetSkyRadianceToPoint(
         float mu = rmu / r;
         float mu_s = dot(camera, sun_direction) / r;
         float nu = dot(view_ray, sun_direction);
-        float d = length(point);
+		float d = length(point - camera);
         bool ray_r_mu_intersects_ground = RayIntersectsGround(r, mu);
 
         transmittance = GetTransmittance(r, mu, d, ray_r_mu_intersects_ground);
