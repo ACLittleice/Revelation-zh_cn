@@ -158,7 +158,7 @@ float CloudHighDensity(in vec2 rayPos) {
 float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dimensionalProfile, in bool detail) {
 	// Remap the height of the clouds to the range of [0, 1]
 	float rayRadius = sdot(rayPos); rayRadius *= inversesqrt(rayRadius);
-	heightFraction = saturate((rayRadius - cumulusBottomRadius) * rcp(cumulusThickness));
+	heightFraction = (rayRadius - cumulusBottomRadius) * rcp(cumulusThickness);
 
 	// Wind field
 	const float windAngle = radians(45.0);
@@ -179,17 +179,17 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	if (coverage < 0.25) return 0.0;
 
 	// Vertical profile
-	float cloudType = cloudMap.y * sqr(coverage);
+	float cloudType = min(cloudMap.x, cloudMap.y);
 	float verticalProfile = GetVerticalProfile(heightFraction, cloudType);
 
 	dimensionalProfile = saturate(verticalProfile * coverage);
 	// if (dimensionalProfile < cloudEpsilon) return 0.0;
 
 	vec3 position = rayPos * 4e-4;
-	float baseNoise = texture(baseNoiseTex, position).x;
+	float baseNoise = 1.0 - texture(baseNoiseTex, position).x;
 
 	// Transition from wispy shapes to billowy shapes over height
-	baseNoise = mix(baseNoise, 1.0 - baseNoise, saturate(heightFraction * 8.0));
+	// baseNoise = mix(baseNoise, 1.0 - baseNoise, saturate(heightFraction * 8.0));
 
 	float cloudDensity = ValueErosion(dimensionalProfile, baseNoise);
 	if (cloudDensity < cloudEpsilon) return 0.0;
@@ -207,11 +207,11 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 		// detailNoise = mix(1.0 - detailNoise, detailNoise, saturate(heightFraction * 8.0));
 	}
 	#endif
-	cloudDensity = linearstep(sqr(detailNoise) * sqr(0.75 - heightFraction * 0.5), 1.0, cloudDensity);
+	cloudDensity = ValueErosion(cloudDensity, sqr(detailNoise * (0.7 - heightFraction * 0.5)));
 
 	// Density profile
-	float densityProfile = sqr(saturate(heightFraction * 5.0));
-	return cloudDensity * (2.0 - cloudDensity) * densityProfile;
+	cloudDensity *= remap(heightFraction, 0.1, 0.25, 0.1, 1.0) * (2.0 - cloudDensity);
+	return cloudDensity;
 }
 
 #endif
