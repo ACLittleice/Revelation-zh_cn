@@ -183,24 +183,6 @@ void main() {
 		// Remap sss amount to [0, 1] range
 		sssAmount = linearstep(64.0 * r255, 1.0, sssAmount) * eyeSkylightSmooth * SUBSURFACE_SCATTERING_STRENGTH;
 
-		// Ambient occlusion
-		#if AO_ENABLED > 0 && !defined SSILVB_ENABLED
-			vec3 ao = vec3(1.0);
-			#if AO_ENABLED == 1
-				ao.x = CalculateSSAO(screenCoord, viewPos, viewNormal, SampleStbnUnitvec2(screenTexel, frameCounter));
-			#else
-				ao.x = CalculateGTAO(screenCoord, viewPos, viewNormal, SampleStbnVec2(screenTexel, frameCounter));
-			#endif
-
-			#ifdef AO_MULTI_BOUNCE
-				ao = ApproxMultiBounce(ao.x, albedo);
-			#else
-				ao = vec3(ao.x);
-			#endif
-		#else
-			const float ao = 1.0;
-		#endif
-
 		// Cloud shadows
 		#ifdef CLOUD_SHADOWS
 			// float cloudShadow = CalculateCloudShadows(worldPos);
@@ -224,80 +206,91 @@ void main() {
 		float NdotL = dot(worldNormal, worldLightVector);
 
 		bool doShadows = NdotL > 1e-3;
-		bool doSss = sssAmount > 1e-3;
-		bool inShadowMapRange = distanceFade < EPS;
 
 		// Shadows and SSS
-        if (doShadows || doSss) {
-			vec3 shadow = sunlightMult;
+        if (doShadows || sssAmount > 1e-3) {
+			vec3 shadow = vec3(1.0);
 
-			// Apply shadowmap
-        	if (inShadowMapRange) {
-				float distortionFactor;
-				vec3 normalOffset = flatNormal * (worldDistSquared * 1e-4 + 3e-2) * (2.0 - saturate(NdotL));
-				vec3 shadowScreenPos = WorldToShadowScreenSpace(worldPos + normalOffset, distortionFactor);
-
-				if (saturate(shadowScreenPos) == shadowScreenPos) {
-					vec2 blockerSearch;
-					// Sub-surface scattering
-					if (doSss) {
-						blockerSearch = BlockerSearchSSS(shadowScreenPos, dither, 0.5 * distortionFactor);
-						vec3 subsurfaceScattering = CalculateSubsurfaceScattering(albedo, sssAmount, blockerSearch.y, LdotV);
-
-						// Formula from https://www.alanzucconi.com/2017/08/30/fast-subsurface-scattering-1/
-						// float bssrdf = sqr(saturate(dot(worldDir, worldLightVector + 0.2 * worldNormal))) * 4.0;
-						sceneOut += subsurfaceScattering * sunlightMult * ao;
-					} else {
-						blockerSearch.x = BlockerSearch(shadowScreenPos, dither, 0.5 * distortionFactor);
-					}
-
-					// Shadows
-					if (doShadows) {
-						shadowScreenPos.z -= (worldDistSquared * 1e-9 + 3e-6) * (1.0 + dither) / distortionFactor * shadowDistance;
-
-						shadow *= PercentageCloserFilter(shadowScreenPos, worldPos, dither, 0.5 * blockerSearch.x * distortionFactor);
-					}
-				}
+			// PCSS
+        	if (distanceFade < EPS) {
+				vec3 normalOffset = flatNormal * (approxSqrt(worldDistSquared) * 1e-2 + 3e-2) * (2.0 - saturate(NdotL));
+				shadow = CalculatePCSS(worldPos, normalOffset, dither, sssAmount);
 			}
 
-			// Process diffuse and specular highlights
-			if (doShadows && dot(shadow, vec3(1.0)) > EPS || doSss && !inShadowMapRange) {
-				#ifdef SCREEN_SPACE_SHADOWS
-					#if defined NORMAL_MAPPING
-						vec3 viewFlatNormal = mat3(gbufferModelView) * flatNormal;
+			if (doShadows) {
+				// Process diffuse and specular highlights
+				if (dot(shadow, vec3(1.0)) > EPS) {
+					#ifdef SCREEN_SPACE_SHADOWS
+						#if defined NORMAL_MAPPING
+							vec3 viewFlatNormal = mat3(gbufferModelView) * flatNormal;
+						#else
+							#define viewFlatNormal viewNormal
+						#endif
+
+						shadow *= materialID == 39u ? 1.0 : ScreenSpaceShadow(viewPos, viewFlatNormal, dither, sssAmount);
+					#endif
+
+					shadow = saturate(shadow) * sunlightMult;
+
+					// Apply parallax shadows
+					#ifdef PARALLAX_SHADOW
+						#if defined PARALLAX && !defined PARALLAX_DEPTH_WRITE
+							shadow *= oms(loadSceneColor(screenTexel).x);
+						#endif
+					#endif
+
+					vec3 halfway = normalize(worldLightVector - worldDir);
+					float NdotV = abs(dot(worldNormal, worldDir));
+					float NdotH = dot(worldNormal, halfway);
+					float LdotH = dot(worldLightVector, halfway);
+
+					// Sunlight diffuse
+					vec3 sunlightDiffuse = DiffuseHammon(LdotV, NdotV, NdotL, NdotH, material.roughness, albedo);
+					sceneOut += shadow * sunlightDiffuse;
+
+					#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+						vec3 f0 = GetMaterialF0(material.metalness, albedo);
 					#else
-						#define viewFlatNormal viewNormal
+						const vec3 f0 = vec3(DEFAULT_DIELECTRIC_F0);
 					#endif
 
-					shadow *= materialID == 39u ? 1.0 : ScreenSpaceShadow(viewPos, viewFlatNormal, dither, sssAmount);
-				#endif
-
-				// Apply parallax shadows
-				#ifdef PARALLAX_SHADOW
-					#if defined PARALLAX && !defined PARALLAX_DEPTH_WRITE
-						shadow *= oms(loadSceneColor(screenTexel).x);
-					#endif
-				#endif
-
-				vec3 halfway = normalize(worldLightVector - worldDir);
-				float NdotV = abs(dot(worldNormal, worldDir));
-				float NdotH = dot(worldNormal, halfway);
-				float LdotH = dot(worldLightVector, halfway);
-
-				// Sunlight diffuse
-				vec3 sunlightDiffuse = DiffuseHammon(LdotV, NdotV, NdotL, NdotH, material.roughness, albedo);
-				sunlightDiffuse += PI * SUBSURFACE_SCATTERING_BRIGHTNESS * uniformPhase * sssAmount * distanceFade;
-				sceneOut += shadow * saturate(sunlightDiffuse);
-
-				#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-					vec3 f0 = GetMaterialF0(material.metalness, albedo);
+					specularHighlight = shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, material.roughness, f0);
+				}
+			} else {
+				// Subsurface scattering
+				#if defined NORMAL_MAPPING
+					vec3 viewFlatNormal = mat3(gbufferModelView) * flatNormal;
 				#else
-					const vec3 f0 = vec3(DEFAULT_DIELECTRIC_F0);
+					#define viewFlatNormal viewNormal
 				#endif
 
-				specularHighlight = shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, material.roughness, f0);
+				float plantMask = float(clamp(materialID, 1000u, 1002u) == materialID || clamp(materialID, 27u, 28u) == materialID);
+				shadow = mix(shadow, vec3(ScreenSpaceShadow(viewPos, viewFlatNormal, dither, sssAmount)), saturate(distanceFade + plantMask * 0.5));
+
+				shadow = saturate(shadow * mix(albedo, vec3(1.0), sqr(luminance(shadow)))) * sunlightMult;
+
+				float phase = HenyeyGreensteinPhase(-LdotV, 0.65) * 0.25 + uniformPhase * 0.75;
+				sceneOut += shadow * phase * SUBSURFACE_SCATTERING_BRIGHTNESS;
 			}
 		}
+
+		// Ambient occlusion
+		#if AO_ENABLED > 0 && !defined SSILVB_ENABLED
+			vec3 ao = vec3(1.0);
+			#if AO_ENABLED == 1
+				ao.x = CalculateSSAO(screenCoord, viewPos, viewNormal, SampleStbnUnitvec2(screenTexel, frameCounter));
+			#else
+				ao.x = CalculateGTAO(screenCoord, viewPos, viewNormal, SampleStbnVec2(screenTexel, frameCounter));
+			#endif
+
+			#ifdef AO_MULTI_BOUNCE
+				ao = ApproxMultiBounce(ao.x, albedo);
+			#else
+				ao = vec3(ao.x);
+			#endif
+		#else
+			const float ao = 1.0;
+		#endif
 
 		// Skylight and bounced sunlight
 		#ifndef SSILVB_ENABLED
@@ -311,10 +304,9 @@ void main() {
 
 				sceneOut += skylight * cube(lightmap.y) * ao;
 
-				// Bounced sunlight
-				float bounce = CalculateApproxBouncedLight(worldNormal);
-				bounce *= pow5(lightmap.y);
-				sceneOut += bounce * sunlightMult * ao;
+				// Fake bounced light
+				float bounce = CalculateFakeBouncedLight(worldNormal);
+				sceneOut += bounce * pow5(lightmap.y) * sunlightMult * ao;
 			}
 		#endif
 

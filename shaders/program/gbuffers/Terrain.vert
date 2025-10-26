@@ -80,14 +80,8 @@ void main() {
 		tbnMatrix[2] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
 		tbnMatrix[0] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * at_tangent.xyz);
 		tbnMatrix[1] = cross(tbnMatrix[0], tbnMatrix[2]) * fastSign(at_tangent.w);
-		if (clamp(materialID, 1000u, 1002u) == materialID || clamp(materialID, 27u, 28u) == materialID) {
-			tbnMatrix[2] = vec3(0.0, 1.0, 0.0);
-		}
 	#else
 		flatNormal = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
-		if (clamp(materialID, 1000u, 1002u) == materialID || clamp(materialID, 27u, 28u) == materialID) {
-			flatNormal = vec3(0.0, 1.0, 0.0);
-		}
 	#endif
 
 	#ifdef WAVING_FOLIAGE
