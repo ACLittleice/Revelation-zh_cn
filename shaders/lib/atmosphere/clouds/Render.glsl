@@ -293,8 +293,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 						#endif
 
 						// Estimate the light optical depth of the ground from the cloud volume
-						float opticalDepthGround = stepDensity * heightFraction * (cumulusThickness * cumulusExtinction * -rLOG2);
-						float scatteringGround = exp2(max(opticalDepthGround, opticalDepthGround * 0.25 - 0.5)) * rPI;
+						float scatteringGround = oms(dimensionalProfile * saturate(heightFraction * 4.0)) * 0.25 * uniformPhase;
 
 						// Compute In-Scatter Probability
 						// See slide 92 of [Schneider, 2017]
@@ -303,8 +302,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 						// float inScatterProbability = depthProbability * verticalProbability;
 						// scatteringSun *= inScatterProbability;
 
-						vec2 scattering = vec2(scatteringSun + scatteringGround * uniformPhase * worldLightVector.y,
-											scatteringSky + scatteringGround);
+						vec2 scattering = vec2(scatteringSun + scatteringGround * worldLightVector.y, scatteringSky);
 
 						float stepOpticalDepth = -rLOG2 * cumulusExtinction * stepDensity * stepSize;
 						float stepTransmittance = exp2(stepOpticalDepth);
