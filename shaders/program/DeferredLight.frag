@@ -214,7 +214,7 @@ void main() {
 			// PCSS
         	if (distanceFade < EPS) {
 				vec3 normalOffset = flatNormal * (approxSqrt(worldDistSquared) * 1e-2 + 3e-2) * (2.0 - saturate(NdotL));
-				shadow = CalculatePCSS(worldPos, normalOffset, dither, sssAmount);
+				shadow = CalculatePCSS(worldPos, normalOffset, dither, sssAmount * float(!doShadows));
 			}
 
 			if (doShadows) {
