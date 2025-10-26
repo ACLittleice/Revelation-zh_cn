@@ -61,13 +61,16 @@ void main() {
 		lightmap = saturate(vec2(vaUV2) * r240);
 	#endif
 
+	// Nether portal
+	lightmap.x = float(mc_Entity.x == 11500.0);
+
 	vertColor = vaColor;
 
     tbnMatrix[2] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
 	tbnMatrix[0] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * at_tangent.xyz);
 	tbnMatrix[1] = cross(tbnMatrix[0], tbnMatrix[2]) * fastSign(at_tangent.w);
 
-	materialID = uint(max(mc_Entity.x - 1e4, 2.0));
+	materialID = mc_Entity.x == 10003.0 ? 3u : 2u;
 
 	#ifdef PHYSICS_OCEAN
 		// basic texture to determine how shallow/far away from the shore the water is

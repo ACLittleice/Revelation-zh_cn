@@ -121,11 +121,14 @@ void main() {
 
 		// Translucent
 		if (glassMask || waterMask) {
-			// Glass absorption
 			if (glassMask) {
+				// Absorption
 				vec3 absorption = log2(gbufferData1.rgb);
 				absorption *= 2.0 * sqrt2(gbufferData1.a);
 				sceneOut *= exp2(absorption);
+
+				// Emissive
+				sceneOut += (2.0 * EMISSIVE_BRIGHTNESS) * Unpack2x8UX(gbufferData0.x) * cube(gbufferData1.rgb * gbufferData1.a);
 			}
 
 			// Apply specular lighting
