@@ -104,7 +104,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 	);
 
 	float stepLength = min(rayLength, far) * rSteps;
-	float uniformFog = 32.0 / far;
+	float uniformFog = 16.0 / far;
 
 	vec3 scatteringSun = vec3(0.0);
 	vec3 scatteringSky = vec3(0.0);
