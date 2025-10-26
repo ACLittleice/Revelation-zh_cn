@@ -175,7 +175,50 @@ vec4 textureCatmullRomFast(in sampler2D tex, in vec2 coord) {
     vec4 s0 = texture(tex, vec2(tc12.x,  tc0.y));
     vec4 s1 = texture(tex, vec2(tc0.x,  tc12.y));
     vec4 s2 = texture(tex, vec2(tc12.x, tc12.y));
-    vec4 s3 = texture(tex, vec2(tc3.x,   tc0.y));
+    vec4 s3 = texture(tex, vec2(tc3.x,  tc12.y));
+    vec4 s4 = texture(tex, vec2(tc12.x,  tc3.y));
+
+    float cw0 = w12.x * w0.y;
+    float cw1 = w0.x  * w12.y;
+    float cw2 = w12.x * w12.y;
+    float cw3 = w3.x  * w12.y;
+    float cw4 = w12.x * w3.y;
+
+    s0 *= cw0;
+    s1 *= cw1;
+    s2 *= cw2;
+    s3 *= cw3;
+    s4 *= cw4;
+
+    vec4 color = (s0 + s1 + s2 + s3 + s4) / (cw0 + cw1 + cw2 + cw3 + cw4);
+    return color;
+}
+
+vec4 textureCatmullRomFastAntiRing(in sampler2D tex, in vec2 coord) {
+	vec2 res = vec2(textureSize(tex, 0));
+    vec2 pixelSize = 1.0 / res;
+
+    vec2 pos = coord * res;
+    vec2 tc1 = floor(pos - 0.5) + 0.5;
+    vec2 f  = pos - tc1;
+    vec2 f2 = f * f;
+    vec2 f3 = f * f2;
+
+    const float c = 0.5;
+    vec2 w0  = -c         * f3 +  2.0 * c        * f2 - c * f;
+    vec2 w1  =  (2.0 - c) * f3 - (3.0 - c)       * f2 + 1.0;
+    vec2 w2  = -(2.0 - c) * f3 + (3.0 - 2.0 * c) * f2 + c * f;
+    vec2 w3  = c          * f3 - c               * f2;
+    vec2 w12 = w1 + w2;
+
+    vec2 tc0  = pixelSize * (tc1 - 1.0);
+    vec2 tc3  = pixelSize * (tc1 + 2.0);
+    vec2 tc12 = pixelSize * (tc1 + w2 / w12);
+
+    vec4 s0 = texture(tex, vec2(tc12.x,  tc0.y));
+    vec4 s1 = texture(tex, vec2(tc0.x,  tc12.y));
+    vec4 s2 = texture(tex, vec2(tc12.x, tc12.y));
+    vec4 s3 = texture(tex, vec2(tc3.x,  tc12.y));
     vec4 s4 = texture(tex, vec2(tc12.x,  tc3.y));
 
     vec4 minColor = min(min(min(s0, s1), min(s2, s3)), s4);

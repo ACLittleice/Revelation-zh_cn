@@ -85,7 +85,7 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
     if (saturate(prevCoord) != prevCoord) return vec4(currData, 1.0);
 
     #ifdef TAA_SHARPEN
-        vec4 temporalData = textureCatmullRomFast(colortex1, prevCoord);
+        vec4 temporalData = textureCatmullRomFastAntiRing(colortex1, prevCoord);
     #else
         vec4 temporalData = texture(colortex1, prevCoord);
     #endif
@@ -124,10 +124,7 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
         #endif
     #endif
 
-    float subpixelConfidence = sdot(fract(prevCoord * viewSize) - 0.5);
-    subpixelConfidence = 1.0 - saturate(subpixelConfidence) * 0.25;
-
-    float frameIndex = temporalData.a + subpixelConfidence;
+    float frameIndex = temporalData.a + 1.0;
 
     float blendWeight = min(frameIndex, TAA_MAX_ACCUM_FRAMES);
     blendWeight *= 1.0 + sqr(temporalContrast) * TAA_ANTIFLICKER;
