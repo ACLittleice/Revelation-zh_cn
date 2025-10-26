@@ -267,7 +267,7 @@ void main() {
 				float plantMask = float(clamp(materialID, 1000u, 1002u) == materialID || clamp(materialID, 27u, 28u) == materialID);
 				shadow = mix(shadow, vec3(ScreenSpaceShadow(viewPos, viewFlatNormal, dither, sssAmount)), saturate(distanceFade + plantMask * 0.5));
 
-				shadow = saturate(shadow * mix(albedo, vec3(1.0), sqr(luminance(shadow)))) * sunlightMult;
+				shadow = saturate(shadow * mix(albedo, vec3(1.0), sqr(luminance(shadow)) * 0.75)) * sunlightMult;
 
 				float phase = HenyeyGreensteinPhase(-LdotV, 0.65) * 0.25 + uniformPhase * 0.75;
 				sceneOut += shadow * phase * SUBSURFACE_SCATTERING_BRIGHTNESS;
