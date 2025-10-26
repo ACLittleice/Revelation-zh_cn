@@ -190,7 +190,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	// if (dimensionalProfile < cloudEpsilon) return 0.0;
 
 	rayPos -= windDir * cumulusTopOffset * heightFraction;
-	vec3 position = rayPos * 4e-4;
+	vec3 position = rayPos * 3e-4;
 	float baseNoise = 1.0 - texture(baseNoiseTex, position).x;
 
 	// Transition from wispy shapes to billowy shapes over height
@@ -206,13 +206,13 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 		// vec3 curlNoise = texture(curlNoiseTex, position.xz * 2.0).xyz;
 		position += /* curlNoise * 0.05 * oms(heightFraction) -  */windOffset * 1e-4;
 
-		detailNoise = texture(detailNoiseTex, position * 5.0).x;
+		detailNoise = texture(detailNoiseTex, position * 8.0).x;
 
 		// Transition from wispy shapes to billowy shapes over height
 		// detailNoise = mix(1.0 - detailNoise, detailNoise, saturate(heightFraction * 8.0));
 	}
 	#endif
-	cloudDensity = ValueErosion(cloudDensity, sqr(detailNoise * verticalProfile) * 0.75);
+	cloudDensity = ValueErosion(cloudDensity, detailNoise * verticalProfile * 0.25);
 
 	// Density profile
 	cloudDensity *= remap(heightFraction, 0.1, 0.25, 0.1, 1.0);
