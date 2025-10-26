@@ -230,7 +230,7 @@ void main() {
 						shadow *= materialID == 39u ? 1.0 : ScreenSpaceShadow(viewPos, viewFlatNormal, dither, sssAmount);
 					#endif
 
-					shadow = saturate(shadow) * sunlightMult;
+					shadow *= sunlightMult;
 
 					// Apply parallax shadows
 					#ifdef PARALLAX_SHADOW
