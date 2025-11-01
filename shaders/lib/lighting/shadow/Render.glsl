@@ -132,7 +132,8 @@ vec3 CalculatePCSS(in vec3 worldPos, in vec3 normalOffset, in float dither, in f
 
 	vec3 pcss = vec3(1.0);
 	if (saturate(shadowScreenPos) == shadowScreenPos) {
-		float blockerDepth = BlockerSearch(shadowScreenPos, dither, 0.5 * distortionFactor) + sssAmount * 0.1 * dither;
+		float blockerDepth = BlockerSearch(shadowScreenPos, dither, 0.5 * distortionFactor);
+		blockerDepth += sssAmount * SUBSURFACE_SCATTERING_RADIUS * dither;
 		pcss = PercentageCloserFilter(shadowScreenPos, worldPos, dither, blockerDepth * distortionFactor, sssAmount);
 	}
 
