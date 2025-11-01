@@ -342,7 +342,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 			vec3 cloudTemp = RenderCloudMid(rayPos.xz, rayDir, noise.y, phase);
 
 			// Update integral data
-			if (cloudTemp.z > cloudEpsilon) {
+			if (cloudTemp.z > EPS) {
 				float transmittanceTemp = 1.0 - cloudTemp.z;
 
 				// Blend layers
@@ -369,7 +369,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 			vec3 cloudTemp = RenderCloudHigh(rayPos.xz, rayDir, noise.y, phase);
 
 			// Update integral data
-			if (cloudTemp.z > cloudEpsilon) {
+			if (cloudTemp.z > EPS) {
 				float transmittanceTemp = 1.0 - cloudTemp.z;
 
 				// Blend layers
@@ -391,7 +391,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
     vec3 cloudScattering = vec3(0.0);
 
 	// Composite
-	if (cloudTransmittance < 1.0 - cloudEpsilon) {
+	if (cloudTransmittance < 1.0) {
 		vec3 cloudPos = camera + rayDir * cloudDepth;
 
 		// Compute irradiance
