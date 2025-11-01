@@ -59,15 +59,17 @@ float SampleDepthMax4x4(in sampler2D depthTex, in vec2 coord) {
 
 //======// Main //================================================================================//
 void main() {
-    ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
-	vec2 screenCoord = texelToUv(screenTexel);
+    uvec2 localPos = QuadLayout16x16(gl_LocalInvocationIndex);
+    ivec2 texelPos = ivec2(localPos + gl_WorkGroupID.xy * gl_WorkGroupSize.xy);
+
+	vec2 coord = texelToUv(texelPos);
 
 	#ifdef CLOUD_TAAU_ENABLED
-		vec2 renderCoord = (screenCoord + taaOffset * 0.5) * CLOUD_TAAU_SCALE;
+		vec2 renderCoord = (coord + taaOffset * 0.5) * CLOUD_TAAU_SCALE;
 		ivec2 renderTexel = uvToTexel(renderCoord);
 	#else
-		#define renderCoord screenCoord
-		#define renderTexel screenTexel
+		#define renderCoord coord
+		#define renderTexel texelPos
 	#endif
 
 	vec4 cloudOut = vec4(0.0, 0.0, 0.0, 1.0);
@@ -88,6 +90,6 @@ void main() {
 		cloudOut = RenderClouds(worldDir, noise, cloudDepth);
 	}
 
-	imageStore(cloudOriginImg, screenTexel, cloudOut);
-	imageStore(cloudOriginImg, screenTexel + ivec2(viewSize * 0.5), vec4(cloudDepth));
+	imageStore(cloudOriginImg, texelPos, cloudOut);
+	imageStore(cloudOriginImg, texelPos + ivec2(viewSize * 0.5), vec4(cloudDepth));
 }

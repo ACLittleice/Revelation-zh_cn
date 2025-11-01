@@ -55,27 +55,28 @@ float GetClosestDepth(in ivec2 texel) {
 
 //======// Main //================================================================================//
 void main() {
-	ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
+    uvec2 localPos = QuadLayout16x16(gl_LocalInvocationIndex);
+    ivec2 texelPos = ivec2(localPos + gl_WorkGroupID.xy * gl_WorkGroupSize.xy);
 
-    ivec2 currentTexel = screenTexel << 1;
-	float depth = GetClosestDepth(currentTexel);
-	// float depth = loadDepth0(currentTexel);
+    ivec2 renderTexel = texelPos << 1;
+	float depth = GetClosestDepth(renderTexel);
+	// float depth = loadDepth0(renderTexel);
 	#if defined DISTANT_HORIZONS
 		bool dhTerrainMask = depth > 1.0 - EPS;
-		if (dhTerrainMask) depth = loadDepth0DH(currentTexel);
+		if (dhTerrainMask) depth = loadDepth0DH(renderTexel);
 	#endif
 
 	if (depth < 1.0) {
 		#if defined DISTANT_HORIZONS
             if (dhTerrainMask) depth = ViewToScreenDepth(ScreenToViewDepthDH(depth));
 		#endif
-		uvec4 gbufferData0 = loadGbufferData0(currentTexel);
+		uvec4 gbufferData0 = loadGbufferData0(renderTexel);
 		vec3 worldNormal = FetchWorldNormal(gbufferData0);
 
-    	vec2 screenCoord = texelToUv(currentTexel);
+    	vec2 screenCoord = texelToUv(renderTexel);
 		vec3 viewPos = ScreenToViewSpace(vec3(screenCoord, depth));
 
 		vec2 lightmap = Unpack2x8U(gbufferData0.x);
-		imageStore(colorimg3, screenTexel, CalculateSSILVB(screenCoord, viewPos, worldNormal, lightmap));
+		imageStore(colorimg3, texelPos, CalculateSSILVB(screenCoord, viewPos, worldNormal, lightmap));
 	}
 }

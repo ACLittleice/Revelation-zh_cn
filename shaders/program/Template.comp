@@ -41,7 +41,13 @@ uniform sampler2D sampler2;
 
 //======// Main //================================================================================//
 void main() {
-	ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
-    vec2 texCoord = texelToUv(texel);
-	imageStore(colorimg0, texel, vec4(imageLoad(colorimg1, texel).rgb, 1.0));
+	// Z-Order
+	ivec2 texelPos = ivec2(gl_GlobalInvocationID.xy);
+
+	// Quadratic
+    uvec2 localPos = QuadLayout16x16(gl_LocalInvocationIndex);
+    ivec2 texelPos = ivec2(localPos + gl_WorkGroupID.xy * gl_WorkGroupSize.xy);
+
+    vec2 texCoord = texelToUv(texelPos);
+	imageStore(colorimg0, texelPos, vec4(imageLoad(colorimg1, texelPos).rgb, 1.0));
 }

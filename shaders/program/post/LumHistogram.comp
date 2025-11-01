@@ -19,7 +19,7 @@
 
 //======// Input //===============================================================================//
 
-layout (local_size_x = 16, local_size_y = 16) in;
+layout (local_size_x = 8, local_size_y = 8) in;
 const vec2 workGroupsRender = vec2(0.5, 0.5);
 
 //======// Uniform //=============================================================================//
@@ -56,8 +56,9 @@ void main() {
 
 	if (all(lessThan(gl_GlobalInvocationID.xy, imageSize(colorimg4) >> 1u))) {
 		// Compute luminance
-		ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
-		float luminance = luminance(imageLoad(colorimg4, texel).rgb);
+		uvec2 localPos = QuadLayout8x8(gl_LocalInvocationIndex);
+		ivec2 texelPos = ivec2(localPos + gl_WorkGroupID.xy * gl_WorkGroupSize.xy);
+		float luminance = luminance(imageLoad(colorimg4, texelPos).rgb);
 
 		// Update histogram
 		uint binIndex = histogramLumToBin(luminance);

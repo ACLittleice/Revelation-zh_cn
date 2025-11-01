@@ -88,12 +88,13 @@ float CalculateVariance(in ivec2 texel) {
 void main() {
 	SharedPreload();
 
-	ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
+	uvec2 localPos = QuadLayout16x16(gl_LocalInvocationIndex);
+	ivec2 texelPos = ivec2(localPos + gl_WorkGroupID.xy * gl_WorkGroupSize.xy);
 
 	ivec2 offsetToBR = ivec2(halfViewSize.x, 0);
 	ivec2 texelEnd = ivec2(halfViewEnd) - 1;
 
-	vec3 normalDepthData = texelFetch(colortex2, texel + offsetToBR, 0).rgb;
+	vec3 normalDepthData = texelFetch(colortex2, texelPos + offsetToBR, 0).rgb;
 	// vec2 depthGradient = vec2(dFdx(normalDepthData.w), dFdy(normalDepthData.w));
 
 	const ivec2 offset[8] = {
@@ -122,10 +123,10 @@ void main() {
 	//             1.0 / 256.0, 1.0 / 64.0, 3.0 / 128.0, 1.0 / 64.0, 1.0 / 256.0};
 
 
-	vec4 filteredColVar = imageLoad(colorimg3, texel);
+	vec4 filteredColVar = imageLoad(colorimg3, texelPos);
 	float centerLuma = luminance(filteredColVar.rgb);
 
-	float frameIndex = texelFetch(colortex2, texel, 0).a;
+	float frameIndex = texelFetch(colortex2, texelPos, 0).a;
 	float frameCurve = curve(saturate(frameIndex * rcp(16.0)));
 
 	float variance = CalculateVariance(ivec2(gl_LocalInvocationID.xy + padRadius));
@@ -139,7 +140,7 @@ void main() {
     vec3 worldNormal = OctDecodeSnorm(normalDepthData.xy);
 
 	float sumWeight = 1.0;
-	ivec2 randTexel = texel + ivec2((SampleStbnVec2(texel, frameCounter) - 0.5) * float(min(ATROUS_FILTER_SIZE, 16)));
+	ivec2 randTexel = texelPos + ivec2((SampleStbnVec2(texelPos, frameCounter) - 0.5) * float(min(ATROUS_FILTER_SIZE, 16)));
 
 	for (uint i = 0u; i < 8u; ++i) {
 		ivec2 sampleTexel = clamp(randTexel + offset[i] * ATROUS_FILTER_SIZE, ivec2(1), texelEnd);
@@ -165,5 +166,5 @@ void main() {
 	sumWeight = rcp(sumWeight);
 	filteredColVar *= sumWeight;
 	// filteredColVar.a *= sumWeight; // Variance squaring
-	imageStore(colorimg3, texel, filteredColVar);
+	imageStore(colorimg3, texelPos, filteredColVar);
 }

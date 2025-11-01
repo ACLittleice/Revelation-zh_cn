@@ -62,7 +62,8 @@ vec3 MotionBlur(in ivec2 texel) {
 
 //======// Main //================================================================================//
 void main() {
-	ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
+    uvec2 localPos = QuadLayout16x16(gl_LocalInvocationIndex);
+    ivec2 texelPos = ivec2(localPos + gl_WorkGroupID.xy * gl_WorkGroupSize.xy);
 
-    imageStore(colorimg0, screenTexel, vec4(MotionBlur(screenTexel), 1.0));
+    imageStore(colorimg0, texelPos, vec4(MotionBlur(texelPos), 1.0));
 }
