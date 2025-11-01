@@ -174,7 +174,7 @@ void main() {
 	vec3 sunlightMult = cloudShadow * saturate(lightmap.y * 1e6) * global.light.directIlluminance;
 	if (NdotL > 1e-3) {
 		vec3 flatNormal = FetchFlatNormal(gbufferData0);
-		vec3 normalOffset = flatNormal * (approxSqrt(worldDistSquared) * 1e-2 + 3e-2) * (2.0 - saturate(NdotL));
+		vec3 normalOffset = flatNormal * (approxSqrt(worldDistSquared) * 2e-3 + 2e-2) * (2.0 - saturate(NdotL));
 		vec3 shadow = CalculatePCSS(worldPos, normalOffset, dither, 0.0);
 
 		if (dot(shadow, vec3(1.0)) > EPS) {
