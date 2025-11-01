@@ -47,10 +47,10 @@ float BlockerSearch(in vec3 shadowScreenPos, in float dither, in float searchSca
 		sumWeight += weight;
 	}
 
-	blockerDepth *= 1.0 / sumWeight;
-	blockerDepth = clamp((shadowScreenPos.z - blockerDepth) / blockerDepth, 0.02, 0.25);
+	blockerDepth /= sumWeight;
+	blockerDepth = clamp((shadowScreenPos.z - blockerDepth) / blockerDepth, 0.01, 0.1);
 
-	return blockerDepth;
+	return blockerDepth * 2.0;
 }
 
 vec3 CalculateWaterCaustics(in vec3 worldPos, in float waterDepth, in float dither) {
@@ -70,7 +70,7 @@ vec3 CalculateWaterCaustics(in vec3 worldPos, in float waterDepth, in float dith
 		caustics += saturate(1.0 - 20.0 * distance(surfacePos, refractedPos));
 	}
 
-	return -smin(-caustics, -0.2, 0.2) * saturate(exp2(-rLOG2 * waterExtinction * waterDepth));
+	return -smin(-caustics, -0.1, 0.15) * saturate(exp2(-rLOG2 * waterExtinction * waterDepth));
 }
 
 vec3 PercentageCloserFilter(in vec3 shadowScreenPos, in vec3 worldPos, in float dither, in float blockerDepth, in float sssAmount) {
@@ -126,10 +126,13 @@ vec3 PercentageCloserFilter(in vec3 shadowScreenPos, in vec3 worldPos, in float 
 vec3 CalculatePCSS(in vec3 worldPos, in vec3 normalOffset, in float dither, in float sssAmount) {
 	float distortionFactor;
 	vec3 shadowScreenPos = WorldToShadowScreenSpace(worldPos + normalOffset, distortionFactor);
+	shadowScreenPos.z -= 3e-8 * (1.0 + dither) * shadowProjectionInverse[1].y * distortionFactor;
+
+	dither *= TAU;
 
 	vec3 pcss = vec3(1.0);
 	if (saturate(shadowScreenPos) == shadowScreenPos) {
-		float blockerDepth = BlockerSearch(shadowScreenPos, dither, 0.5 * distortionFactor) + sssAmount * 0.5 * dither;
+		float blockerDepth = BlockerSearch(shadowScreenPos, dither, 0.5 * distortionFactor) + sssAmount * 0.1 * dither;
 		pcss = PercentageCloserFilter(shadowScreenPos, worldPos, dither, blockerDepth * distortionFactor, sssAmount);
 	}
 
