@@ -302,7 +302,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 						// float inScatterProbability = depthProbability * verticalProbability;
 						// scatteringSun *= inScatterProbability;
 
-						vec2 scattering = vec2(scatteringSun + scatteringGround * worldLightVector.y, scatteringSky);
+						vec2 scattering = vec2(scatteringSun + scatteringGround * worldLightVector.y, scatteringSky * (0.5 + msVolume));
 
 						float stepOpticalDepth = -rLOG2 * cumulusExtinction * stepDensity * stepSize;
 						float stepTransmittance = exp2(stepOpticalDepth);
