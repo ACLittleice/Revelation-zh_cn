@@ -193,8 +193,8 @@ void main() {
 		#endif
 
 		// Sunlight
-		vec3 sunlightMult = cloudShadow * saturate(lightmap.y * 1e6 + float(isEyeInWater)) * global.light.directIlluminance;
-		vec3 specularHighlight = vec3(0.0);
+		vec3 sunlightBase = cloudShadow * saturate(lightmap.y * 1e6 + float(isEyeInWater)) * global.light.directIlluminance;
+		vec3 specularDirect = vec3(0.0);
 
 		float worldDistSquared = sdot(worldPos);
 		float distanceFade = sqr(pow16(0.64 * rcp(shadowDistance * shadowDistance) * sdot(worldPos.xz)));
@@ -202,9 +202,7 @@ void main() {
 			distanceFade = saturate(distanceFade + float(dhTerrainMask));
 		#endif
 
-		float LdotV = dot(worldLightVector, -worldDir);
 		float NdotL = dot(worldNormal, worldLightVector);
-
 		bool doShadows = NdotL > 1e-3;
 
 		// Shadows and SSS
@@ -217,20 +215,23 @@ void main() {
 				shadow = CalculatePCSS(worldPos, normalOffset, dither, sssAmount * float(!doShadows));
 			}
 
-			if (doShadows) {
-				// Process diffuse and specular highlights
-				if (dot(shadow, vec3(1.0)) > EPS) {
-					#ifdef SCREEN_SPACE_SHADOWS
-						#if defined NORMAL_MAPPING
-							vec3 viewFlatNormal = mat3(gbufferModelView) * flatNormal;
-						#else
-							#define viewFlatNormal viewNormal
-						#endif
+			if (dot(shadow, vec3(1.0)) > EPS) {
+			#ifdef SCREEN_SPACE_SHADOWS
+				#if defined NORMAL_MAPPING
+					vec3 viewFlatNormal = mat3(gbufferModelView) * flatNormal;
+				#else
+					#define viewFlatNormal viewNormal
+				#endif
 
-						shadow *= materialID == 39u ? 1.0 : ScreenSpaceShadow(viewPos, viewFlatNormal, dither, sssAmount);
-					#endif
+				float contactShadow = materialID == 39u ? 1.0 : ScreenSpaceShadow(viewPos, viewFlatNormal, dither, sssAmount);
+			#else
+				float contactShadow = float(doShadows);
+			#endif
 
-					shadow *= sunlightMult;
+				float LdotV = dot(worldLightVector, -worldDir);
+
+				if (doShadows) {
+					shadow *= contactShadow * sunlightBase;
 
 					// Apply parallax shadows
 					#ifdef PARALLAX_SHADOW
@@ -244,7 +245,6 @@ void main() {
 					float NdotH = dot(worldNormal, halfway);
 					float LdotH = dot(worldLightVector, halfway);
 
-					// Sunlight diffuse
 					vec3 sunlightDiffuse = DiffuseHammon(LdotV, NdotV, NdotL, NdotH, material.roughness, albedo);
 					sceneOut += shadow * sunlightDiffuse;
 
@@ -254,23 +254,18 @@ void main() {
 						const vec3 f0 = vec3(DEFAULT_DIELECTRIC_F0);
 					#endif
 
-					specularHighlight = shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, material.roughness, f0);
+					specularDirect = shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, material.roughness, f0);
+				} else {
+					// Subsurface scattering
+					float cutout = float(clamp(materialID, 1000u, 1003u) == materialID || clamp(materialID, 27u, 28u) == materialID);
+					shadow = mix(shadow, vec3(contactShadow), saturate(distanceFade + cutout * 0.75));
+
+					// Wavelength-dependent approximation
+					shadow = saturate(shadow * mix(albedo, vec3(1.0), sqr(luminance(shadow)) * 0.75)) * sunlightBase;
+
+					float phase = HenyeyGreensteinPhase(-LdotV, 0.65) * 0.25 + uniformPhase * 0.75;
+					sceneOut += shadow * phase * SUBSURFACE_SCATTERING_BRIGHTNESS;
 				}
-			} else {
-				// Subsurface scattering
-				#if defined NORMAL_MAPPING
-					vec3 viewFlatNormal = mat3(gbufferModelView) * flatNormal;
-				#else
-					#define viewFlatNormal viewNormal
-				#endif
-
-				float plantMask = float(clamp(materialID, 1000u, 1002u) == materialID || clamp(materialID, 27u, 28u) == materialID);
-				shadow = mix(shadow, vec3(ScreenSpaceShadow(viewPos, viewFlatNormal, dither, sssAmount)), saturate(distanceFade + plantMask * 0.5));
-
-				shadow = saturate(shadow * mix(albedo, vec3(1.0), sqr(luminance(shadow)) * 0.75)) * sunlightMult;
-
-				float phase = HenyeyGreensteinPhase(-LdotV, 0.65) * 0.25 + uniformPhase * 0.75;
-				sceneOut += shadow * phase * SUBSURFACE_SCATTERING_BRIGHTNESS;
 			}
 		}
 
@@ -306,7 +301,7 @@ void main() {
 
 				// Fake bounced light
 				float bounce = CalculateFakeBouncedLight(worldNormal);
-				sceneOut += bounce * pow5(lightmap.y) * sunlightMult * ao;
+				sceneOut += bounce * pow5(lightmap.y) * sunlightBase * ao;
 			}
 		#endif
 
@@ -319,7 +314,7 @@ void main() {
 			// Hard-coded emissive
 			vec4 emissive = HardCodeEmissive(materialID, albedo, worldPos, blocklightColor);
 			#ifndef SSILVB_ENABLED
-				if (emissive.a * lightmap.x > 1e-5) {
+				if (emissive.a * lightmap.x > EPS) {
 					lightmap.x = CalculateBlocklightFalloff(lightmap.x);
 					sceneOut += lightmap.x * emissive.a * (ao * oms(lightmap.x) + lightmap.x) * blocklightColor;
 				}
@@ -333,7 +328,7 @@ void main() {
 
 		// Handheld light
 		#ifdef HANDHELD_LIGHTING
-			if (heldBlockLightValue + heldBlockLightValue2 > 1e-4) {
+			if (heldBlockLightValue + heldBlockLightValue2 > EPS) {
 				float NdotL = saturate(dot(worldNormal, -worldDir)) * 0.8 + 0.2;
 				float attenuation = rcp(1.0 + worldDistSquared) * NdotL;
 				float irradiance = attenuation * max(heldBlockLightValue, heldBlockLightValue2) * HELD_LIGHT_BRIGHTNESS;
@@ -355,15 +350,15 @@ void main() {
 		// Minimal ambient light
 		sceneOut += (worldNormal.y * 0.4 + 0.6) * max(MINIMUM_AMBIENT_BRIGHTNESS, 5e-3 * nightVision) * ao;
 
-		// Apply albedo
+		// Apply albedo (for diffuse)
 		sceneOut *= albedo;
 
 		// Metallic diffuse elimination
 		material.metalness *= 0.2 * lightmap.y + 0.8;
 		sceneOut *= oms(material.metalness);
 
-		// Specular highlights
-		sceneOut += specularHighlight;
+		// Direct specular lighting
+		sceneOut += specularDirect;
 
 		// Output clamp
 		sceneOut = satU16f(sceneOut);
