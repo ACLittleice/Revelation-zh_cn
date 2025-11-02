@@ -22,7 +22,7 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
     vec3 origin = screenPos;
 
     float fixZ = step(viewDir.z, 0.0) * 1e23 - (viewPos.z + near) / viewDir.z;
-    vec3 rayDir = ViewToScreenSpace(viewDir * fixZ + viewPos) - origin;
+    vec3 rayDir = normalize(ViewToScreenSpace(viewDir * fixZ + viewPos) - origin);
 
     rayDir.xy *= viewSize;
     origin.xy *= viewSize;
