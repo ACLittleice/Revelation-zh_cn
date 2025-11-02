@@ -97,26 +97,26 @@ float CloudHighDensity(in vec2 rayPos) {
 
 	// Curl noise to simulate wind, makes the positioning of the clouds more natural
 	// vec2 curlNoise = texture(curlNoiseTex, rayPos * 1e-4).xy * 0.02;
-	vec2 position = (rayPos - windOffset) * 1e-4/*  + curlNoise */;
+	vec2 position = (rayPos - windOffset) * 1.8e-4/*  + curlNoise */;
 
 	float density = 0.0;
 
 	#ifdef CLOUD_CIRRUS
 	/* Cirrus clouds */
 	{
-		float coverage = CLOUD_CI_COVERAGE - 1.5 + texture(cloudMapTex, position * 0.007).x;
+		float coverage = CLOUD_CI_COVERAGE - 1.5 + texture(cloudMapTex, position * 0.005).x;
 		coverage = saturate(coverage + texture(noisetex, position * 0.01).z);
 
 		if (coverage > 0.1) {
-			vec2 p = position - coverage * 0.5 - windOffset * 1e-4;
+			vec2 p = position - coverage * 0.25 - windOffset * 1e-4;
 			float s0 = textureTiling(nubisCirroTex, p * 0.25).x;
-			float s1 = textureTiling(nubisCirroTex, (p + s0 * 0.25) * 0.6).x;
+			float s1 = textureTiling(nubisCirroTex, (p + s0 * 0.25) * 0.5).x;
 			float cirrus = mix(s0, s1, 0.3);
 
-			cirrus *= cirrus * saturate(cirrus + coverage);
-			cirrus *= smoothstep(0.1, 1.0, coverage);
+			cirrus *= saturate(cirrus + coverage);
+			cirrus *= smoothstep(0.1, 0.9, coverage);
 
-			density += cirrus;
+			density += almostUnitIdentity(cirrus);
 		}
 	}
 	#endif
@@ -124,23 +124,23 @@ float CloudHighDensity(in vec2 rayPos) {
 	/* Cirrocumulus clouds */
 	{
 		float coverage = CLOUD_CC_COVERAGE - saturate(texture(noisetex, position * 0.01).z * 1.75);
-		coverage = saturate(texture(noisetex, position * 0.05).z + coverage);
+		coverage = saturate(texture(noisetex, position * 0.04).z + coverage);
 
 		if (coverage > 0.2) {
 			vec2 p = position - coverage * 0.25 - windOffset * 1e-4;
 			float s0 = textureTiling(nubisCirroTex, p * 0.25).z;
-			float s1 = textureTiling(nubisCirroTex, p * 0.65).z;
-			float cirrocumulus = mix(s0, s1, 0.3);
+			float s1 = textureTiling(nubisCirroTex, p * 0.5).z;
+			float cirrocumulus = curve(mix(s0, s1, 0.3));
 
-			cirrocumulus *= cirrocumulus * saturate(cirrocumulus + coverage);
+			cirrocumulus *= saturate(cirrocumulus + coverage);
 			cirrocumulus *= smoothstep(0.2, 0.8, coverage);
 
-			density += sqr(saturate(cirrocumulus * 2.0));
+			density += sqr(cirrocumulus * 2.0);
 		}
 	}
 	#endif
 
-	return density * 4.0;
+	return density;
 }
 
 //================================================================================================//

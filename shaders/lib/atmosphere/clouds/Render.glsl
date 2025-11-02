@@ -157,7 +157,7 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float noise, in float ph
 		}
 
 		// Approximate sunlight multi-scattering
-		float msVolume = 1.0 - exp2(-64.0 * density);
+		float msVolume = 1.0 - exp2(-0.5 - 64.0 * density);
 		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phase, msVolume * cirrusAlbedo);
 
 		float opticalDepthSky = density * (cloudHighThickness * 0.5 * cirrusExtinction * -rLOG2);
