@@ -48,14 +48,11 @@ void TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal) {
 
     // Estimate spatial variance
     vec2 currMoments = vec2(luma, luma * luma);
-    #if 0
+    #if 1
 	    for (uint i = 0u; i < 8u; ++i) {
             ivec2 sampleTexel = clamp(texel + offset3x3N[i], ivec2(0), texelEnd);
             vec3 sampleColor = texelFetch(colortex3, sampleTexel, 0).rgb;
             float sampleLuma = luminance(sampleColor);
-
-            // vec3 sampleNormal = FetchSurfaceNormal(loadGbufferData0(sampleTexel << 1));
-            // float weight = saturate(dot(sampleNormal, worldNormal) * 20.0 - 19.0);
 
             currMoments += vec2(sampleLuma, sampleLuma * sampleLuma);
         }
@@ -119,18 +116,18 @@ void TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal) {
                 varianceMoments.xy = mix(prevMoments, varianceMoments.xy, alpha);
             // }
 
-            float mipLevel = 2.0 * saturate(1.0 - indirectHistory.a * rcp(16.0));
+            float mipLevel = 3.0 * saturate(1.0 - indirectHistory.a * rcp(16.0));
             indirectCurrent.rgb = textureLod(colortex3, screenPos.xy * 0.5, mipLevel).rgb;
 
             indirectCurrent.rgb = indirectHistory.rgb = mix(prevDiffuse.rgb, indirectCurrent.rgb, alpha);
 
-            indirectCurrent.a = max0(varianceMoments.y - varianceMoments.x * varianceMoments.x);
-            indirectCurrent.a *= inversesqrt(indirectCurrent.a + EPS);
+            indirectCurrent.a = max0(varianceMoments.y - varianceMoments.x * varianceMoments.x) + EPS;
+            indirectCurrent.a *= inversesqrt(indirectCurrent.a);
             return;
         }
     }
 
-    indirectCurrent.rgb = textureLod(colortex3, screenPos.xy * 0.5, 2.0).rgb;
+    indirectCurrent.rgb = textureLod(colortex3, screenPos.xy * 0.5, 3.0).rgb;
     indirectCurrent.a = varianceMoments.x;
 }
 
