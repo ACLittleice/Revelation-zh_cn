@@ -180,14 +180,14 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	// Coveage profile
 	float coverage = saturate(mix(cloudMap.x, cloudMap.y * 1.5 + 0.25, sqr(wetness) * 0.75) * (2.5 * CLOUD_CU_COVERAGE));
 	// coverage = pow(coverage, remap(heightFraction, 0.7, 0.8, 1.0, 1.0 - 0.5 * anvilBias));
-	if (coverage < 0.25) return 0.0;
+	// if (coverage < 0.25) return 0.0;
 
 	// Vertical profile
 	float cloudType = cloudMap.y * coverage;
 	float verticalProfile = GetVerticalProfile(heightFraction, cloudType);
 
 	dimensionalProfile = saturate(verticalProfile * coverage);
-	// if (dimensionalProfile < cloudEpsilon) return 0.0;
+	if (dimensionalProfile < 0.25) return 0.0;
 
 	rayPos -= windDir * cumulusTopOffset * heightFraction;
 	vec3 position = rayPos * 3e-4;
