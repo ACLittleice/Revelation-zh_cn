@@ -5,14 +5,10 @@
 
 //======// Output //==============================================================================//
 
-/* RENDERTARGETS: 6,7 */
-layout (location = 0) out vec4 albedoOut;
-layout (location = 1) out uvec4 gbufferOut0;
-
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
 /* RENDERTARGETS: 6,7,8 */
-layout (location = 2) out vec4 gbufferOut1;
-#endif
+layout (location = 0) out vec4 albedoOut;
+layout (location = 1) out uvec4 materialOut;
+layout (location = 2) out vec4 normalOut;
 
 //======// Input //===============================================================================//
 
@@ -75,13 +71,29 @@ vec2 endPortalLayer(in vec2 coord, in float layer) {
 	return (4.5 - layer * 0.25) * (rotate * coord) + offset;
 }
 
-#include "/lib/surface/ManualTBN.glsl"
-
 //======// Main //================================================================================//
 void main() {
 	vec4 albedo = texture(tex, texCoord) * vertColor;
 
-	mat3 tbnMatrix = CalculateTBNMatrix(worldPos, texCoord);
+    vec3 deltaPos1 = dFdx(worldPos);
+    vec3 deltaPos2 = dFdy(worldPos);
+
+	vec3 flatNormal = normalize(cross(deltaPos1, deltaPos2));
+
+	#ifdef NORMAL_MAPPING
+        vec3 deltaPos1Perp = cross(flatNormal, deltaPos1);
+        vec3 deltaPos2Perp = cross(deltaPos2, flatNormal);
+
+        vec2 deltaUv1 = dFdx(texCoord);
+        vec2 deltaUv2 = dFdy(texCoord);
+
+        vec3 tangent   = normalize(deltaPos2Perp * deltaUv1.x + deltaPos1Perp * deltaUv2.x);
+        vec3 bitangent = normalize(deltaPos2Perp * deltaUv1.y + deltaPos1Perp * deltaUv2.y);
+
+        float invmax = inversesqrt(max(sdot(tangent), sdot(bitangent)));
+
+        mat3 tbnMatrix = mat3(tangent * invmax, bitangent * invmax, flatNormal);
+    #endif
 
 	if (albedo.a < 0.1) { discard; return; }
 
@@ -109,17 +121,22 @@ void main() {
 
 	albedoOut = albedo;
 
-	gbufferOut0.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
-	gbufferOut0.y = materialID;
+	materialOut.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
+	materialOut.y = materialID;
 
-	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(tbnMatrix[2]));
+	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+		vec4 specularTex = texture(specular, texCoord);
+		materialOut.z = Packup2x8U(specularTex.xy);
+		materialOut.w = Packup2x8U(specularTex.zw);
+	#endif
+
+	normalOut.xy = OctEncodeUnorm(flatNormal);
+
 	#if defined NORMAL_MAPPING
         vec3 normalTex = texture(normals, texCoord).rgb;
         DecodeNormalTex(normalTex);
-		gbufferOut0.w = Packup2x8U(OctEncodeUnorm(tbnMatrix * normalTex));
-	#endif
-
-	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-		gbufferOut1 = texture(specular, texCoord);
+		normalOut.zw = OctEncodeUnorm(tbnMatrix * normalTex);
+	#else
+		normalOut.zw = normalOut.xy;
 	#endif
 }

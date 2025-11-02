@@ -72,21 +72,21 @@ void main() {
 		}
 	#endif
 
-	uvec4 gbufferData0 = loadGbufferData0(screenTexel);
+	uvec4 materialPack = loadMaterialPack(screenTexel);
 
-	uint materialID = gbufferData0.y;
+	uint materialID = materialPack.y;
 	bool glassMask = materialID == 2u;
 	bool waterMask = materialID == 3u;
 
 	// Process refraction
 	ivec2 refractedTexel = screenTexel;
 	if (glassMask || waterMask) {
-		vec3 viewNormal = mat3(gbufferModelView) * FetchWorldNormal(gbufferData0.w);
+		vec3 viewNormal = mat3(gbufferModelView) * FetchSurfaceNormal(screenTexel);
 
 		#ifdef RAYTRACED_REFRACTION
 			vec2 refractedCoord = CalculateRefractedCoord(waterMask, viewPos, viewNormal, screenPos);
 		#else
-			vec3 viewFlatNormal = mat3(gbufferModelView) * FetchFlatNormal(gbufferData0);
+			vec3 viewFlatNormal = mat3(gbufferModelView) * FetchGeometryNormal(screenTexel);
 			viewNormal -= float(waterMask) * viewFlatNormal; // Fix water refraction artifacts
 
 			float depth1 = loadDepth1(screenTexel);
@@ -103,32 +103,31 @@ void main() {
 		refractedTexel = uvToTexel(refractedCoord);
 	}
 
-    sceneOut = loadSceneColor(refractedTexel);
-	vec3 worldNormal = FetchWorldNormal(gbufferData0);
+    sceneOut = loadSceneMain(refractedTexel);
 
 	vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
 	vec3 worldDir = normalize(worldPos);
 
 	if (depth < 1.0) {
-		vec4 gbufferData1 = loadGbufferData1(screenTexel);
+		vec4 translucent = ExtractSpecularTex(materialPack);
 
 		// Particle translucent
 		if (materialID == 500u) {
 			vec3 diffuseLight = texelFetch(colortex3, screenTexel, 0).rgb;
-			vec3 albedo = sRGBtoLinear(gbufferData1.rgb);
-			sceneOut = mix(sceneOut, albedo * diffuseLight, gbufferData1.a);
+			vec3 albedo = sRGBtoLinear(translucent.rgb);
+			sceneOut = mix(sceneOut, albedo * diffuseLight, translucent.a);
 		}
 
 		// Translucent
 		if (glassMask || waterMask) {
 			if (glassMask) {
 				// Absorption
-				vec3 absorption = log2(gbufferData1.rgb);
-				absorption *= 2.0 * sqrt2(gbufferData1.a);
+				vec3 absorption = log2(translucent.rgb);
+				absorption *= 2.0 * sqrt2(translucent.a);
 				sceneOut *= exp2(absorption);
 
 				// Emissive
-				sceneOut += (2.0 * EMISSIVE_BRIGHTNESS) * Unpack2x8UX(gbufferData0.x) * cube(gbufferData1.rgb * gbufferData1.a);
+				sceneOut += (2.0 * EMISSIVE_BRIGHTNESS) * Unpack2x8UX(materialPack.x) * cube(translucent.rgb * translucent.a);
 			}
 
 			// Apply specular lighting
@@ -182,8 +181,8 @@ void main() {
 	RenderVanillaFog(sceneOut, bloomyFogMask, viewDistance);
 
 	#if DEBUG_NORMALS == 1
-		sceneOut = worldNormal * 0.5 + 0.5;
+		sceneOut = FetchSurfaceNormal(screenTexel) * 0.5 + 0.5;
 	#elif DEBUG_NORMALS == 2
-		sceneOut = FetchFlatNormal(gbufferData0) * 0.5 + 0.5;
+		sceneOut = FetchGeometryNormal(screenTexel) * 0.5 + 0.5;
 	#endif
 }

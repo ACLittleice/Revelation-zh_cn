@@ -5,14 +5,10 @@
 
 //======// Output //==============================================================================//
 
-/* RENDERTARGETS: 6,7 */
-layout (location = 0) out vec4 albedoOut;
-layout (location = 1) out uvec4 gbufferOut0;
-
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
 /* RENDERTARGETS: 6,7,8 */
-layout (location = 2) out vec4 gbufferOut1;
-#endif
+layout (location = 0) out vec4 albedoOut;
+layout (location = 1) out uvec4 materialOut;
+layout (location = 2) out vec4 normalOut;
 
 //======// Uniform //=============================================================================//
 
@@ -66,17 +62,22 @@ void main() {
 
 	albedoOut = albedo;
 
-	gbufferOut0.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
-	gbufferOut0.y = materialID;
+	materialOut.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
+	materialOut.y = materialID;
 
-	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(flatNormal));
+	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+		vec4 specularTex = texture(specular, texCoord);
+		materialOut.z = Packup2x8U(specularTex.xy);
+		materialOut.w = Packup2x8U(specularTex.zw);
+	#endif
+
+	normalOut.xy = OctEncodeUnorm(flatNormal);
+
 	#if defined NORMAL_MAPPING
         vec3 normalTex = texture(normals, texCoord).rgb;
         DecodeNormalTex(normalTex);
-		gbufferOut0.w = Packup2x8U(OctEncodeUnorm(tbnMatrix * normalTex));
-	#endif
-
-	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-		gbufferOut1 = texture(specular, texCoord);
+		normalOut.zw = OctEncodeUnorm(tbnMatrix * normalTex);
+	#else
+		normalOut.zw = normalOut.xy;
 	#endif
 }

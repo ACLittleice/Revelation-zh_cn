@@ -54,7 +54,7 @@ void TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal) {
             vec3 sampleColor = texelFetch(colortex3, sampleTexel, 0).rgb;
             float sampleLuma = luminance(sampleColor);
 
-            // vec3 sampleNormal = FetchWorldNormal(loadGbufferData0(sampleTexel << 1));
+            // vec3 sampleNormal = FetchSurfaceNormal(loadGbufferData0(sampleTexel << 1));
             // float weight = saturate(dot(sampleNormal, worldNormal) * 20.0 - 19.0);
 
             currMoments += vec2(sampleLuma, sampleLuma * sampleLuma);
@@ -155,10 +155,10 @@ void main() {
 
             if (depth < 1.0) {
                 vec3 screenPos = vec3(currentCoord, depth);
-                vec3 worldNormal = FetchWorldNormal(currentTexel);
+                vec3 worldNormal = FetchSurfaceNormal(currentTexel);
                 TemporalFilter(screenTexel, screenPos, worldNormal);
 
-                float blocklight = Unpack2x8UX(loadGbufferData0(currentTexel).x);
+                float blocklight = Unpack2x8UX(loadMaterialPack(currentTexel).x);
                 blocklight = pow5(blocklight) * exp2(-64.0 * luminance(indirectCurrent.rgb) * global.exposure.value);
                 indirectCurrent.rgb += blackbody(float(BLOCKLIGHT_TEMPERATURE)) * saturate(blocklight) * SSILVB_BLENDED_LIGHTMAP;
             }
@@ -171,7 +171,7 @@ void main() {
             #endif
 
             if (depth < 1.0) {
-                vec3 worldNormal = FetchWorldNormal(currentTexel);
+                vec3 worldNormal = FetchSurfaceNormal(currentTexel);
                 vec3 screenPos = vec3(currentCoord - vec2(1.0, 0.0), depth);
                 vec3 viewPos = ScreenToViewSpace(screenPos);
                 #if defined DISTANT_HORIZONS
