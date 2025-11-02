@@ -15,8 +15,8 @@
 
 // #extension GL_NV_compute_shader_derivatives : enable
 
-layout (local_size_x = 16, local_size_y = 16) in;
-const vec2 workGroupsRender = vec2(0.5f, 0.5f);
+layout (local_size_x = 8, local_size_y = 8) in;
+const vec2 workGroupsRender = vec2(0.5, 0.5);
 
 //======// Utility //=============================================================================//
 
@@ -88,7 +88,7 @@ float CalculateVariance(in ivec2 texel) {
 void main() {
 	SharedPreload();
 
-	uvec2 localPos = QuadLayout16x16(gl_LocalInvocationIndex);
+	uvec2 localPos = QuadLayout8x8(gl_LocalInvocationIndex);
 	ivec2 texelPos = ivec2(localPos + gl_WorkGroupID.xy * gl_WorkGroupSize.xy);
 
 	ivec2 offsetToBR = ivec2(halfViewSize.x, 0);
@@ -127,15 +127,14 @@ void main() {
 	float centerLuma = luminance(filteredColVar.rgb);
 
 	float frameIndex = texelFetch(colortex2, texelPos, 0).a;
-	float frameCurve = curve(saturate(frameIndex * rcp(16.0)));
+	float historyFactor = saturate(frameIndex * rcp(16.0));
 
-	float variance = CalculateVariance(ivec2(gl_LocalInvocationID.xy + padRadius));
-	const float invSigmaL = 4.0 * log2(float(ATROUS_FILTER_SIZE));
+	float variance = CalculateVariance(ivec2(localPos + padRadius));
+	const float invSigmaL = 2.0 * log2(float(ATROUS_FILTER_SIZE));
 	float variancePhi = -invSigmaL / (variance + EPS);
-	variancePhi *= frameCurve;
 
-	float sigmaZ = -4.0 * inversesqrt(float(ATROUS_FILTER_SIZE)) * frameCurve;
-	float sigmaN = 48.0 * frameCurve;
+	const float sigmaZ = -8.0 * inversesqrt(float(ATROUS_FILTER_SIZE));
+	const float sigmaN = 32.0;
 
     vec3 worldNormal = OctDecodeSnorm(normalDepthData.xy);
 
@@ -156,7 +155,7 @@ void main() {
 		// wL = exp(−|L0 − L1| / (σLvar + ε))
 		float logWeightL = abs(sampleLuma - centerLuma) * variancePhi;
 
-		float weight = saturate(exp2(logWeightN + logWeightZ + logWeightL));
+		float weight = saturate(exp2((logWeightN + logWeightZ + logWeightL) * historyFactor));
 
 		// sampleColVar.a *= weight; // Variance squaring
 		filteredColVar += sampleColVar * weight;
