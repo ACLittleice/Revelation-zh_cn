@@ -134,7 +134,7 @@ void main() {
 	// float variance = CalculateVariance(ivec2(localPos + padRadius));
 	float variance = filteredColVar.a;
 
-	const float invSigmaL = 2.0 * log2(float(ATROUS_FILTER_SIZE));
+	const float invSigmaL = 2.0 * log2(1.0 + float(ATROUS_FILTER_SIZE));
 	float variancePhi = -invSigmaL / (variance + EPS);
 
 	const float sigmaZ = -8.0 * inversesqrt(float(ATROUS_FILTER_SIZE));
