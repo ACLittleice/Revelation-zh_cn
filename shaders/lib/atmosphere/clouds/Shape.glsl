@@ -212,7 +212,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 		// detailNoise = mix(1.0 - detailNoise, detailNoise, saturate(heightFraction * 8.0));
 	}
 	#endif
-	cloudDensity = ValueErosion(cloudDensity, detailNoise * verticalProfile * 0.25);
+	cloudDensity = ValueErosion(cloudDensity, detailNoise * 0.2);
 
 	// Density profile
 	cloudDensity *= remap(heightFraction, 0.1, 0.25, 0.1, 1.0);
