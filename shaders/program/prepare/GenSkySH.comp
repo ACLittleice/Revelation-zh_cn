@@ -78,6 +78,10 @@ void main() {
 	vec3 direction = sampleUniformSphere(R2(index));
 	vec3 skyRadiance = texture(skyMapTex, ProjectSky(direction)).rgb;
 
+	#ifndef PLANET_GROUND
+		skyRadiance *= step(0.0, direction.y) * 0.8 + 0.2;
+	#endif
+
 	vec3[9] shCoeff;
 	float[9] basis = BasisSH3(direction);
 

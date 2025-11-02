@@ -417,6 +417,8 @@ vec3 GetSkyRadiance(
                 vec3 scatterAP = GetSkyRadianceToPoint(planet_point, sun_direction, transmitAP);
                 ground = ground * transmitAP + scatterAP;
             }
+        #else
+            ray_r_mu_intersects_ground = false;
         #endif
 
         sun_scattering = GetCombinedScattering(r, mu, mu_s, nu, ray_r_mu_intersects_ground, sun_single_mie_scattering);
@@ -485,6 +487,8 @@ vec3 GetSkyRadiance(
                 vec3 scatterAP = GetSkyRadianceToPoint(planet_point, sun_direction, transmitAP);
                 ground = ground * transmitAP + scatterAP;
             }
+        #else
+            ray_r_mu_intersects_ground = false;
         #endif
 
         sun_scattering = GetCombinedScattering(r, mu, mu_s, nu, ray_r_mu_intersects_ground, sun_single_mie_scattering);
