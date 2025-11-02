@@ -25,7 +25,7 @@ out vec3 sceneOut;
 
 //======// Uniform //=============================================================================//
 
-writeonly uniform image2D colorimg8;
+writeonly uniform uimage2D colorimg7;
 
 uniform sampler2D cloudOriginTex;
 
@@ -85,9 +85,9 @@ void main() {
 
 	vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
 	vec3 worldDir = normalize(worldPos);
-	uvec4 gbufferData0 = loadGbufferData0(screenTexel);
 
-	uint materialID = gbufferData0.y;
+	uvec4 materialPack = loadMaterialPack(screenTexel);
+	uint materialID = materialPack.y;
 
 	vec3 albedo = sRGBtoLinear(loadAlbedo(screenTexel));
 
@@ -123,22 +123,18 @@ void main() {
 			sceneOut = sceneOut * cloudData.a + cloudData.rgb;
 		#endif
 
-		imageStore(colorimg8, screenTexel, vec4(0.0));
+		imageStore(colorimg7, screenTexel, uvec4(0));
 	} else {
 		worldPos += gbufferModelViewInverse[3].xyz;
 
-		vec3 flatNormal = FetchFlatNormal(gbufferData0);
-		#ifdef NORMAL_MAPPING
-			vec3 worldNormal = FetchWorldNormal(gbufferData0);
-		#else
-			vec3 worldNormal = flatNormal;
-		#endif
+		vec3 flatNormal, worldNormal;
+		FetchNormalData(screenTexel, flatNormal, worldNormal);
 		vec3 viewNormal = mat3(gbufferModelView) * worldNormal;
 
-		vec2 lightmap = Unpack2x8U(gbufferData0.x);
+		vec2 lightmap = Unpack2x8U(materialPack.x);
 
 		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-			vec4 specularTex = loadGbufferData1(screenTexel);
+			vec4 specularTex = ExtractSpecularTex(materialPack);
 
 			// Compute rain puddles
 			#ifdef RAIN_PUDDLES
@@ -150,7 +146,9 @@ void main() {
 			#endif
 
 			Material material = GetMaterialData(specularTex);
-			imageStore(colorimg8, screenTexel, specularTex);
+
+			materialPack.z = Packup2x8U(specularTex.xy);
+			imageStore(colorimg7, screenTexel, materialPack);
 		#else
 			Material material = Material(1.0, 0.0, 0.0, false, false);
 		#endif
@@ -236,7 +234,7 @@ void main() {
 					// Apply parallax shadows
 					#ifdef PARALLAX_SHADOW
 						#if defined PARALLAX && !defined PARALLAX_DEPTH_WRITE
-							shadow *= oms(loadSceneColor(screenTexel).x);
+							shadow *= oms(loadSceneMain(screenTexel).x);
 						#endif
 					#endif
 

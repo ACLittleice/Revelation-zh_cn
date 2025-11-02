@@ -5,9 +5,8 @@
 
 //======// Output //==============================================================================//
 
-/* RENDERTARGETS: 7,8 */
-layout (location = 0) out uvec4 gbufferOut0;
-layout (location = 1) out vec4 gbufferOut1;
+/* RENDERTARGETS: 7 */
+layout (location = 0) out uvec4 materialOut;
 
 //======// Input //===============================================================================//
 
@@ -30,8 +29,9 @@ void main() {
 
 	if (albedo.a < 0.1) { discard; return; }
 
-	gbufferOut0.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
-	gbufferOut0.y = 500u;
+	materialOut.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
+	materialOut.y = 500u;
 
-    gbufferOut1 = albedo;
+	materialOut.z = Packup2x8U(albedo.xy);
+	materialOut.w = Packup2x8U(albedo.zw);
 }

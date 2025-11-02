@@ -89,9 +89,9 @@ void SpecularFilter(inout vec4 specularData, in ivec2 texel, in float roughness,
         vec4 sampleData = texelFetch(colortex3, sampleTexel, 0);
 
         float sampleLinearDepth = ScreenToViewDepth(loadDepth0(sampleTexel));
-        vec3 sampleWorldNormal = FetchWorldNormal(sampleTexel);
+        vec3 sampleWorldNormal = FetchSurfaceNormal(sampleTexel);
         // vec3 sampleReflectedDir = reflect(-worldDir, sampleWorldNormal);
-        float sampleRoughness = sqr(1.0 - loadGbufferData1(sampleTexel).x);
+        float sampleRoughness = sqr(1.0 - Unpack2x8UX(loadMaterialPack(sampleTexel).z));
 
         float weight = lobeWeight(worldNormal, sampleWorldNormal, roughness, sampleRoughness, 2.0);
         weight *= exp2(-4.0 * NdotV * abs(linearDepth - sampleLinearDepth));
@@ -115,13 +115,13 @@ void main() {
     uvec2 localPos = QuadLayout16x16(gl_LocalInvocationIndex);
     ivec2 texelPos = ivec2(localPos + gl_WorkGroupID.xy * gl_WorkGroupSize.xy);
 
-    Material material = GetMaterialData(loadGbufferData1(texelPos).xy);
+    Material material = GetMaterialData(Unpack2x8U(loadMaterialPack(texelPos).z));
     if (material.specularMask) {
         vec2 screenCoord = texelToUv(texelPos);
         vec3 viewDir = ScreenToViewVector(screenCoord);
 
         vec3 worldDir = mat3(gbufferModelViewInverse) * viewDir;
-        vec3 worldNormal = FetchWorldNormal(texelPos);
+        vec3 worldNormal = FetchSurfaceNormal(texelPos);
 
         vec4 specularData = texelFetch(colortex3, texelPos, 0);
     #ifdef REFLECTION_FILTER
@@ -132,7 +132,7 @@ void main() {
     #endif
 
     #if defined SPECULAR_COMBINE_PASS
-        vec3 sceneOut = loadSceneColor(texelPos);
+        vec3 sceneOut = loadSceneMain(texelPos);
         vec3 albedo = sRGBtoLinear(loadAlbedo(texelPos));
 
         float NdotV = abs(dot(worldNormal, worldDir));

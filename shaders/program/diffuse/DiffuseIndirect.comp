@@ -70,13 +70,12 @@ void main() {
 		#if defined DISTANT_HORIZONS
             if (dhTerrainMask) depth = ViewToScreenDepth(ScreenToViewDepthDH(depth));
 		#endif
-		uvec4 gbufferData0 = loadGbufferData0(renderTexel);
-		vec3 worldNormal = FetchWorldNormal(gbufferData0);
+		vec3 worldNormal = FetchSurfaceNormal(renderTexel);
 
     	vec2 screenCoord = texelToUv(renderTexel);
 		vec3 viewPos = ScreenToViewSpace(vec3(screenCoord, depth));
 
-		vec2 lightmap = Unpack2x8U(gbufferData0.x);
+		vec2 lightmap = Unpack2x8U(loadMaterialPack(renderTexel).x);
 		imageStore(colorimg3, texelPos, CalculateSSILVB(screenCoord, viewPos, worldNormal, lightmap));
 	}
 }

@@ -79,7 +79,7 @@ vec3 historyClipAABB(in vec3 history, in vec3 center, in vec3 extent) {
 vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
     ivec2 texel = uvToTexel(screenCoord + taaOffset * 0.5);
 
-    vec3 currData = loadSceneColor(texel);
+    vec3 currData = loadSceneMain(texel);
     vec2 prevCoord = screenCoord - motionVector;
 
     if (saturate(prevCoord) != prevCoord) return vec4(currData, 1.0);
@@ -157,11 +157,11 @@ void main() {
         #ifdef TAA_ENABLED
             temporalOut = TemporalReprojection(screenCoord, motionVector);
         #else
-            temporalOut = vec4(loadSceneColor(screenTexel), 1.0);
+            temporalOut = vec4(loadSceneMain(screenTexel), 1.0);
         #endif
     #else
         ivec2 srcTexel = uvToTexel(screenCoord + taaOffset * 0.5);
-        temporalOut = vec4(loadSceneColor(srcTexel), 1.0);
+        temporalOut = vec4(loadSceneMain(srcTexel), 1.0);
 
         vec2 prevCoord = Reproject(vec3(screenCoord, depth)).xy;
         if (distance(prevCoord, screenCoord) < EPS) {

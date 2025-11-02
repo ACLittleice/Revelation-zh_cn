@@ -6,8 +6,8 @@
 //======// Output //==============================================================================//
 
 /* RENDERTARGETS: 7,8,12 */
-layout (location = 0) out uvec4 gbufferOut0;
-layout (location = 1) out vec4 gbufferOut1;
+layout (location = 0) out uvec4 materialOut;
+layout (location = 1) out vec4 normalOut;
 layout (location = 2) out vec4 waterOut;
 
 //======// Uniform //=============================================================================//
@@ -55,8 +55,7 @@ in vec3 worldPos;
 
 //======// Main //================================================================================//
 void main() {
-	vec3 worldNormal;
-	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(tbnMatrix[2]));
+	normalOut.xy = OctEncodeUnorm(tbnMatrix[2]);
 
 	if (materialID == 3u) { // water
 		ivec2 texel = ivec2(gl_FragCoord.xy);
@@ -65,14 +64,14 @@ void main() {
 		#ifdef PHYSICS_OCEAN
 			WavePixelData wave = physics_wavePixel(physics_localPosition.xz, physics_localWaviness, physics_iterationsNormal, physics_gameTime);
 
-			worldNormal = wave.normal;
+			vec3 worldNormal = wave.normal;
 		#else
 			vec3 minecraftPos = worldPos + cameraPosition;
 			#ifdef WATER_PARALLAX
 				float dither = SampleStbnVec1(texel, frameCounter + 5);
-				worldNormal = CalculateWaterNormal(minecraftPos, worldDir * tbnMatrix, dither);
+				vec3 worldNormal = CalculateWaterNormal(minecraftPos, worldDir * tbnMatrix, dither);
 			#else
-				worldNormal = CalculateWaterNormal(minecraftPos);
+				vec3 worldNormal = CalculateWaterNormal(minecraftPos);
 			#endif
 
 			worldNormal = tbnMatrix * worldNormal;
@@ -83,7 +82,7 @@ void main() {
 		vec3 worldPos1 = transMAD(gbufferModelViewInverse, viewPos1);
 
 		vec2 encodedNormal = OctEncodeUnorm(worldNormal);
-		gbufferOut0.w = Packup2x8U(encodedNormal);
+		normalOut.zw = encodedNormal;
 
 		waterOut = vec4(distance(worldPos, worldPos1) * r255, Packup2x8(encodedNormal), 0.0, 1.0);
 	} else {
@@ -92,19 +91,18 @@ void main() {
 		if (albedo.a < 0.1) { discard; return; }
 
 		#if defined NORMAL_MAPPING
-			worldNormal = texture(normals, texCoord).rgb;
-			DecodeNormalTex(worldNormal);
-
-			worldNormal = tbnMatrix * worldNormal;
-			gbufferOut0.w = Packup2x8U(OctEncodeUnorm(worldNormal));
+			vec3 normalTex = texture(normals, texCoord).rgb;
+			DecodeNormalTex(normalTex);
+			normalOut.zw = OctEncodeUnorm(tbnMatrix * normalTex);
 		#else
-			gbufferOut0.w = gbufferOut0.z;
+			normalOut.zw = normalOut.xy;
 		#endif
 
-		gbufferOut1 = albedo;
+		materialOut.z = Packup2x8U(albedo.xy);
+		materialOut.w = Packup2x8U(albedo.zw);
 		waterOut = vec4(0.0);
 	}
 
-	gbufferOut0.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
-	gbufferOut0.y = materialID;
+	materialOut.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
+	materialOut.y = materialID;
 }

@@ -85,9 +85,9 @@ vec4 CalculateSpecularReflections(in vec3 screenPos, in vec3 viewPos, in vec3 wo
 //======// Main //================================================================================//
 void main() {
     ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
-	uvec4 gbufferData0 = loadGbufferData0(screenTexel);
+	uvec2 materialPack = loadMaterialPack(screenTexel).xy;
 
-	uint materialID = gbufferData0.y;
+	uint materialID = materialPack.y;
 	bool notParticle = materialID != 500u;
 
 	// Skip opaque fragments
@@ -111,7 +111,7 @@ void main() {
 	vec2 waterData = texelFetch(colortex12, screenTexel, 0).xy;
 	bool waterMask = waterData.x > 0.0;
 
-	vec2 lightmap = Unpack2x8U(gbufferData0.x);
+	vec2 lightmap = Unpack2x8U(materialPack.x);
 
 	// Process water
 	if (waterMask && isEyeInWater == 0) {
@@ -143,7 +143,8 @@ void main() {
 	// Translucent lighting
 	vec4 lightingOut = vec4(0.0);
 
-	vec3 worldNormal = FetchWorldNormal(gbufferData0.w);
+	vec3 flatNormal, worldNormal;
+	FetchNormalData(screenTexel, flatNormal, worldNormal);
 
 	float dither = SampleStbnVec1(screenTexel, frameCounter + 4);
 	float NdotL = 1.0; // Particle has no normal
@@ -173,7 +174,6 @@ void main() {
 	// Sunlight
 	vec3 sunlightMult = cloudShadow * saturate(lightmap.y * 1e6) * global.light.directIlluminance;
 	if (NdotL > 1e-3) {
-		vec3 flatNormal = FetchFlatNormal(gbufferData0);
 		vec3 normalOffset = flatNormal * (approxSqrt(worldDistSquared) * 2e-3 + 2e-2) * (2.0 - saturate(NdotL));
 		vec3 shadow = CalculatePCSS(worldPos, normalOffset, dither, 0.0);
 

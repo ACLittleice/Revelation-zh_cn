@@ -5,14 +5,10 @@
 
 //======// Output //==============================================================================//
 
-/* RENDERTARGETS: 6,7 */
-layout (location = 0) out vec4 albedoOut;
-layout (location = 1) out uvec3 gbufferOut0;
-
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
 /* RENDERTARGETS: 6,7,8 */
-layout (location = 2) out vec2 gbufferOut1;
-#endif
+layout (location = 0) out vec4 albedoOut;
+layout (location = 1) out uvec4 materialOut;
+layout (location = 2) out vec4 normalOut;
 
 //======// Input //===============================================================================//
 
@@ -56,11 +52,10 @@ void main() {
 		albedoOut = vec4(1.0);
 	#endif
 
-	gbufferOut0.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
-	gbufferOut0.y = materialID;
+	materialOut.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
+	materialOut.y = materialID;
+	materialOut.zw = uvec2(0);
 
-	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(flatNormal));
-	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-		gbufferOut1 = vec2(0.0);
-	#endif
+	normalOut.xy = OctEncodeUnorm(flatNormal);
+	normalOut.zw = normalOut.xy;
 }
