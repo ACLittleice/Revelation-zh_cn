@@ -169,11 +169,11 @@ float AlligatorFbm(const vec3 p, float gridsize, const uint octaves, const float
 
 //======// Main //================================================================================//
 void main() {
-	ivec3 gid = ivec3(gl_GlobalInvocationID.xyz);
-	vec3 uv = (vec3(gid) + 0.5) / vec3(imageSize(baseNoiseImg));
+	ivec3 tid = ivec3(gl_GlobalInvocationID.xyz);
+	vec3 uv = (vec3(tid) + 0.5) / vec3(imageSize(baseNoiseImg));
 
     float noise = AlligatorFbm(uv, 5.0, 8, 2.0, 0.65);
     noise = pow(noise * 1.5, 0.7);
 
-	imageStore(baseNoiseImg, gid, vec4(noise));
+	imageStore(baseNoiseImg, tid, vec4(noise));
 }

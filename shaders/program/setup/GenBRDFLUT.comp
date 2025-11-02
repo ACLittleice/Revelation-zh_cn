@@ -70,9 +70,9 @@ vec2 IntegrateBRDF(in float roughness, in float NdotV) {
 
 //======// Main //================================================================================//
 void main() {
-	ivec2 gid = ivec2(gl_GlobalInvocationID.xy);
-	vec2 uv = (vec2(gid) + 0.5) / vec2(imageSize(brdfLutImg));
+	ivec2 tid = ivec2(gl_GlobalInvocationID.xy);
+	vec2 uv = (vec2(tid) + 0.5) / vec2(imageSize(brdfLutImg));
 
     vec2 brdf = IntegrateBRDF(uv.x, uv.y);
-	imageStore(brdfLutImg, gid, vec4(brdf, 0.0, 1.0));
+	imageStore(brdfLutImg, tid, vec4(brdf, 0.0, 1.0));
 }
