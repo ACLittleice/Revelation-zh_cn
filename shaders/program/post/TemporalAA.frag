@@ -73,9 +73,6 @@ vec3 historyClipAABB(in vec3 history, in vec3 center, in vec3 extent) {
     return history;
 }
 
-#define mean(a, b, c, d, e, f, g, h, i) (a + b + c + d + e + f + g + h + i) * rcp(9.0)
-#define sqrMean(a, b, c, d, e, f, g, h, i) (a * a + b * b + c * c + d * d + e * e + f * f + g * g + h * h + i * i) * rcp(9.0)
-
 vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
     ivec2 texel = uvToTexel(screenCoord + taaOffset * 0.5);
 
@@ -98,6 +95,8 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
 
     #ifdef TAA_CLIPPING
         #define currentLoad(offset) sRGBToYCoCg(texelFetchOffset(colortex0, texel, 0, offset).rgb)
+        #define mean(a, b, c, d, e, f, g, h, i) (a + b + c + d + e + f + g + h + i) * rcp(9.0)
+        #define sqrMean(a, b, c, d, e, f, g, h, i) (a * a + b * b + c * c + d * d + e * e + f * f + g * g + h * h + i * i) * rcp(9.0)
 
         vec3 sample0 = currData;
         vec3 sample1 = currentLoad(ivec2(-1,  1));
@@ -124,13 +123,14 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
         #endif
     #endif
 
-    float frameIndex = temporalData.a + 1.0;
+    // Subpixel sharpening
+	prevData = mix(prevData, currData, distance(fract(prevCoord * viewSize), vec2(0.5)) * 0.5);
 
-    float blendWeight = min(frameIndex, TAA_MAX_ACCUM_FRAMES);
+    float blendWeight = min(++temporalData.a, TAA_MAX_ACCUM_FRAMES);
     blendWeight *= 1.0 + sqr(temporalContrast) * TAA_ANTIFLICKER;
 
     currData = mix(perceptualWeight(prevData), perceptualWeight(currData), rcp(blendWeight));
-    return vec4(YCoCgToSRGB(perceptualWeightInv(currData)), frameIndex);
+    return vec4(YCoCgToSRGB(perceptualWeightInv(currData)), temporalData.a);
 }
 
 //======// Main //================================================================================//
