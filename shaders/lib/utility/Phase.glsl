@@ -87,6 +87,20 @@ float FournierForandPhase(in float cosTheta, in float n, in float mu) {
 	return p1 * p2 + p3;
 }
 
+// Dual-Lobe HG phase function
+// g0: forward lobe anisotropy parameter, g1: backward lobe anisotropy parameter
+// m: mixing parameter
+float DualLobePhase(in float mu, in float g0, in float g1, in float m) {
+    return mix(HenyeyGreensteinPhase(mu, g0), HenyeyGreensteinPhase(mu, g1), m);
+}
+
+// Triple-Lobe HG phase function
+// g0: forward lobe anisotropy parameter, g1: backward lobe anisotropy parameter
+// m: mixing parameter, g2: peak anisotropy parameter, i: peak intensity
+float TripleLobePhase(in float mu, in float g0, in float g1, in float m, in float g2, in float i) {
+    return max(DualLobePhase(mu, g0, g1, m), CornetteShanksPhase(mu, g2) * i);
+}
+
 // From https://www.shadertoy.com/view/4sjBDG
 float NumericalMieFit(float cosTheta) {
     // This function was optimized to minimize (delta*delta)/reference in order to capture
