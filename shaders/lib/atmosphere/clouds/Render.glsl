@@ -31,7 +31,7 @@
 
 float CloudVolumeOpticalDepth(in vec3 rayPos, in vec3 rayDir, in float noise, in uint steps) {
 	float rSteps = 1.0 / float(steps);
-	const float rayLength = cumulusThickness * 2.0;
+	const float rayLength = cumulusThickness * 1.0;
 	float stepLength = rayLength * rSteps * rSteps;
 
 	vec3 rayStep = rayDir * stepLength;
@@ -49,8 +49,8 @@ float CloudVolumeOpticalDepth(in vec3 rayPos, in vec3 rayDir, in float noise, in
     return cumulusExtinction * 2.0 * stepLength * sumDensity;
 }
 
-// Approximate method from [Wrenninge et al., 2013]
-float CloudMultiScatteringApproximation(in float opticalDepth, in float phase, in float msVolume) {
+// [Wrenninge et al., 2013]
+float CloudMultiScatteringApproxOz(in float opticalDepth, in float phase) {
 	float scatteringFalloff = cloudMsFalloffA;
 	float extinctionFalloff = cloudMsFalloffB;
 
@@ -60,20 +60,23 @@ float CloudMultiScatteringApproximation(in float opticalDepth, in float phase, i
 	for (uint ms = 1u; ms < cloudMsCount; ++ms) {
 		phase = mix(uniformPhase, phase, cloudMsFalloffC);
 
-	#if 1
 		float transmittance = exp2(-rLOG2 * extinctionFalloff * opticalDepth);
-	#else
-		float transmittance = rcp(1.0 + 2.718 * extinctionFalloff * opticalDepth);
-	#endif
-
 		multiple += transmittance * phase * scatteringFalloff;
 
 		scatteringFalloff *= scatteringFalloff;
 		extinctionFalloff *= extinctionFalloff;
 	}
 
-	float energyEstimate = 0.25 + 0.75 * msVolume / oms(msVolume);
-	return single + multiple * energyEstimate;
+	return single + multiple;
+}
+
+float CloudMultiScatteringApproxHaringPro(in float opticalDepth, in float phase, in float extinction, in float albedo) {
+	// Inspired by [Schneider, 2017]
+	float transmittance = exp(-min(opticalDepth, opticalDepth * 0.25 + 1.0));
+
+	// https://zhuanlan.zhihu.com/p/457997155
+	float msV = albedo * oms(exp2(-8.0 * extinction));
+	return transmittance * (phase + msV / oms(msV) * uniformPhase);
 }
 
 //================================================================================================//
@@ -104,8 +107,7 @@ vec3 RenderCloudMid(in vec2 rayPos, in vec3 rayDir, in float noise, in float pha
 		}
 
 		// Approximate sunlight multi-scattering
-		float msVolume = 1.0 - exp2(-64.0 * density);
-		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phase, msVolume * stratusAlbedo);
+		float scatteringSun = CloudMultiScatteringApproxHaringPro(opticalDepthSun, phase, 8.0 * density, stratusAlbedo);
 
 		float opticalDepthSky = density * (cloudMidThickness * 0.5 * stratusExtinction * -rLOG2);
 
@@ -157,8 +159,7 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float noise, in float ph
 		}
 
 		// Approximate sunlight multi-scattering
-		float msVolume = 1.0 - exp2(-0.5 - 64.0 * density);
-		float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phase, msVolume * cirrusAlbedo);
+		float scatteringSun = CloudMultiScatteringApproxHaringPro(opticalDepthSun, phase, 8.0 * density, cirrusAlbedo);
 
 		float opticalDepthSky = density * (cloudHighThickness * 0.5 * cirrusExtinction * -rLOG2);
 
@@ -277,8 +278,8 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 						float opticalDepthSun = CloudVolumeOpticalDepth(rayPos, lightDir, noise.y, CLOUD_LOW_SUNLIGHT_SAMPLES);
 
 						// Approximate sunlight multi-scattering
-						float msVolume = 1.0 - exp2(-8.0 * linearstep(0.5, 4.0, dimensionalProfile + stepDensity * 4.0));
-						float scatteringSun = CloudMultiScatteringApproximation(opticalDepthSun, phase, msVolume * cumulusAlbedo);
+						float msE = linearstep(0.5, 4.0, dimensionalProfile + stepDensity * 4.0);
+						float scatteringSun = CloudMultiScatteringApproxHaringPro(opticalDepthSun, phase, msE, cumulusAlbedo);
 
 						#if CLOUD_CU_SKYLIGHT_SAMPLES > 0
 							// Compute the optical depth of skylight through clouds
@@ -302,7 +303,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 						// float inScatterProbability = depthProbability * verticalProbability;
 						// scatteringSun *= inScatterProbability;
 
-						vec2 scattering = vec2(scatteringSun + scatteringGround * worldLightVector.y, scatteringSky * (0.5 + msVolume));
+						vec2 scattering = vec2(scatteringSun + scatteringGround * worldLightVector.y, scatteringSky);
 
 						float stepOpticalDepth = -rLOG2 * cumulusExtinction * stepDensity * stepSize;
 						float stepTransmittance = exp2(stepOpticalDepth);

@@ -88,11 +88,6 @@ option.CLOUD_TAAU_CLIPPING=Upsampling Clipping
 option.CLOUD_MAX_ACCUM_FRAMES=Max Accumulated Frames
 option.CLOUD_TAAU_ANTIFLICKER=Anti-flicker
 
-option.CLOUD_MS_COUNT=Multi-scattering Count
-option.CLOUD_MS_FALLOFF_E=Extinction Falloff
-option.CLOUD_MS_FALLOFF_S=Scattering Falloff
-option.CLOUD_MS_FALLOFF_P=Phase Falloff
-
 option.CLOUD_LOW_SAMPLES=Samples
 option.CLOUD_LOW_SKYLIGHT_SAMPLES=Skylight Samples
 option.CLOUD_LOW_SUNLIGHT_SAMPLES=Sunlight Samples

@@ -34,11 +34,6 @@
 /* Universal */
     #define CLOUD_AERIAL_PERSPECTIVE            // Enables aerial perspective for clouds
 
-    #define CLOUD_MS_COUNT              4       // Times of multi-scattering for clouds. [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 25 30 35 40 45 50]
-    #define CLOUD_MS_FALLOFF_S          0.5     // Scattering falloff for multi-scattering. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
-    #define CLOUD_MS_FALLOFF_E          0.5     // Extinction falloff for multi-scattering. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
-    #define CLOUD_MS_FALLOFF_P          0.5     // Asymmetry falloff for multi-scattering. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
-
 /* Low-level clouds */
     #define CLOUD_CUMULUS 	                    // Enables cumulus clouds
 
@@ -84,12 +79,12 @@
 
 //================================================================================================//
 
-const uint  cloudMsCount 			= CLOUD_MS_COUNT;
+const uint  cloudMsCount 			= 4;
 
 // Must be a <= b to keep energy conservation
-const float cloudMsFalloffA 	    = CLOUD_MS_FALLOFF_S;
-const float cloudMsFalloffB 	    = CLOUD_MS_FALLOFF_E;
-const float cloudMsFalloffC 	    = CLOUD_MS_FALLOFF_P;
+const float cloudMsFalloffA 	    = 0.5;
+const float cloudMsFalloffB 	    = 0.5;
+const float cloudMsFalloffC 	    = 0.5;
 
 const float cloudMapExtend 		    = 128e3; // m
 
@@ -118,7 +113,7 @@ const float cumulusScattering 		= 0.06;
 const float stratusScattering 		= 0.04;
 const float cirrusScattering 		= 0.02;
 
-const float cumulusAbsorption 		= 0.002;
+const float cumulusAbsorption 		= 0.001;
 const float stratusAbsorption 		= 0.002;
 const float cirrusAbsorption 		= 0.004;
 

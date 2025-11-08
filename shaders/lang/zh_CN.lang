@@ -88,11 +88,6 @@ option.CLOUD_TAAU_CLIPPING=方差裁切
 option.CLOUD_MAX_ACCUM_FRAMES=最大累积帧数
 option.CLOUD_TAAU_ANTIFLICKER=抗闪烁
 
-option.CLOUD_MS_COUNT=多重散射次数
-option.CLOUD_MS_FALLOFF_E=消光衰减
-option.CLOUD_MS_FALLOFF_S=散射衰减
-option.CLOUD_MS_FALLOFF_P=相位衰减
-
 option.CLOUD_LOW_SAMPLES=采样数
 option.CLOUD_LOW_SKYLIGHT_SAMPLES=天光采样数
 option.CLOUD_LOW_SUNLIGHT_SAMPLES=阳光采样数
