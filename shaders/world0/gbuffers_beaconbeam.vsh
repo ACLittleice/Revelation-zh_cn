@@ -1,3 +1,5 @@
 #version 460 core
 
-#include "/program/gbuffers/Beaconbeam.vert"
+#define GBUFFER_BEACONBEAM 1
+
+#include "/program/gbuffers/Textured.vert"

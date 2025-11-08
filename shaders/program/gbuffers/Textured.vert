@@ -39,6 +39,10 @@ void main() {
 	texCoord = vaUV0;
 	lightmap = saturate(vec2(vaUV2) * r240);
 
+	#if GBUFFER_BEACONBEAM
+		lightmap.x = 1.0;
+	#endif
+
 	vertColor = vaColor;
 
 	vec3 viewPos = transMAD(modelViewMatrix, vaPosition + chunkOffset);

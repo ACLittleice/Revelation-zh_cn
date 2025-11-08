@@ -14,6 +14,10 @@ layout (location = 2) out vec4 normalOut;
 
 uniform sampler2D tex;
 
+#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+    uniform sampler2D specular;
+#endif
+
 //======// Input //===============================================================================//
 
 in vec3 worldPos;
@@ -40,8 +44,15 @@ void main() {
 	albedoOut = vec4(albedo.rgb, 1.0);
 
 	materialOut.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
-	materialOut.y = lightmap.x > 0.99 ? 20u : 40u;
-	materialOut.zw = uvec2(0);
+	materialOut.y = lightmap.x > 0.999 ? 20u : 40u;
+
+	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+		vec4 specularTex = texture(specular, texCoord);
+		materialOut.z = Packup2x8U(specularTex.xy);
+		materialOut.w = Packup2x8U(specularTex.zw);
+	#else
+		materialOut.zw = uvec2(0);
+	#endif
 
 	vec3 flatNormal = normalize(cross(dFdx(worldPos), dFdy(worldPos)));
 
