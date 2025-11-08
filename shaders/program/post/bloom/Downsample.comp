@@ -13,7 +13,7 @@
 
 //======// Input //===============================================================================//
 
-layout (local_size_x = 8, local_size_y = 8) in;
+layout (local_size_x = 16, local_size_y = 16) in;
 
 //======// Utility //=============================================================================//
 
@@ -73,15 +73,16 @@ vec3 CalculateBloomTile(in vec2 uv) {
 
 //======// Main //================================================================================//
 void main() {
-    vec2 interpolatedUV = vec2(gl_GlobalInvocationID.xy) * 2.0 + 1.0;
+    vec2 baseUv = vec2(gl_GlobalInvocationID.xy) * 2.0 + 1.0;
 
 	const int index = max(0, DOWNSAMPLE_LEVEL - 1);
-    vec2 srcUV = (interpolatedUV + float(index * 12)) * viewPixelSize + bloomTileOffset[index];
+    vec2 srcUv = (baseUv + float(index * 12)) * viewPixelSize + bloomTileOffset[index];
 
-	if (clamp(srcUV, viewPixelSize, 1.0 - viewPixelSize) == srcUV) {
-		vec3 bloomTile = CalculateBloomTile(srcUV);
+	if (clamp(srcUv, viewPixelSize, 1.0 - viewPixelSize) == srcUv) {
+		vec3 bloomTile = CalculateBloomTile(srcUv);
 
-		vec2 dstTexel = vec2(gl_GlobalInvocationID.xy + DOWNSAMPLE_LEVEL * 12) + bloomTileOffset[DOWNSAMPLE_LEVEL] * viewSize;
-		imageStore(colorimg4, ivec2(dstTexel + 0.5), vec4(bloomTile, 1.0));
+		vec2 dstTexel = vec2(gl_GlobalInvocationID.xy + DOWNSAMPLE_LEVEL * 12);
+		dstTexel += bloomTileOffset[DOWNSAMPLE_LEVEL] * viewSize + 0.5;
+		imageStore(colorimg4, ivec2(dstTexel), vec4(bloomTile, 1.0));
 	}
 }
