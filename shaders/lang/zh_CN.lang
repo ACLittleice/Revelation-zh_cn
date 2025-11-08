@@ -302,11 +302,15 @@ option.WATER_PARALLAX=水体视差
 option.WATER_CAUSTICS=水体焦散
 option.WATER_WAVE_HEIGHT=水波高度
 option.WATER_WAVE_SPEED=水波速度
+option.WATER_FOG_DENSITY=水雾密度
+option.WATER_IOR=水体折射率
+
 option.WATER_ABSORPTION_R=水体吸收系数-§4红
 option.WATER_ABSORPTION_G=水体吸收系数-§2绿
 option.WATER_ABSORPTION_B=水体吸收系数-§1蓝
-option.WATER_FOG_DENSITY=水雾密度
-option.WATER_IOR=水体折射率
+option.WATER_SCATTERING_R=水体散射系数-§4红
+option.WATER_SCATTERING_G=水体散射系数-§2绿
+option.WATER_SCATTERING_B=水体散射系数-§1蓝
 
 option.TRANSLUCENT_ROUGHNESS=半透明粗糙度
 option.GLASS_IOR=玻璃折射率

@@ -1,13 +1,11 @@
 //================================================================================================//
 
 mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) {
-	float fogDensity = max(waterDepth, 1.0);
-
-	vec3 transmittance = exp2(-rLOG2 * waterExtinction * fogDensity);
+	vec3 transmittance = exp2(-rLOG2 * waterExtinction * waterDepth);
 
 	// float phase = clamp(FournierForandPhase(LdotV, 1.2, 3.3225), 0.0, 1e3);
 	float phase = HenyeyGreensteinPhase(LdotV, 0.9) * 0.75 + uniformPhase * 0.25;
-	const vec3 sunTransmittance = exp2(-rLOG2 * waterExtinction * 8.0);
+	const vec3 sunTransmittance = exp2(-rLOG2 * waterExtinction * 4.0);
 
 	vec3 directIlluminance = global.light.directIlluminance;
 	vec3 skyIlluminance = global.light.skyIlluminance;
@@ -28,7 +26,7 @@ mat2x3 AnalyticWaterFog(in float skylight, in float waterDepth, in float LdotV) 
 		vec3 refractDir = refract(vec3(0.0, 1.0, 0.0), waveNormal, 1.0 / WATER_IOR);
 
 		vec3 projectPos = vec3(0.0, 1.0, 0.0) - refractDir * rcp(refractDir.y);
-		return saturate(1.0 - 8.0 * length(projectPos)) * exp2(-rLOG2 * waterExtinction * max(waterDepth, 4.0));
+		return saturate(1.0 - 8.0 * length(projectPos)) * exp2(-rLOG2 * waterExtinction * waterDepth);
 	}
 
 	mat2x3 RaymarchWaterFog(in vec3 worldPos, in float dither) {

@@ -302,11 +302,15 @@ option.WATER_PARALLAX=Water Parallax
 option.WATER_CAUSTICS=Water Caustics
 option.WATER_WAVE_HEIGHT=Water Wave Height
 option.WATER_WAVE_SPEED=Water Wave Speed
+option.WATER_FOG_DENSITY=Water Fog Density
+option.WATER_IOR=Water IOR
+
 option.WATER_ABSORPTION_R=Water Absorption §4Red
 option.WATER_ABSORPTION_G=Water Absorption §2Green
 option.WATER_ABSORPTION_B=Water Absorption §1Blue
-option.WATER_FOG_DENSITY=Water Fog Density
-option.WATER_IOR=Water IOR
+option.WATER_SCATTERING_R=Water Scattering §4Red
+option.WATER_SCATTERING_G=Water Scattering §2Green
+option.WATER_SCATTERING_B=Water Scattering §1Blue
 
 option.TRANSLUCENT_ROUGHNESS=Translucent Roughness
 option.GLASS_IOR=Glass IOR
