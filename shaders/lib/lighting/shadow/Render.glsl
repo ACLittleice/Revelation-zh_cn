@@ -48,9 +48,9 @@ float BlockerSearch(in vec3 shadowScreenPos, in float dither, in float searchSca
 	}
 
 	blockerDepth /= sumWeight;
-	blockerDepth = clamp((shadowScreenPos.z - blockerDepth) / blockerDepth, 0.01, 0.1);
+	blockerDepth = (blockerDepth - shadowScreenPos.z) * shadowProjectionInverse[2].z * 5.0;
 
-	return blockerDepth * 2.0;
+	return clamp(atmosphereModel.sun_angular_radius * 2.0 * blockerDepth, 0.02, 0.25);
 }
 
 vec3 CalculateWaterCaustics(in vec3 worldPos, in float waterDepth, in float dither) {
@@ -132,7 +132,7 @@ vec3 CalculatePCSS(in vec3 worldPos, in vec3 normalOffset, in float dither, in f
 
 	vec3 pcss = vec3(1.0);
 	if (saturate(shadowScreenPos) == shadowScreenPos) {
-		float blockerDepth = BlockerSearch(shadowScreenPos, dither, 0.5 * distortionFactor);
+		float blockerDepth = BlockerSearch(shadowScreenPos, dither, 0.25 * distortionFactor);
 		blockerDepth += sssAmount * SUBSURFACE_SCATTERING_RADIUS * dither;
 		pcss = PercentageCloserFilter(shadowScreenPos, worldPos, dither, blockerDepth * distortionFactor, sssAmount);
 	}
