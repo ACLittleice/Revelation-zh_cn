@@ -265,9 +265,9 @@ void main() {
 					shadow = mix(shadow, vec3(contactShadow), saturate(distanceFade + cutout * 0.75));
 
 					// Wavelength-dependent approximation
-					shadow = saturate(shadow * mix(albedo, vec3(1.0), sqr(luminance(shadow)) * 0.75)) * sunlightBase;
+					shadow *= saturate(pow(albedo, vec3(sqr(1.0 - mean(shadow)) - 0.2))) * sunlightBase;
 
-					float phase = HenyeyGreensteinPhase(-LdotV, 0.65) * 0.25 + uniformPhase * 0.75;
+					float phase = HenyeyGreensteinPhase(-LdotV, 0.7) * 0.25 + uniformPhase * 0.75;
 					sceneOut += shadow * phase * SUBSURFACE_SCATTERING_BRIGHTNESS;
 				}
 			}
