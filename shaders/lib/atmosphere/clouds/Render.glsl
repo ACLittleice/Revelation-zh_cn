@@ -31,7 +31,7 @@
 
 float CloudVolumeOpticalDepth(in vec3 rayPos, in vec3 rayDir, in float noise, in uint steps) {
 	float rSteps = 1.0 / float(steps);
-	const float rayLength = cumulusThickness;
+	const float rayLength = cumulusThickness * 2.0;
 	float stepLength = rayLength * rSteps * rSteps;
 
 	vec3 rayStep = rayDir * stepLength;
@@ -86,7 +86,7 @@ vec3 RenderCloudMid(in vec2 rayPos, in vec3 rayDir, in float noise, in float pha
 
 		float opticalDepthSun = 0.0; {
 			const float rSteps = 1.0 / float(CLOUD_MID_SUNLIGHT_SAMPLES);
-			const float rayLength = cloudMidThickness * 0.5;
+			const float rayLength = cloudMidThickness * 1.0;
 			const float stepLength = rayLength * rSteps * rSteps;
 
 			vec2 rayStep = worldLightVector.xz * stepLength;
@@ -139,7 +139,7 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float noise, in float ph
 
 		float opticalDepthSun = 0.0; {
 			const float rSteps = 1.0 / float(CLOUD_HIGH_SUNLIGHT_SAMPLES);
-			const float rayLength = cloudHighThickness * 0.5;
+			const float rayLength = cloudHighThickness * 1.0;
 			const float stepLength = rayLength * rSteps * rSteps;
 
 			vec2 rayStep = worldLightVector.xz * stepLength;
