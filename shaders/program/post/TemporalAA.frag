@@ -124,7 +124,7 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
     #endif
 
     // Subpixel sharpening
-	prevData = mix(prevData, currData, distance(fract(prevCoord * viewSize), vec2(0.5)) * 0.5);
+	prevData = mix(prevData, currData, sdot(fract(prevCoord * viewSize) - 0.5) * 0.5);
 
     float blendWeight = min(++temporalData.a, TAA_MAX_ACCUM_FRAMES);
     blendWeight *= 1.0 + sqr(temporalContrast) * TAA_ANTIFLICKER;
