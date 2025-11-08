@@ -53,9 +53,14 @@ void main() {
 
 	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
 		ivec2 texelPos = ivec2(gl_FragCoord.xy);
-		vec3 screenPos = vec3(gl_FragCoord.xy * viewPixelSize, FetchDepthFix(texelPos));
+		vec3 screenPos = vec3(gl_FragCoord.xy * viewPixelSize, loadDepth0(texelPos));
 
 		if (screenPos.z > 1.0 - EPS) discard;
+
+		// Hand-depth correction
+		if (screenPos.z < 0.56) {
+			screenPos.z = screenPos.z * rcp(MC_HAND_DEPTH) + (0.5 - 0.5 / MC_HAND_DEPTH);
+		}
 
     	Material material = GetMaterialData(Unpack2x8U(loadMaterialPack(texelPos).z));
 

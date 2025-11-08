@@ -1,8 +1,3 @@
-float FetchDepthFix(in ivec2 texel) {
-	float depth = loadDepth0(texel);
-	return depth + 0.38 * step(depth, 0.56);
-}
-
 vec3 FetchGeometryNormal(in ivec2 texel) {
 	return OctDecodeUnorm(loadNormalPack(texel).xy);
 }

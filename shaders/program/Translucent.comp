@@ -93,13 +93,17 @@ void main() {
 	// Skip opaque fragments
 	if (clamp(materialID, 2u, 3u) != materialID && notParticle) return;
 
-	float depth = loadDepth0(screenTexel);
-	vec3 screenPos = vec3(texelToUv(screenTexel), depth);
+	vec3 screenPos = vec3(texelToUv(screenTexel), loadDepth0(screenTexel));
 	#if defined DISTANT_HORIZONS
-		if (depth > 1.0 - EPS) {
+		if (screenPos.z > 1.0 - EPS) {
 			screenPos.z = ViewToScreenDepth(ScreenToViewDepthDH(loadDepth0DH(screenTexel)));
 		}
 	#endif
+
+	// Hand-depth correction
+	if (screenPos.z < 0.56) {
+		screenPos.z = screenPos.z * rcp(MC_HAND_DEPTH) + (0.5 - 0.5 / MC_HAND_DEPTH);
+	}
 
 	vec3 viewPos = ScreenToViewSpace(screenPos);
 	vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;

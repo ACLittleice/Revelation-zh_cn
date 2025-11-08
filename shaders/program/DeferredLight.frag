@@ -72,7 +72,13 @@ void main() {
 	ivec2 screenTexel = ivec2(gl_FragCoord.xy);
     vec2 screenCoord = gl_FragCoord.xy * viewPixelSize;
 
-	vec3 screenPos = vec3(screenCoord, FetchDepthFix(screenTexel));
+	vec3 screenPos = vec3(screenCoord, loadDepth0(screenTexel));
+
+	// Hand-depth correction
+	if (screenPos.z < 0.56) {
+		screenPos.z = screenPos.z * rcp(MC_HAND_DEPTH) + (0.5 - 0.5 / MC_HAND_DEPTH);
+	}
+
 	vec3 viewPos = ScreenToViewSpace(screenPos);
 
 	#if defined DISTANT_HORIZONS
