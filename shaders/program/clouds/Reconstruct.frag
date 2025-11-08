@@ -114,34 +114,27 @@ void main() {
 		// vec4 prevData = max0(textureLanczos(cloudReconstructTex, prevCoord));
 		vec4 prevData = max0(textureCatmullRomFast(cloudReconstructTex, prevCoord));
 
-		vec2 centerPixel = currCoord * viewSize - 0.5;
-		vec2 floorPixel = floor(centerPixel);
-		vec2 fractPixel = centerPixel - floorPixel;
+		ivec2 currTexel = uvToTexel(currCoord);
+		vec4 currData = texelFetch(cloudOriginTex, currTexel, 0);
 
-		// Catmull-Rom filter for current pixel
-		vec4 weightX = catmullRom(fractPixel.x);
-		vec4 weightY = catmullRom(fractPixel.y);
-
-		vec4 currData = vec4(0.0);
-		vec4 moment1  = vec4(0.0);
-		vec4 moment2  = vec4(0.0);
-
-		// Fetch 4x4 neighbour pixels
-		ivec2 baseTexel = ivec2(floorPixel) - 1;
-		for (uint y = 0u; y < 4u; ++y) {
-			for (uint x = 0u; x < 4u; ++x) {
-				vec4 sampleData = texelFetch(cloudOriginTex, baseTexel + ivec2(x, y), 0);
-				currData += sampleData * weightX[x] * weightY[y];
-
-				moment1 += sampleData;
-				moment2 += sampleData * sampleData;
-			}
-		}
-		moment1 *= 1.0 / 16.0;
-		moment2 *= 1.0 / 16.0;
-
-		// Ellipsoid intersection clipping
 		#ifdef CLOUD_TAAU_CLIPPING
+			vec4 moment1  = vec4(0.0);
+			vec4 moment2  = vec4(0.0);
+
+			// Fetch 4x4 neighbour pixels
+			ivec2 baseTexel = currTexel - 1;
+			for (uint y = 0u; y < 4u; ++y) {
+				for (uint x = 0u; x < 4u; ++x) {
+					vec4 sampleData = texelFetch(cloudOriginTex, baseTexel + ivec2(x, y), 0);
+
+					moment1 += sampleData;
+					moment2 += sampleData * sampleData;
+				}
+			}
+			moment1 *= 1.0 / 16.0;
+			moment2 *= 1.0 / 16.0;
+
+			// Ellipsoid intersection clipping
 			vec4 clipStdDevInv = inversesqrt(abs(moment2 - moment1 * moment1) + EPS);
 			prevData -= moment1;
 			prevData *= saturate(inversesqrt(sdot(prevData * clipStdDevInv * 0.25)));
@@ -154,6 +147,6 @@ void main() {
 		float antiFlicker = 1.0 + sqr(temporalContrast) * CLOUD_TAAU_ANTIFLICKER;
 
 		frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
-		cloudOut = mix(prevData, max0(currData), rcp(antiFlicker * float(frameOut)));
+		cloudOut = mix(prevData, currData, rcp(antiFlicker * float(frameOut)));
 	}
 }
