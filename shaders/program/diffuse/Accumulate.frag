@@ -43,7 +43,7 @@ layout (location = 2) out vec2 varianceMoments;
 void TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal) {
     vec2 prevCoord = Reproject(screenPos).xy;
 
-    float luma = luminance(texelFetch(colortex3, texel, 0).rgb);
+    float luma = texelFetch(colortex3, texel, 0).r; // We use YCoCg color space
     ivec2 texelEnd = ivec2(halfViewEnd);
 
     // Estimate spatial variance
@@ -51,8 +51,7 @@ void TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal) {
     #if 1
 	    for (uint i = 0u; i < 8u; ++i) {
             ivec2 sampleTexel = clamp(texel + offset3x3N[i], ivec2(0), texelEnd);
-            vec3 sampleColor = texelFetch(colortex3, sampleTexel, 0).rgb;
-            float sampleLuma = luminance(sampleColor);
+            float sampleLuma = texelFetch(colortex3, sampleTexel, 0).r; // We use YCoCg color space
 
             currMoments += vec2(sampleLuma, sampleLuma * sampleLuma);
         }
@@ -156,7 +155,7 @@ void main() {
                 TemporalFilter(screenTexel, screenPos, worldNormal);
 
                 float blocklight = Unpack2x8UX(loadMaterialPack(currentTexel).x);
-                blocklight = pow5(blocklight) * exp2(-64.0 * luminance(indirectCurrent.rgb) * global.exposure.value);
+                blocklight = pow5(blocklight) * exp2(-64.0 * indirectCurrent.r * global.exposure.value);
                 indirectCurrent.rgb += blackbody(float(BLOCKLIGHT_TEMPERATURE)) * saturate(blocklight) * SSILVB_BLENDED_LIGHTMAP;
             }
         } else {

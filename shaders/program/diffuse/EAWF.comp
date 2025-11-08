@@ -126,7 +126,7 @@ void main() {
 
 
 	vec4 filteredColVar = imageLoad(colorimg3, texelPos);
-	float centerLuma = luminance(filteredColVar.rgb);
+	float centerLuma = filteredColVar.r; // We use YCoCg color space
 
 	float frameIndex = texelFetch(colortex2, texelPos, 0).a;
 	float historyFactor = saturate(frameIndex * rcp(16.0));
@@ -150,7 +150,7 @@ void main() {
 		vec3 sampleAux = texelFetch(colortex2, sampleTexel + offsetToBR, 0).rgb;
 
 		vec4 sampleColVar = imageLoad(colorimg3, sampleTexel);
-		float sampleLuma = luminance(sampleColVar.rgb);
+		float sampleLuma = sampleColVar.r; // We use YCoCg color space
 
 		// wN = max(0, N0 · N1) ^ σN
 		float logWeightN = log2(saturate(dot(OctDecodeSnorm(sampleAux.xy), worldNormal))) * sigmaN;
