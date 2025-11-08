@@ -40,7 +40,7 @@ out vec3 finalOut;
 // https://gpuopen.com/wp-content/uploads/2019/07/FidelityFX-CAS.pptx
 // https://github.com/GPUOpen-Effects/FidelityFX-CAS
 vec3 FFXCasFilter(in ivec2 texel, in float sharpness) {
-	#define CasLoad(offset) texelFetchOffset(colortex0, texel, 0, offset).rgb
+	#define CasLoad(offset) texelFetchOffset(colortex8, texel, 0, offset).rgb
 
 	#ifndef CAS_ENABLED
 		return CasLoad(ivec2(0, 0));
@@ -102,12 +102,9 @@ void main() {
 		if (abs(MC_RENDER_QUALITY - 1.0) < 1e-2) {
 			finalOut = FFXCasFilter(screenTexel, CAS_STRENGTH);
 		} else {
-			finalOut = textureCatmullRomFast(colortex0, gl_FragCoord.xy * viewPixelSize * MC_RENDER_QUALITY).rgb;
+			finalOut = textureCatmullRomFast(colortex8, gl_FragCoord.xy * viewPixelSize * MC_RENDER_QUALITY).rgb;
 		}
 	#endif
-
-	// Apply gamma correction
-	finalOut = linearToSRGBApprox(finalOut);
 
 	// Text display
 	#if 0

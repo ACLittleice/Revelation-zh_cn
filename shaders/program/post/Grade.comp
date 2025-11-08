@@ -34,7 +34,7 @@ const vec2 workGroupsRender = vec2(1.0, 1.0);
 
 //======// Uniform //=============================================================================//
 
-writeonly uniform image2D colorimg0; // LDR output
+writeonly uniform image2D colorimg8; // LDR output
 
 uniform sampler2D colortex0; // Motion blur output
 uniform sampler2D colortex1; // TAA output
@@ -237,5 +237,5 @@ void main() {
 	// LDR range clamp
 	LDRImage = saturate(LDRImage);
 
-	imageStore(colorimg0, texelPos, vec4(sRGBtoLinearApprox(LDRImage), 1.0));
+	imageStore(colorimg8, texelPos, vec4(LDRImage, 1.0));
 }
