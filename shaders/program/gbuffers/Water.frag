@@ -69,7 +69,7 @@ void main() {
 			vec3 minecraftPos = worldPos + cameraPosition;
 			#ifdef WATER_PARALLAX
 				float dither = SampleStbnVec1(texel, frameCounter + 5);
-				vec3 worldNormal = CalculateWaterNormal(minecraftPos, worldDir * tbnMatrix, dither);
+				vec3 worldNormal = CalculateWaterNormal(minecraftPos, worldDir * tbnMatrix);
 			#else
 				vec3 worldNormal = CalculateWaterNormal(minecraftPos);
 			#endif

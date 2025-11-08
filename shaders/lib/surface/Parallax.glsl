@@ -12,11 +12,9 @@ vec3 CalculateParallax(in vec3 tangentDir, in float dither) {
     vec3 rayPos = vec3(tileBase, 1.0) + rayStep * dither;
 
     float sampleHeight;
-    for (uint i = 0u; i < PARALLAX_SAMPLES; ++i) {
+    for (uint i = 0u; i < PARALLAX_SAMPLES && sampleHeight < rayPos.z; ++i) {
         rayPos += rayStep;
         sampleHeight = texelFetch(normals, atlasTexel(rayPos.xy), 0).a;
-        if (sampleHeight > rayPos.z) break;
-
     }
 
     // Refine the parallax mapping (binary search)
