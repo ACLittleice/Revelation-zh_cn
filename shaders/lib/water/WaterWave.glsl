@@ -48,7 +48,7 @@ float CalculateWaterHeight(in vec2 position, in bool detail) {
 	float sumWeight = 0.0;
 
 	float waveTime = 0.5 * WATER_WAVE_SPEED * frameTimeCounter;
-	uint steps = detail ? 12u : 6u;
+	uint steps = detail ? 12u : 8u;
 
 	for (uint i = 0u; i < steps; ++i, dir *= rot) {
 		vec2 res = wavedx(position + dir * noise.xy * (8.0 * weight), dir, frequency, waveTime);
@@ -65,7 +65,7 @@ float CalculateWaterHeight(in vec2 position, in bool detail) {
 		sum *= saturate(noise.z * 2.0 - 1.0) * 3.0 + 1.0;
 	#endif
 
-	return sum / sumWeight * 0.125;
+	return sum / sumWeight * 0.15;
 }
 
 //================================================================================================//
