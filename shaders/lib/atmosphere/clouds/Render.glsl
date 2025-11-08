@@ -82,53 +82,7 @@ float CloudMultiScatteringApproxHaringPro(in float opticalDepth, in float phase,
 //================================================================================================//
 
 vec3 RenderCloudMid(in vec2 rayPos, in vec3 rayDir, in float noise, in float phase) {
-	float density = CloudMidDensity(rayPos);
-	if (density > EPS) {
-		float opticalDepth = density * cloudMidThickness / abs(rayDir.y);
-		float integral = oms(exp2(-rLOG2 * stratusExtinction * opticalDepth));
-
-		float opticalDepthSun = 0.0; {
-			const float rSteps = 1.0 / float(CLOUD_MID_SUNLIGHT_SAMPLES);
-			const float rayLength = cloudMidThickness * 1.0;
-			const float stepLength = rayLength * rSteps * rSteps;
-
-			vec2 rayStep = worldLightVector.xz * stepLength;
-
-			float sumDensity = 0.0;
-			for (uint i = 0u; i < CLOUD_MID_SUNLIGHT_SAMPLES; ++i) {
-				float fi = float(i) + noise;
-				vec2 samplePos = rayPos + rayStep * sqr(fi);
-
-				float density = CloudMidDensity(samplePos);
-				sumDensity += density * fi;
-			}
-
-			opticalDepthSun = stratusExtinction * 2.0 * stepLength * sumDensity;
-		}
-
-		// Approximate sunlight multi-scattering
-		float scatteringSun = CloudMultiScatteringApproxHaringPro(opticalDepthSun, phase, 8.0 * density, stratusAlbedo);
-
-		float opticalDepthSky = density * (cloudMidThickness * 0.5 * stratusExtinction * -rLOG2);
-
-		// Compute skylight multi-scattering
-		// See slide 85 of [Schneider, 2017]
-		// Original formula: Energy = max( exp( - density_along_light_ray ), (exp(-density_along_light_ray * 0.25) * 0.7) )
-		float scatteringSky = exp2(max(opticalDepthSky, opticalDepthSky * 0.25 - 0.5));
-
-		// Compute powder effect
-		// Formula from [Schneider, 2015]
-		// float powder = 2.0 * oms(exp2(-(density * 32.0 + 0.1)));
-
-		// TODO: Better implementation
-		// float inScatterProbability = oms(exp2(-16.0 * density - 0.125)) * PI;
-
-		scatteringSun *= integral * stratusAlbedo;
-		scatteringSky *= integral * stratusAlbedo;
-		return vec3(scatteringSun, scatteringSky, integral);
-	} else {
-		return vec3(0.0);
-	}
+	return vec3(0.0);
 }
 
 //================================================================================================//
@@ -159,7 +113,7 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float noise, in float ph
 		}
 
 		// Approximate sunlight multi-scattering
-		float scatteringSun = CloudMultiScatteringApproxHaringPro(opticalDepthSun, phase, 8.0 * density, cirrusAlbedo);
+		float scatteringSun = CloudMultiScatteringApproxHaringPro(opticalDepthSun, phase, 5.0 * density, cirrusAlbedo);
 
 		float opticalDepthSky = density * (cloudHighThickness * 0.5 * cirrusExtinction * -rLOG2);
 

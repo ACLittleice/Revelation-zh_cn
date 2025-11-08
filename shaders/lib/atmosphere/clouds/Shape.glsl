@@ -32,60 +32,13 @@
 
 //================================================================================================//
 
-float GetSmoothNoise(in vec2 coord) {
-    vec2 whole = floor(coord);
-    vec2 part = curve(coord - whole);
-
-	ivec2 texel = ivec2(whole);
-
-	float s0 = texelFetch(noisetex, texel % 256, 0).x;
-	float s1 = texelFetch(noisetex, (texel + ivec2(1, 0)) % 256, 0).x;
-	float s2 = texelFetch(noisetex, (texel + ivec2(0, 1)) % 256, 0).x;
-	float s3 = texelFetch(noisetex, (texel + ivec2(1, 1)) % 256, 0).x;
-
-    return mix(mix(s0, s1, part.x), mix(s2, s3, part.x), part.y);
-}
-
 // [Schneider, 2023]
 float ValueErosion(in float value, in float oldMin) {
     return saturate((value - oldMin) / (1.0 - oldMin));
 }
 
-//================================================================================================//
-
 float CloudMidDensity(in vec2 rayPos) {
-	// Wind field
-	const float windAngle = radians(10.0);
-	const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_MID_WIND_SPEED;
-	vec2 windOffset = windVelocity * worldTimeCounter;
-
-	rayPos -= windOffset;
-
-	float localCoverage = GetSmoothNoise(rayPos * 3e-5 + 32.0);
-	localCoverage += texture(noisetex, rayPos * 7e-6).z;
-
-	/* Altostratus clouds */
-	if (localCoverage > 0.25) {
-		// Curl noise to simulate wind, makes the positioning of the clouds more natural
-		vec2 curlNoise = texture(curlNoiseTex, rayPos * 5e-5).xy * 5e-4;
-
-		vec2 position = (rayPos - windOffset * 0.5) * 1e-6 + curlNoise;
-		curlNoise *= 0.5;
-
-		float altostratus = texture(noisetex, position * 32.0).z, weight = 0.7;
-		position += altostratus * 2e-3;
-
-		// Altostratus FBM
-		for (uint i = 0u; i < 5u; ++i, weight *= 0.55) {
-			position = position * 2.5 + curlNoise - windOffset * 1e-6;
-			altostratus += weight * texture(noisetex, position).x;
-		}
-		altostratus *= 0.5;
-
-		localCoverage = saturate(localCoverage - 0.8) * (1.5 + 1.5 * CLOUD_AS_COVERAGE);
-		float density = saturate(altostratus + localCoverage - 1.25);
-		return curve(density);
-	}
+	return 0.0;
 }
 
 // Adapted from [Schneider, 2022]
