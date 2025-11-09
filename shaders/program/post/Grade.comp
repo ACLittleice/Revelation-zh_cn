@@ -23,7 +23,7 @@ const vec2 workGroupsRender = vec2(1.0, 1.0);
 #define TONE_MAPPER AgX_Minimal // [None AcademyFit AcademyFull AgX_Minimal AgX_Full Uchimura Lottes]
 
 #define BLOOM_INTENSITY 1.0 // Intensity of bloom. [0.0 0.01 0.02 0.05 0.07 0.1 0.15 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5.0 7.0 10.0 15.0 20.0]
-#define BLOOMY_FOG_INTENSITY 0.75 // Intensity of bloomy fog. [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.75 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.5 3.0 3.5 4.0 5.0]
+#define BLOOMY_FOG_INTENSITY 1.0 // Intensity of bloomy fog. [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.75 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.5 3.0 3.5 4.0 5.0]
 
 #define PURKINJE_SHIFT // Enables purkinje shift effect
 #define PURKINJE_SHIFT_STRENGTH 0.5 // Strength of purkinje shift effect. [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.5 3.0 3.5 4.0 5.0]
@@ -81,23 +81,23 @@ void CombineBloomAndFog(inout vec3 scene, in ivec2 texel, in float exposure) {
 
 		bloomData += sampleTile * weight;
 		sumWeight += weight;
-		weight *= 0.85;
+		weight *= 0.9;
 	}
 
 	bloomData *= rcp(sumWeight);
 
-	float bloomIntensity = BLOOM_INTENSITY * 0.075;
-	bloomIntensity *= fma(1.0 / max(exposure, 1.0), 0.75, 0.25);
+	float bloomIntensity = BLOOM_INTENSITY * 0.1;
+	bloomIntensity /= exposure + 1.0;
 
-	scene = mix(scene, bloomData, bloomIntensity);
+	scene = mix(scene, bloomData, saturate(bloomIntensity));
 
 	#ifdef BLOOMY_FOG
-		float mask = texelFetch(colortex12, texel, 0).x;
-		scene = mix(bloomData, scene, mix(1.0, saturate(mask), BLOOMY_FOG_INTENSITY));
+		float mask = saturate(texelFetch(colortex12, texel, 0).x);
+		scene = mix(bloomData, scene, mix(1.0, mask, BLOOMY_FOG_INTENSITY));
 	#endif
 
 	if (rainStrength > 1e-2) {
-		float rainAlpha = textureBicubic(colortex6, screenCoord).a;
+		float rainAlpha = texture(colortex6, screenCoord).a;
 		rainAlpha = oms(rainAlpha) * RAIN_VISIBILITY;
 		scene = scene * oms(rainAlpha) + bloomData * rainAlpha * 1.25;
 	}
