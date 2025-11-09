@@ -261,8 +261,10 @@ void main() {
 					specularDirect = shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, material.roughness, f0);
 				} else {
 					// Subsurface scattering
-					float cutout = float(clamp(materialID, 1000u, 1003u) == materialID || clamp(materialID, 27u, 28u) == materialID);
-					shadow = mix(shadow, vec3(contactShadow), saturate(distanceFade + cutout * 0.75));
+					if (isEyeInWater == 0) {
+						float cutout = float(clamp(materialID, 1000u, 1003u) == materialID || clamp(materialID, 27u, 28u) == materialID);
+						shadow = mix(shadow, vec3(contactShadow), saturate(distanceFade + cutout * 0.5));
+					}
 
 					// Wavelength-dependent approximation
 					shadow *= saturate(pow(albedo, vec3(sqr(1.0 - mean(shadow)) - 0.2))) * sunlightBase;
