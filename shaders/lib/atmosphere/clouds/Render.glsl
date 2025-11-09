@@ -71,12 +71,12 @@ float CloudMultiScatteringApproxOz(in float opticalDepth, in float phase) {
 }
 
 float CloudMultiScatteringApproxHaringPro(in float opticalDepth, in float phase, in float extinction, in float albedo) {
-	// Inspired by [Schneider, 2017]
-	float transmittance = exp(-min(opticalDepth, opticalDepth * 0.25 + 1.0));
-
 	// https://zhuanlan.zhihu.com/p/457997155
 	float msV = albedo * oms(exp2(-8.0 * extinction));
-	return transmittance * (phase + msV / oms(msV) * uniformPhase);
+	float msT = exp2(-0.25 * opticalDepth - 2.0);
+
+	float transmittance = exp2(-rLOG2 * opticalDepth);
+	return transmittance * phase + msT * msV / oms(msV) * uniformPhase;
 }
 
 //================================================================================================//
@@ -232,8 +232,8 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 						float opticalDepthSun = CloudVolumeOpticalDepth(rayPos, lightDir, noise.y, CLOUD_LOW_SUNLIGHT_SAMPLES);
 
 						// Approximate sunlight multi-scattering
-						float msE = linearstep(0.5, 4.0, dimensionalProfile + stepDensity * 4.0);
-						float scatteringSun = CloudMultiScatteringApproxHaringPro(opticalDepthSun, phase, msE, cumulusAlbedo);
+						float coarseDensity = linearstep(0.5, 4.0, dimensionalProfile + stepDensity * 4.0);
+						float scatteringSun = CloudMultiScatteringApproxHaringPro(opticalDepthSun, phase, coarseDensity, cumulusAlbedo);
 
 						#if CLOUD_CU_SKYLIGHT_SAMPLES > 0
 							// Compute the optical depth of skylight through clouds
