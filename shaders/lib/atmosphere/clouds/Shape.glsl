@@ -62,7 +62,7 @@ float CloudHighDensity(in vec2 rayPos) {
 
 		if (coverage > 0.2) {
 			vec2 p = position + coverage * 0.5 - windOffset * 1e-4;
-			float cirrus = texture(cirroLutTex, p * 0.375).y * 0.25;
+			float cirrus = textureBicubic(cirroLutTex, p * 0.375).y * 0.25;
 
 			cirrus *= saturate(cirrus + coverage);
 			cirrus *= smoothstep(0.2, 1.0, coverage);
@@ -79,7 +79,7 @@ float CloudHighDensity(in vec2 rayPos) {
 
 		if (coverage > 0.25) {
 			vec2 p = position + coverage * 0.25 - windOffset * 1e-4;
-			float cirrocumulus = sqr(texture(cirroLutTex, p * 0.25).x);
+			float cirrocumulus = sqr(textureBicubic(cirroLutTex, p * 0.25).x);
 
 			cirrocumulus *= saturate(cirrocumulus + coverage);
 			cirrocumulus *= smoothstep(0.25, 0.75, coverage);
