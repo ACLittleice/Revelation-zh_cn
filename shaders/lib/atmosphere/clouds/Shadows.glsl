@@ -77,7 +77,7 @@ vec2 DistortCloudShadowPos(in vec2 shadowPos) {
 float CalculateCloudShadows(in vec3 rayPos) {
 	float steps = float(CLOUD_SHADOW_SAMPLES) * (2.0 - worldLightVector.y);
 
-	rayPos += vec3(0.0, viewerHeight, 0.0);
+	rayPos.y += viewerHeight;
 
 	vec2 intersection = RaySphericalShellIntersection(rayPos, worldLightVector, cumulusBottomRadius, cumulusTopRadius);
 	float stepLength = (intersection.y - intersection.x) * rcp(steps);
@@ -86,18 +86,19 @@ float CalculateCloudShadows(in vec3 rayPos) {
 	rayPos += worldLightVector * intersection.x;
 	rayPos += rayStep * BlueNoiseTemporal(ivec2(gl_GlobalInvocationID.xy));
 
-	float opticalDepth = 0.0;
+	float extinction = 0.0;
+	const float maxExtinction = -log2(cloudMinTransmittance) / cumulusExtinction;
 
 	// Raymarch along the light vector
-	for (uint i = 0u; i < uint(steps); ++i, rayPos += rayStep) {
+	for (uint i = 0u; i < uint(steps) && extinction < maxExtinction; ++i, rayPos += rayStep) {
 		float temp;
-		opticalDepth += CloudVolumeDensity(rayPos, temp, temp, false);
-		if (opticalDepth > steps * 0.25) break;
+		extinction += CloudVolumeDensity(rayPos, temp, temp, false) * stepLength;
 	}
 
-	float cloudShadow = exp2(-rLOG2 * cumulusExtinction * opticalDepth * stepLength);
+	float transmittance = exp2(-rLOG2 * cumulusExtinction * extinction);
+	transmittance = linearstep(cloudMinTransmittance, 1.0, transmittance);
 
 	float timeFade = linearstep(0.05, 0.1, worldLightVector.y);
-	return oms(timeFade) + cloudShadow * timeFade;
+	return oms(timeFade) + transmittance * timeFade;
 }
 #endif
