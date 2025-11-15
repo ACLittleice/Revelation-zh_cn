@@ -105,7 +105,7 @@ float CloudHighDensity(in vec2 rayPos) {
 		float cumulus = saturate(heightFraction * 8.0) * linearstep(1.0, 0.6, heightFraction);
 
 		float verticalProfile = mix(stratus, stratocumulus, saturate(cloudType * 2.0));
-		return mix(verticalProfile, cumulus, curve(saturate(cloudType * 2.0 - 1.0)));
+		return mix(verticalProfile, cumulus, /* curve */(saturate(cloudType * 2.0 - 1.0)));
 	}
 #endif
 
@@ -163,7 +163,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	cloudDensity = ValueErosion(cloudDensity, detailNoise * 0.25);
 
 	// Density profile
-	return approxSqrt(cloudDensity) * remap(heightFraction, 0.1, 0.25, 0.25, 1.0);
+	return approxSqrt(cloudDensity) * remap(heightFraction, 0.1, 0.2, 0.3, 1.0);
 }
 
 #endif
