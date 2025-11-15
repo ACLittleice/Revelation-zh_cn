@@ -113,14 +113,16 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float noise, in float ph
 		}
 
 		// Approximate sunlight multi-scattering
-		float scatteringSun = CloudMultiScatteringApproxHaringPro(opticalDepthSun, phase, 5.0 * density, cirrusAlbedo);
+		float coarseDensity = density * (2.0 - density) + 0.05;
+		float scatteringSun = CloudMultiScatteringApproxHaringPro(opticalDepthSun, phase, coarseDensity, cirrusAlbedo);
 
-		float opticalDepthSky = density * (cloudHighThickness * 0.5 * cirrusExtinction * -rLOG2);
+		// float opticalDepthSky = density * (cloudHighThickness * 0.5 * cirrusExtinction * -rLOG2);
 
 		// Compute skylight multi-scattering
 		// See slide 85 of [Schneider, 2017]
 		// Original formula: Energy = max( exp( - density_along_light_ray ), (exp(-density_along_light_ray * 0.25) * 0.7) )
-		float scatteringSky = exp2(max(opticalDepthSky, opticalDepthSky * 0.25 - 0.5));
+		// float scatteringSky = exp2(max(opticalDepthSky, opticalDepthSky * 0.25 - 0.5));
+		float scatteringSky = 1.0 - density;
 
 		// Compute powder effect
 		// Formula from [Schneider, 2015]
@@ -259,8 +261,8 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 						vec2 scattering = vec2(scatteringSun + scatteringGround * worldLightVector.y, scatteringSky);
 
-						float stepOpticalDepth = -rLOG2 * cumulusExtinction * stepDensity * stepSize;
-						float stepTransmittance = exp2(stepOpticalDepth);
+						float stepOpticalDepth = stepDensity * stepSize;
+						float stepTransmittance = exp2(-rLOG2 * cumulusExtinction * stepOpticalDepth);
 
 						// Energy-conserving analytical integration from [Hillaire, 2016]
 						float stepIntegral = transmittance * oms(stepTransmittance);
