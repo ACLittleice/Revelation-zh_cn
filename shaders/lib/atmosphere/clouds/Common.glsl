@@ -109,7 +109,7 @@ const float cloudHighThickness      = CLOUD_HIGH_THICKNESS;
 const float cloudMidRadius          = planetRadius + CLOUD_MID_ALTITUDE;
 const float cloudHighRadius         = planetRadius + CLOUD_HIGH_ALTITUDE;
 
-const float cumulusAlbedo 		    = 0.97;
+const float cumulusAlbedo 		    = 0.95;
 const float stratusAlbedo 		    = 0.91;
 const float cirrusAlbedo 		    = 0.85;
 
