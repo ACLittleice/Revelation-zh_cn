@@ -105,14 +105,13 @@ float CloudHighDensity(in vec2 rayPos) {
 		float cumulus = saturate(heightFraction * 8.0) * linearstep(1.0, 0.6, heightFraction);
 
 		float verticalProfile = mix(stratus, stratocumulus, saturate(cloudType * 2.0));
-		return mix(verticalProfile, cumulus, saturate(cloudType * 2.0 - 1.0));
+		return mix(verticalProfile, cumulus, curve(saturate(cloudType * 2.0 - 1.0)));
 	}
 #endif
 
 float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dimensionalProfile, in bool detail) {
 	// Remap the height of the clouds to the range of [0, 1]
-	float rayRadius = sdot(rayPos); rayRadius *= inversesqrt(rayRadius);
-	heightFraction = saturate((rayRadius - cumulusBottomRadius) * rcp(cumulusThickness));
+	heightFraction = saturate((length(rayPos) - cumulusBottomRadius) * rcp(cumulusThickness));
 
 	// Wind field
 	const float windAngle = radians(45.0);
@@ -136,7 +135,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	float verticalProfile = GetVerticalProfile(heightFraction, cloudType);
 
 	dimensionalProfile = saturate(verticalProfile * coverage);
-	if (dimensionalProfile < 0.25) return 0.0;
+	if (dimensionalProfile < 0.125) return 0.0;
 
 	rayPos -= windDir * cumulusTopOffset * heightFraction;
 	vec3 position = rayPos * 3e-4;
@@ -153,7 +152,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	#if !defined PASS_SKY_MAP
 	if (detail) {
 		// vec3 curlNoise = texture(curlNoiseTex, position.xz * 2.0).xyz;
-		position += /* curlNoise * 0.05 * oms(heightFraction) -  */windOffset * 1e-4;
+		position += baseNoise * 0.05 - windOffset * 1e-4;
 
 		detailNoise = texture(detailNoiseTex, position * 8.0).x;
 
@@ -161,7 +160,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 		// detailNoise = mix(1.0 - detailNoise, detailNoise, saturate(heightFraction * 8.0));
 	}
 	#endif
-	cloudDensity = ValueErosion(cloudDensity, detailNoise * 0.2);
+	cloudDensity = ValueErosion(cloudDensity, detailNoise * 0.25);
 
 	// Density profile
 	return approxSqrt(cloudDensity) * remap(heightFraction, 0.1, 0.25, 0.25, 1.0);
