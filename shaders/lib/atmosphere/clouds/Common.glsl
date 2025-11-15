@@ -111,11 +111,11 @@ const float cloudHighRadius         = planetRadius + CLOUD_HIGH_ALTITUDE;
 
 const float cumulusAlbedo 		    = 0.97;
 const float stratusAlbedo 		    = 0.91;
-const float cirrusAlbedo 		    = 0.88;
+const float cirrusAlbedo 		    = 0.85;
 
 const float cumulusScattering 		= 0.06;
 const float stratusScattering 		= 0.04;
-const float cirrusScattering 		= 0.02;
+const float cirrusScattering 		= 0.01;
 
 const float cumulusExtinction 		= cumulusScattering / cumulusAlbedo;
 const float stratusExtinction 		= stratusScattering / stratusAlbedo;

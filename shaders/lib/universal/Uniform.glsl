@@ -36,7 +36,7 @@ uniform sampler3D detailNoiseTex;
 uniform sampler2D cloudMapTex;
 uniform sampler2D verticalLut;
 uniform sampler2D curlNoiseTex;
-uniform sampler2D nubisCirroTex;
+uniform sampler2D cirroLutTex;
 
 uniform int frameCounter;
 uniform int isEyeInWater;

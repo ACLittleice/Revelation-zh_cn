@@ -113,7 +113,7 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 rayDir, in float noise, in float ph
 		}
 
 		// Approximate sunlight multi-scattering
-		float coarseDensity = density * (2.0 - density) + 0.05;
+		float coarseDensity = density * (2.0 - density) + 0.1;
 		float scatteringSun = CloudMultiScatteringApproxHaringPro(opticalDepthSun, phase, coarseDensity, cirrusAlbedo);
 
 		// float opticalDepthSky = density * (cloudHighThickness * 0.5 * cirrusExtinction * -rLOG2);
