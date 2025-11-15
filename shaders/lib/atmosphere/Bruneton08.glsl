@@ -356,7 +356,7 @@ vec3 GetSkyRadianceToPoint(
         vec3 mie = sun_single_mie_scattering * CornetteShanksPhase(nu, mie_phase_g)
                 + moon_single_mie_scattering * CornetteShanksPhase(-nu, mie_phase_g) * moonlightMult;
 
-        return (rayleigh + mie) * oms(wetness * 0.5);
+        return rayleigh * oms(wetness * 0.5) + mie;
 }
 
 vec3 GetSkyRadiance(
@@ -430,7 +430,7 @@ vec3 GetSkyRadiance(
         vec3 mie = sun_single_mie_scattering * CornetteShanksPhase(nu, mie_phase_g)
                 + moon_single_mie_scattering * CornetteShanksPhase(-nu, mie_phase_g) * moonlightMult;
 
-        return (rayleigh + mie + ground) * oms(wetness * 0.5);
+        return (rayleigh + ground) * oms(wetness * 0.5) + mie;
 }
 
 vec3 GetSkyRadiance(
@@ -500,5 +500,5 @@ vec3 GetSkyRadiance(
         vec3 mie = sun_single_mie_scattering * CornetteShanksPhase(nu, mie_phase_g)
                 + moon_single_mie_scattering * CornetteShanksPhase(-nu, mie_phase_g) * moonlightMult;
 
-        return (rayleigh + mie + ground) * oms(wetness * 0.5);
+        return (rayleigh + ground) * oms(wetness * 0.5) + mie;
 }
