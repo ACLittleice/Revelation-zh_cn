@@ -359,9 +359,9 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 		skyIlluminance += lightningShading * 0.05;
 
 		// Direct + Indirect
-		cloudScattering  = integralScattering.x * oms(wetness * 0.5) * directIlluminance;
+		cloudScattering  = integralScattering.x * directIlluminance;
 		cloudScattering += integralScattering.y * uniformPhase * skyIlluminance;
-		cloudScattering *= PI;
+		cloudScattering *= mix(PI, hPI, wetness);
 
 		// Compute aerial perspective
 		#ifdef CLOUD_AERIAL_PERSPECTIVE
