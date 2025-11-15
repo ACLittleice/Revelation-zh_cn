@@ -152,7 +152,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	#if !defined PASS_SKY_MAP
 	if (detail) {
 		// vec3 curlNoise = texture(curlNoiseTex, position.xz * 2.0).xyz;
-		position += baseNoise * 0.05 - windOffset * 1e-4;
+		position -= baseNoise * 0.2 * windDir + windOffset * 1e-4;
 
 		detailNoise = texture(detailNoiseTex, position * 8.0).x;
 
