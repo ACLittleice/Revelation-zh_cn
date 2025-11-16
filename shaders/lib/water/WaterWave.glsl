@@ -37,7 +37,7 @@ vec2 wavedx(vec2 position, vec2 direction, float frequency, float time) {
 
 float CalculateWaterHeight(in vec2 position) {
 	vec3 noise = FetchSmoothNoise((position + frameTimeCounter) * 2e-3);
-	vec2 dir = sincos(noise.z * 0.2);
+	vec2 dir = sincos(noise.z * 32.0 * inversesqrt(sdot(position)));
 
 	float frequency = 1.0;
 	float weight = 1.0;
