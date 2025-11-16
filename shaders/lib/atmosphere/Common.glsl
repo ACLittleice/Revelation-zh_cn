@@ -95,7 +95,7 @@ const AtmosphereParameters atmosphereModel = AtmosphereParameters(
     planetRadius - 1e3,
     planetRadius + ATMOSPHERE_THICKNESS,
 //    DensityProfile(DensityProfileLayer[2](DensityProfileLayer(0.000000,0.000000,0.000000,0.000000,0.000000),DensityProfileLayer(0.000000,1.000000,-0.125000,0.000000,0.000000))),
-    vec3(0.005802, 0.013558, 0.033100),
+    vec3(6.42905682e-3, 1.08663713e-2, 2.4844733e-2),
 //    DensityProfile(DensityProfileLayer[2](DensityProfileLayer(0.000000,0.000000,0.000000,0.000000,0.000000),DensityProfileLayer(0.000000,1.000000,-0.833333,0.000000,0.000000))),
     vec3(0.003996, 0.003996, 0.003996),
     vec3(0.004440, 0.004440, 0.004440),

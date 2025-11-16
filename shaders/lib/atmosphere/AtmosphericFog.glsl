@@ -1,12 +1,8 @@
 #include "/lib/atmosphere/Rainbow.glsl"
 
-uniform vec3 fogMieExtinction;
-uniform vec3 fogMieScattering;
-uniform vec3 fogRayleighExtinction;
-uniform vec3 fogRayleighScattering;
-
 uniform float biomeSandstorm;
 uniform float biomeSnowstorm;
+uniform float biomeGreenVapor;
 
 //================================================================================================//
 
@@ -30,7 +26,7 @@ vec2 CalculateFogDensity(in vec3 rayPos) {
 	noise -= Calculate3DNoise(rayPos * 4.0 - windOffset);
 #endif
 
-	density.x *= sqr(noise) * (2.0 + biomeSandstorm + biomeSnowstorm);
+	density.x *= sqr(noise) * (4.0 + biomeSandstorm * 8.0 + biomeSnowstorm * 4.0);
 	return density;
 }
 
@@ -56,21 +52,22 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 
 	vec3 worldDir = worldPos * norm;
 
-	if (skyMask && viewerHeight < cumulusTopRadius) {
-		vec2 intersection = RaySphericalShellIntersection(viewerHeight, worldDir.y, planetRadius - 128.0, cumulusTopRadius);
+	if (skyMask) {
+		vec2 intersection = RaySphericalShellIntersection(viewerHeight, worldDir.y, atmosphereModel.bottom_radius, cumulusTopRadius);
 
 		// Not intersecting the volume
 		if (intersection.y < 0.0) return mat2x3(vec3(0.0), vec3(1.0));
 
-		rayLength = clamp(intersection.y - intersection.x, 0.0, 2e4);
+		rayLength = clamp(intersection.y - intersection.x, 0.0, far);
 		rayStart += worldDir * intersection.x;
 	}
 
 	// Adaptive step count
-	steps = min(steps, uint(float(steps) * 0.4 + rayLength * 0.1));
+	steps = min(steps, uint(float(steps) * 0.4 + rayLength * rcp(16.0)));
 	float rSteps = rcp(float(steps));
 
-	vec3 rayStep = rayLength * rSteps * worldDir;
+	float stepLength = rayLength * rSteps;
+	vec3 rayStep = stepLength * worldDir;
 	vec3 rayPos = rayStart + rayStep * dither + cameraPosition;
 
 	vec3 shadowViewStart = transMAD(shadowModelView, rayStart);
@@ -89,22 +86,34 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 	#endif
 
 	float LdotV = dot(worldLightVector, worldDir);
-	vec2 phase = vec2(DualLobePhase(LdotV, 0.7, -0.3, 0.25), RayleighPhase(LdotV));
+	vec2 phase = vec2(CornetteShanksPhase(LdotV, mie_phase_g), RayleighPhase(LdotV));
 
 	float mieDensityMult = VF_MIE_DENSITY * (1.0 + wetness * VF_MIE_DENSITY_RAIN_MULT);
 
+	#ifdef VF_TIME_FADE
+		mieDensityMult *= max(wetness, 1.5 - approxSqrt(timeNoon) * 1.5 - timeSunset * 0.75 - timeMidnight * 0.5);
+	#endif
+
+	vec3 fogMieExtinction = atmosphereModel.mie_extinction * mieDensityMult;
+	vec3 fogMieScattering = atmosphereModel.mie_scattering * mieDensityMult;
+
+	#ifdef PER_BIOME_FOG
+		vec3 biomeAlbedo = mix(vec3(1.0), vec3(1.1, 0.9, 0.7), biomeSandstorm);
+		biomeAlbedo = mix(biomeAlbedo, vec3(0.95, 1.1, 1.0), biomeGreenVapor);
+		fogMieScattering *= biomeAlbedo;
+	#endif
+
 	mat2x3 fogExtinctionCoeff = mat2x3(
-		fogMieExtinction * mieDensityMult,
-		fogRayleighExtinction * VF_RAYLEIGH_DENSITY
+		fogMieExtinction,
+		atmosphereModel.rayleigh_scattering * VF_RAYLEIGH_DENSITY * 0.05
 	);
 
 	mat2x3 fogScatteringCoeff = mat2x3(
-		fogMieScattering * mieDensityMult,
-		fogRayleighScattering * VF_RAYLEIGH_DENSITY
+		fogMieScattering,
+		atmosphereModel.rayleigh_scattering * VF_RAYLEIGH_DENSITY * 0.05
 	);
 
-	float stepLength = min(rayLength, far) * rSteps;
-	float uniformFog = 16.0 / far;
+	float uniformFog = 8.0 / far;
 
 	vec3 scatteringSun = vec3(0.0);
 	vec3 scatteringSky = vec3(0.0);
@@ -145,10 +154,12 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 			cloudShadowPos += shadowViewStep.xy;
 			vec2 cloudShadowCoord = DistortCloudShadowPos(cloudShadowPos);
 			vec2 fade = saturate(32.0 - abs(cloudShadowCoord - 0.5) * 64.0);
-			sampleShadow *= mix(1.0 - wetness * 0.9, texture(cloudShadowTex, cloudShadowCoord).x, fade.x * fade.y);
+
+			float cloudShadow = max(texture(cloudShadowTex, cloudShadowCoord).x, 0.125);
+			sampleShadow *= mix(1.0 - wetness * 0.875, cloudShadow, fade.x * fade.y);
 		#endif
 
-		vec2 stepPhase = max(phase, uniformPhase * saturate(stepFogmass));
+		vec2 stepPhase = max(phase, uniformPhase * saturate(stepFogmass * 2.0));
 		stepFogmass *= stepLength;
 
 		vec3 opticalDepth = fogExtinctionCoeff * stepFogmass;
@@ -167,10 +178,10 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 	#ifndef VF_CLOUD_SHADOWS
 		scatteringSun *= 1.0 - wetness * 0.75;
 	#endif
+	scatteringSky *= eyeSkylightSmooth;
 
 	vec3 scattering = scatteringSun * global.light.directIlluminance;
 	scattering += scatteringSky * uniformPhase * global.light.skyIlluminance;
-	scattering *= eyeSkylightSmooth;
 
 	// Apply rainbows
 	#ifdef RAINBOWS

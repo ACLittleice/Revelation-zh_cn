@@ -75,7 +75,7 @@ void main() {
 
 	vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
 
-	float dither = SampleStbnVec1(screenTexel, frameCounter + 2);
+	float dither = BlueNoiseTemporal(screenTexel);
 
 	mat2x3 volFogData = mat2x3(vec3(0.0), vec3(1.0));
 
