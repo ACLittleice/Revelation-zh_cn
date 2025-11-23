@@ -1,7 +1,7 @@
 //======// Constants //===========================================================================//
 
-const float min_ev = -9.5;
-const float max_ev = 5.5;
+const float min_ev = -8.0;
+const float max_ev = 6.0;
 const float middle_grey = 0.18;
 
 const float slope = 2.0;
@@ -133,8 +133,8 @@ vec3 agxLook(vec3 val) {
     #else
         // Custom
         const vec3 slope = vec3(1.0);
-        const vec3 power = vec3(1.25);
-        const float sat = 1.25;
+        const vec3 power = vec3(1.2);
+        const float sat = 1.2;
     #endif
 
     // ASC CDL
