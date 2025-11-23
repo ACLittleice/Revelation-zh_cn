@@ -1,7 +1,7 @@
 //======// Constants //===========================================================================//
 
 const float min_ev = -8.0;
-const float max_ev = 6.0;
+const float max_ev = 5.5;
 const float middle_grey = 0.18;
 
 const float slope = 2.0;
