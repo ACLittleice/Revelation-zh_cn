@@ -151,19 +151,23 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	if (cloudDensity < cloudEpsilon) return 0.0;
 
 	// Detail erosion
-	float detailNoise = 0.5;
+	float detailNoise = 0.25;
+	float heightFade = sqr(1.0 - heightFraction);
+
 	#if !defined PASS_SKY_MAP
 	if (detail) {
 		// vec3 curlNoise = texture(curlNoiseTex, position.xz * 2.0).xyz;
-		position += baseNoise * 0.1 * windDir + windOffset * 1e-4;
+		position += baseNoise * heightFade * 0.2 * windDir + windOffset * 1e-4;
 
-		detailNoise = texture(detailNoiseTex, position * 8.0).x;
+		detailNoise = sqr(texture(detailNoiseTex, position * 8.0).x);
 
 		// Transition from wispy shapes to billowy shapes over height
 		// detailNoise = mix(1.0 - detailNoise, detailNoise, saturate(heightFraction * 8.0));
 	}
 	#endif
-	cloudDensity = ValueErosion(cloudDensity, detailNoise * mix(0.25, 0.1, heightFraction));
+
+	detailNoise *= mix(0.2, 0.5, heightFade);
+	cloudDensity = ValueErosion(cloudDensity, detailNoise);
 
 	// Density profile
 	return approxSqrt(cloudDensity) * remap(heightFraction, 0.1, 0.2, 0.2, 1.0);
