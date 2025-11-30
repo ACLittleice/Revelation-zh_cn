@@ -98,12 +98,12 @@ float CloudHighDensity(in vec2 rayPos) {
 	}
 #else
 	float GetVerticalProfile(in float heightFraction, in float cloudType) {
-		float stratus = saturate(heightFraction * 16.0) * linearstep(0.2, 0.05, heightFraction);
+		float stratus = saturate(heightFraction * 16.0) * linearstep(0.2, 0.1, heightFraction);
 		float stratocumulus = saturate(heightFraction * 6.0) * linearstep(0.6, 0.2, heightFraction);
-		float cumulus = saturate(heightFraction * 8.0) * linearstep(1.0, 0.6, heightFraction);
+		float cumulus = saturate(heightFraction * 8.0) * linearstep(1.0, 0.7, heightFraction);
 
-		float verticalProfile = mix(stratus, stratocumulus, saturate(cloudType * 2.0));
-		return mix(verticalProfile, cumulus, /* curve */(saturate(cloudType * 2.0 - 1.0)));
+		float verticalProfile = mix(stratus, stratocumulus, curve(saturate(cloudType * 2.0)));
+		return mix(almostUnitIdentity(verticalProfile), cumulus, saturate(cloudType * 2.0 - 1.0));
 	}
 #endif
 
@@ -128,7 +128,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	float coverage = linearstep(stepEdge.x, stepEdge.y, cloudMap.x);
 
 	// Vertical profile
-	float type = smoothstep(0.45 - wetness * 0.2, 1.0, cloudMap.y) * coverage;
+	float type = smoothstep(0.4 - wetness * 0.2, 1.0, cloudMap.y) * coverage;
 	float gradient = GetVerticalProfile(heightFraction, type);
 
 	dimensionalProfile = saturate(gradient * coverage);
