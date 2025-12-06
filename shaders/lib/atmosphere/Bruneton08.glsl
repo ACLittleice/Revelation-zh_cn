@@ -318,11 +318,11 @@ vec3 GetSkyRadianceToPoint(
         float nu = dot(view_ray, sun_direction);
 		float d = length(point - camera);
 
-        #ifndef PLANET_GROUND
-            mu = max(mu, exp2(-0.002 * max0(viewerHeight - planetRadius - 512.0)) - 1.0);
-        #endif
-
         bool ray_r_mu_intersects_ground = RayIntersectsGround(r, mu);
+
+        #ifndef PLANET_GROUND
+            ray_r_mu_intersects_ground = ray_r_mu_intersects_ground && (r > planetRadius + 512.0);
+        #endif
 
         transmittance = GetTransmittance(r, mu, d, ray_r_mu_intersects_ground);
 
@@ -394,11 +394,11 @@ vec3 GetSkyRadiance(
         float mu_s = dot(camera, sun_direction) / r;
         float nu = dot(view_ray, sun_direction);
 
-        #ifndef PLANET_GROUND
-            mu = max(mu, exp2(-0.002 * max0(viewerHeight - planetRadius - 512.0)) - 1.0);
-        #endif
-
         bool ray_r_mu_intersects_ground = RayIntersectsGround(r, mu);
+
+        #ifndef PLANET_GROUND
+            ray_r_mu_intersects_ground = ray_r_mu_intersects_ground && (r > planetRadius + 512.0);
+        #endif
 
         transmittance = ray_r_mu_intersects_ground ? vec3(0.0) : GetTransmittanceToTopAtmosphereBoundary(r, mu);
 
@@ -468,10 +468,6 @@ vec3 GetSkyRadiance(
         float mu_s = dot(camera, sun_direction) / r;
         float nu = dot(view_ray, sun_direction);
 
-        #ifndef PLANET_GROUND
-            mu = max(mu, exp2(-0.002 * max0(viewerHeight - planetRadius - 512.0)) - 1.0);
-        #endif
-
         vec3 sun_single_mie_scattering;
         vec3 sun_scattering;
 
@@ -479,6 +475,10 @@ vec3 GetSkyRadiance(
         vec3 moon_scattering;
 
         bool ray_r_mu_intersects_ground = RayIntersectsGround(r, mu);
+
+        #ifndef PLANET_GROUND
+            ray_r_mu_intersects_ground = ray_r_mu_intersects_ground && (r > planetRadius + 512.0);
+        #endif
 
         vec3 ground = vec3(0.0);
         #ifdef PLANET_GROUND
