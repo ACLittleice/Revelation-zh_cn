@@ -174,8 +174,9 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	// cloudDensity = ValueErosion(cloudDensity, detailNoise);
 	cloudDensity = saturate(cloudDensity - detailNoise * oms(cloudDensity));
 
-	// Density profile (increase at top and decrease at bottom)
-	return saturate(cloudDensity * mix(4.0 - cloudDensity, 0.25, heightFade));
+	// Density profile
+	float densityMult = mix(CLOUD_CU_DENSITY_T, CLOUD_CU_DENSITY_B, heightFade);
+	return saturate(cloudDensity * densityMult);
 }
 
 #endif // INCLUDE_CLOUDS_SHAPE

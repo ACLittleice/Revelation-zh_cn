@@ -114,6 +114,8 @@ option.CLOUD_CUMULUS=Cumulus
 option.CLOUD_CU_COVERAGE=Cumulus Coverage
 option.CLOUD_CU_ALTITUDE=Cumulus Altitude
 option.CLOUD_CU_THICKNESS=Cumulus Thickness
+option.CLOUD_CU_DENSITY_B=Cumulus Bottom Density
+option.CLOUD_CU_DENSITY_T=Cumulus Top Density
 suffix.CLOUD_CU_ALTITUDE=m
 suffix.CLOUD_CU_THICKNESS=m
 
