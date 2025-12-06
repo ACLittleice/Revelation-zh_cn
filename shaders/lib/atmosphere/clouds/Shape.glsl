@@ -167,12 +167,12 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 		// Transition from wispy shapes to billowy shapes over height
 		// detailNoise = mix(1.0 - detailNoise, detailNoise, heightFade);
 
-		detailNoise = mix(0.25, sqr(detailNoise), heightFade * 0.75 + 0.25);
+		detailNoise = mix(0.25, sqr(detailNoise), heightFade * 0.5 + 0.5);
 	}
 	#endif
 
-	cloudDensity = ValueErosion(cloudDensity, detailNoise);
-	// cloudDensity = saturate(cloudDensity - detailNoise);
+	// cloudDensity = ValueErosion(cloudDensity, detailNoise);
+	cloudDensity = saturate(cloudDensity - detailNoise * oms(cloudDensity));
 
 	// Density profile (increase at top and decrease at bottom)
 	return saturate(cloudDensity * mix(4.0 - cloudDensity, 0.25, heightFade));
