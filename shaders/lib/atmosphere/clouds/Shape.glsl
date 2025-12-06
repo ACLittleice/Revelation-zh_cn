@@ -97,13 +97,13 @@ float CloudHighDensity(in vec2 rayPos) {
 		return texture(verticalLut, vec2(cloudType, heightFraction)).x;
 	}
 #else
-	float GetVerticalProfile(in float heightFraction, in float cloudType) {
-		float stratus = linearstep(0.05, 0.1, heightFraction) * linearstep(0.2, 0.1, heightFraction);
-		float stratocumulus = saturate(heightFraction * 6.0) * linearstep(0.5, 0.2, heightFraction);
-		float cumulus = saturate(heightFraction * 8.0) * linearstep(1.0, 0.7, heightFraction);
+	float GetVerticalProfile(in float h, in float t) {
+		float stratus = linearstep(0.05, 0.1, h) * linearstep(0.2, 0.1, h);
+		float stratocumulus = saturate(h * 6.0) * linearstep(0.5, 0.2, h);
+		float cumulus = saturate(h * 8.0) * linearstep(1.0, 0.7, h);
 
-		float verticalProfile = mix(stratus, stratocumulus, saturate(cloudType * 2.0));
-		return mix(verticalProfile, cumulus, saturate(cloudType * 2.0 - 1.0));
+		float gradient = mix(stratus, stratocumulus, sqr(saturate(t * 2.0)));
+		return mix(gradient, cumulus, curve(saturate(t * 2.0 - 1.0)));
 	}
 #endif
 
@@ -128,7 +128,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	float coverage = linearstep(stepEdge.x, stepEdge.y, cloudMap.x);
 
 	// Vertical profile
-	float type = smoothstep(0.4 - wetness * 0.2, 0.95, cloudMap.y);
+	float type = smoothstep(0.25 - wetness * 0.1, 1.0, cloudMap.y);
 	type *= (2.0 - coverage) * coverage;
 	float gradient = GetVerticalProfile(heightFraction, type);
 
@@ -160,7 +160,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	#if !defined PASS_SKY_MAP
 	if (detail) {
 		// vec3 curlNoise = texture(curlNoiseTex, noisePos.xz * 2.0).xyz;
-		noisePos += mix(0.5, baseNoise, heightFade) * 0.15 * windDir + windOffset * 1e-4;
+		noisePos -= mix(0.5, baseNoise, heightFade) * 0.15 * windDir + windOffset * 1e-4;
 
 		detailNoise = texture(detailNoiseTex, noisePos * 5.0).x;
 
