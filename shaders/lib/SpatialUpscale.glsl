@@ -9,8 +9,8 @@
 		ivec2 offsetToBR = ivec2(halfViewSize.x, 0);
         ivec2 texelEnd = ivec2(halfViewEnd) - 1;
 
-		for (uint i = 0u; i < 16u; ++i) {
-			ivec2 sampleTexel = clamp(texel + offset4x4[i], ivec2(1), texelEnd);
+		for (uint i = 0u; i < 8u; ++i) {
+			ivec2 sampleTexel = clamp(texel + offset3x3N[i], ivec2(1), texelEnd);
 
 			vec3 prevData = texelFetch(colortex2, sampleTexel + offsetToBR, 0).rgb;
 
