@@ -44,11 +44,11 @@ float CalculateWaterHeight(in vec2 position) {
 	float sum = 0.0;
 	float sumWeight = 0.0;
 
-	float waveTime = 0.5 * WATER_WAVE_SPEED * frameTimeCounter;
-	float jitter = noise.z * inversesqrt(sdot(position) + 1.0) * 8.0;
+	float waveTime = WATER_WAVE_SPEED * frameTimeCounter;
+	position += noise.z * 8.0;
 
 	for (uint i = 0u; i < 14u; ++i) {
-		dir = sincos((Halton2(i) + jitter) * hPI);
+		dir = sincos(Halton2(i) * hPI);
 		frequency *= 1.22;
 		weight *= 0.8;
 
