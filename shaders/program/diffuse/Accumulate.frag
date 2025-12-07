@@ -45,13 +45,13 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, in f
     vec2 prevCoord = Reproject(screenPos).xy;
 
     float luma = texelFetch(colortex3, texel, 0).r; // We use YCoCg color space
-    ivec2 texelEnd = ivec2(halfViewEnd);
+    ivec2 texelEnd = ivec2(halfViewEnd) - 1;
 
     // Estimate spatial variance
     vec2 currMoments = vec2(luma, luma * luma);
     #if 1
 	    for (uint i = 0u; i < 8u; ++i) {
-            ivec2 sampleTexel = clamp(texel + offset3x3N[i], ivec2(0), texelEnd);
+            ivec2 sampleTexel = clamp(texel + offset3x3N[i], ivec2(1), texelEnd);
             float sampleLuma = texelFetch(colortex3, sampleTexel, 0).r; // We use YCoCg color space
 
             currMoments += vec2(sampleLuma, sampleLuma * sampleLuma);
@@ -65,7 +65,6 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, in f
         vec4 prevDiffuse = vec4(0.0);
         vec2 prevMoments = vec2(0.0);
         float sumWeight = 0.0;
-        float confidence = 0.0;
 
         prevCoord += (prevTaaOffset - taaOffset) * 0.25;
 
@@ -82,16 +81,15 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, in f
         };
 
         ivec2 offsetToBR = ivec2(halfViewSize.x, 0);
-		float depthPhi = -16.0 / viewDistance;
+		float depthPhi = -8.0 / viewDistance;
 
         for (uint i = 0u; i < 4u; ++i) {
             ivec2 sampleTexel = floorTexel + offset2x2[i];
-            if (clamp(sampleTexel, ivec2(0), texelEnd) == sampleTexel) {
+            if (clamp(sampleTexel, ivec2(1), texelEnd) == sampleTexel) {
                 vec3 sampleAux = texelFetch(colortex2, sampleTexel + offsetToBR, 0).rgb;
 
                 float weight = pow8(saturate(dot(OctDecodeSnorm(sampleAux.xy), worldNormal)));
                 weight *= exp2(abs(viewDistance - sampleAux.z) * depthPhi);
-                confidence = max(confidence, weight);
                 weight *= bilinearWeight[i];
 
                 prevDiffuse += texelFetch(colortex2, sampleTexel, 0) * weight;
@@ -105,7 +103,7 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, in f
             prevDiffuse *= sumWeight;
             prevMoments *= sumWeight;
 
-            float sampleIndex = min(prevDiffuse.a * confidence + 1.0, SSILVB_MAX_ACCUM_FRAMES);
+            float sampleIndex = min(prevDiffuse.a + 1.0, SSILVB_MAX_ACCUM_FRAMES);
             float alpha = rcp(sampleIndex);
 
             // See section 4.2 of the paper
@@ -117,15 +115,14 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, in f
             indirectCurrent.rgb = textureLod(colortex3, screenPos.xy * 0.5, mipLevel).rgb;
             indirectCurrent.rgb = mix(prevDiffuse.rgb, indirectCurrent.rgb, alpha);
 
-            indirectCurrent.a = max0(varianceMoments.y - varianceMoments.x * varianceMoments.x) + EPS;
-            indirectCurrent.a *= inversesqrt(indirectCurrent.a);
+            indirectCurrent.a = max0(varianceMoments.y - varianceMoments.x * varianceMoments.x);
 
             return vec4(indirectCurrent.rgb, sampleIndex);
         }
     }
 
     indirectCurrent.rgb = textureLod(colortex3, screenPos.xy * 0.5, 3.0).rgb;
-    indirectCurrent.a = varianceMoments.x;
+    indirectCurrent.a = sqr(varianceMoments.x);
 
     return vec4(0.0);
 }
@@ -155,8 +152,9 @@ void main() {
             vec3 worldNormal = FetchSurfaceNormal(currentTexel);
             vec4 indirectHistory = TemporalFilter(screenTexel, screenPos, worldNormal, viewDistance);
 
+            // Vanilla lightmap blending
             float blocklight = Unpack2x8UX(loadMaterialPack(currentTexel).x);
-            blocklight = pow5(blocklight) * exp2(-64.0 * indirectCurrent.r * global.exposure.value);
+            blocklight = pow5(blocklight) * exp2(-16.0 * indirectCurrent.x * global.exposure.value);
             indirectCurrent.rgb += sRGBToYCoCg(blackbody(float(BLOCKLIGHT_TEMPERATURE))) * saturate(blocklight) * SSILVB_BLENDED_LIGHTMAP;
 
             imageStore(colorimg2, screenTexel, indirectHistory);
