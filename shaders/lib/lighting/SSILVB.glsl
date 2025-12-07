@@ -172,7 +172,7 @@ uint updateSectors(in vec2 horizon) {
 
 //================================================================================================//
 
-vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in vec2 lightmap) {
+vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in float skylight) {
 	const int sliceCount = SSILVB_SLICE_COUNT;
 	const int sampleCount = SSILVB_SAMPLE_COUNT;
 	const float hitThickness = SSILVB_HIT_THICKNESS * 0.1;
@@ -267,7 +267,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
     irradiance *= rSectorCount * rSliceCount;
     irradiance = vec4(irradiance.rgb, saturate(1.0 - irradiance.a));
 
-    vec3 skylight = ConvolvedReconstructSH3(global.light.skySH, worldNormal);
-    irradiance.rgb += skylight * irradiance.a * cube(lightmap.y);
+    vec3 skyIrradiance = ConvolvedReconstructSH3(global.light.skySH, worldNormal);
+    irradiance.rgb += skyIrradiance * irradiance.a * cube(skylight);
     return irradiance;
 }

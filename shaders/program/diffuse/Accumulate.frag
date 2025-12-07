@@ -157,6 +157,10 @@ void main() {
         #endif
 
         if (depth < 1.0) {
+            #if defined DISTANT_HORIZONS
+                if (dhTerrainMask) depth = ViewToScreenDepth(ScreenToViewDepthDH(depth));
+            #endif
+
             vec3 screenPos = vec3(currentCoord, depth);
             vec3 viewPos = ScreenToViewSpace(screenPos);
             float viewDistance = length(viewPos);
