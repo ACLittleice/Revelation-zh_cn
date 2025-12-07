@@ -47,7 +47,7 @@ in vec3 worldPos;
 //======// Main //================================================================================//
 void main() {
 	ivec2 texel = ivec2(gl_FragCoord.xy);
-    if (loadDepth0(texel) < 1.0) { discard; return; }
+    if (sdot(worldPos) < sqr(far - 16.0) || loadDepth0(texel) < 1.0) { discard; return; }
 
 	normalOut.xy = OctEncodeUnorm(flatNormal);
 
