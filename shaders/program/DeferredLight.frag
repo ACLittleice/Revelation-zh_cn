@@ -201,7 +201,7 @@ void main() {
 		vec3 specularDirect = vec3(0.0);
 
 		float worldDistSquared = sdot(worldPos);
-		float distanceFade = sqr(pow16(0.64 * rcp(shadowDistance * shadowDistance) * sdot(worldPos.xz)));
+		float distanceFade = linearstep(shadowDistance - 8.0, shadowDistance, length(worldPos.xz));
 		#if defined DISTANT_HORIZONS
 			distanceFade = saturate(distanceFade + float(dhTerrainMask));
 		#endif
