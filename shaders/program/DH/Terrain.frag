@@ -21,19 +21,18 @@ flat in uint materialID;
 
 //======// Uniform //=============================================================================//
 
-uniform sampler2D noisetex;
-
-uniform vec3 cameraPosition;
-uniform float far;
+#include "/lib/universal/Uniform.glsl"
 
 //======// Function //============================================================================//
 
-float bayer2 (vec2 a) { a = 0.5 * floor(a); return fract(1.5 * fract(a.y) + a.x); }
-#define bayer4(a) (bayer2(0.5 * (a)) * 0.25 + bayer2(a))
+#include "/lib/universal/Random.glsl"
 
 //======// Main //================================================================================//
 void main() {
-    if (sdot(worldPos) < sqr(far - 16.0)) { discard; return; }
+    float fade = smoothstep(sqr(far - 32.0), sqr(far - 16.0), sdot(worldPos));
+	float dither = InterleavedGradientNoiseTemporal(gl_FragCoord.xy);
+
+    if (fade < dither) { discard; return; }
 
 	albedoOut = vec4(vertColor, 1.0);
 	/* Terrain noises */ {
@@ -52,7 +51,7 @@ void main() {
 		albedoOut = vec4(1.0);
 	#endif
 
-	materialOut.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
+	materialOut.x = Packup2x8U(lightmap);
 	materialOut.y = materialID;
 	materialOut.zw = uvec2(0);
 
