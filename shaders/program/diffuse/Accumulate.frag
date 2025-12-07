@@ -65,6 +65,7 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, in f
         vec4 prevDiffuse = vec4(0.0);
         vec2 prevMoments = vec2(0.0);
         float sumWeight = 0.0;
+        float confidence = 0.0;
 
         prevCoord += (prevTaaOffset - taaOffset) * 0.25;
 
@@ -90,6 +91,7 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, in f
 
                 float weight = pow8(saturate(dot(OctDecodeSnorm(sampleAux.xy), worldNormal)));
                 weight *= exp2(abs(viewDistance - sampleAux.z) * depthPhi);
+                confidence = max(confidence, weight);
                 weight *= bilinearWeight[i];
 
                 prevDiffuse += texelFetch(colortex2, sampleTexel, 0) * weight;
@@ -103,7 +105,7 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, in f
             prevDiffuse *= sumWeight;
             prevMoments *= sumWeight;
 
-            float sampleIndex = min(prevDiffuse.a + 1.0, SSILVB_MAX_ACCUM_FRAMES);
+            float sampleIndex = min(prevDiffuse.a * confidence + 1.0, SSILVB_MAX_ACCUM_FRAMES);
             float alpha = rcp(sampleIndex);
 
             // See section 4.2 of the paper
@@ -127,6 +129,16 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, in f
     return vec4(0.0);
 }
 
+float SampleDepthMin4x4(in sampler2D depthTex, in vec2 coord) {
+	// 4x4 pixel neighborhood using textureGatherOffset
+	float LL = minOf(textureGatherOffset(depthTex, coord, ivec2(-2, -2)));
+	float LR = minOf(textureGatherOffset(depthTex, coord, ivec2(-2,  2)));
+	float UL = minOf(textureGatherOffset(depthTex, coord, ivec2( 2, -2)));
+	float UR = minOf(textureGatherOffset(depthTex, coord, ivec2( 2,  2)));
+
+	return min(min(LL, LR), min(UL, UR));
+}
+
 //======// Main //================================================================================//
 void main() {
     vec2 currentCoord = gl_FragCoord.xy * viewPixelSize * 2.0;
@@ -138,7 +150,7 @@ void main() {
         ivec2 screenTexel = ivec2(gl_FragCoord.xy);
 
         ivec2 currentTexel = screenTexel << 1;
-        float depth = loadDepth0(currentTexel);
+        float depth = SampleDepthMin4x4(depthtex0, currentCoord);
         #if defined DISTANT_HORIZONS
             bool dhTerrainMask = depth > (1.0 - EPS);
             if (dhTerrainMask) depth = loadDepth0DH(currentTexel);
