@@ -160,14 +160,12 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	#if !defined PASS_SKY_MAP
 	if (detail) {
 		// vec3 curlNoise = texture(curlNoiseTex, noisePos.xz * 2.0).xyz;
-		noisePos -= mix(0.5, baseNoise, heightFade) * 0.15 * windDir + windOffset * 1e-4;
+		noisePos -= mix(0.5, baseNoise, heightFade) * 0.1 * windDir + windOffset * 1e-4;
 
-		detailNoise = texture(detailNoiseTex, noisePos * 5.0).x;
+		detailNoise = texture(detailNoiseTex, noisePos * 6.0).x;
 
 		// Transition from wispy shapes to billowy shapes over height
-		// detailNoise = mix(1.0 - detailNoise, detailNoise, heightFade);
-
-		detailNoise = mix(0.25, sqr(detailNoise), heightFade * 0.5 + 0.5);
+		detailNoise = sqr(mix(0.75 - detailNoise * 0.5, detailNoise, heightFade));
 	}
 	#endif
 
