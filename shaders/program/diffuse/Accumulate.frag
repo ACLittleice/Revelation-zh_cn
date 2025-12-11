@@ -81,13 +81,13 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, in f
             fractTexel.x      * fractTexel.y
         };
 
-        ivec2 offsetToBR = ivec2(halfViewSize.x, 0);
+        ivec2 tileOffset = ivec2(halfViewSize.x, 0);
 		float depthPhi = -8.0 / viewDistance;
 
         for (uint i = 0u; i < 4u; ++i) {
             ivec2 sampleTexel = floorTexel + offset2x2[i];
             if (clamp(sampleTexel, ivec2(1), texelEnd) == sampleTexel) {
-                vec3 sampleAux = texelFetch(colortex2, sampleTexel + offsetToBR, 0).rgb;
+                vec3 sampleAux = texelFetch(colortex2, sampleTexel + tileOffset, 0).rgb;
 
                 float weight = pow8(saturate(dot(OctDecodeSnorm(sampleAux.xy), worldNormal)));
                 weight *= exp2(abs(viewDistance - sampleAux.z) * depthPhi);
