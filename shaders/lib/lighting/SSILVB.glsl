@@ -179,7 +179,6 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
 
 	const float rSliceCount = 1.0 / float(sliceCount);
 	const float rSampleCount = 1.0 / float(sampleCount);
-	const float rSectorCount = 1.0 / float(sectorCount);
 
     float dither = SampleStbnVec1(ivec2(gl_GlobalInvocationID.xy), frameCounter);
 
@@ -211,16 +210,21 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
         float w0_remap_mul = 1.0 / (1.0 - w0);
         float w0_remap_add = -w0 * w0_remap_mul;
 
-        vec3 endPos = ViewToScreenSpace(smplDirVS + viewPos);
-        vec2 rayDir = normalize(endPos.xy - fragCoord);
+        vec2 rayDir = ViewToScreenSpace(smplDirVS + viewPos).xy - fragCoord;
+	    rayDir *= minOf((step(0.0, rayDir) - fragCoord) / rayDir);
 
-        float stepLength = minOf((step(0.0, rayDir) - fragCoord) / rayDir) * rSampleCount;
-        vec2 rayStep = rayDir * stepLength;
+        float rayDirNorm = inversesqrt(sdot(rayDir * viewSize));
+        float stepScale = -rSampleCount * log2(saturate(rayDirNorm));
+
+        float stepLength = exp2(stepScale * dither);
+        stepScale = exp2(stepScale);
+        rayDir *= rayDirNorm;
 
         uint bitMask = 0u;
 
-        for (uint currentSample = 0u; currentSample < sampleCount; ++currentSample) {
-            vec2 sampleUV = fragCoord + rayStep * (float(currentSample) + dither);
+        for (uint samp = 0u; samp < sampleCount; ++samp) {
+            vec2 sampleUV = fragCoord + rayDir * stepLength;
+            stepLength *= stepScale;
 
 			if (saturate(sampleUV) == sampleUV) {
                 ivec2 sampleTexel = uvToTexel(sampleUV);
@@ -263,7 +267,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
         irradiance.a += float(bitCount(bitMask));
     }
 
-    irradiance *= rSectorCount * rSliceCount;
+    irradiance *= rSliceCount / float(sectorCount);
     irradiance = vec4(irradiance.rgb * 2.0, saturate(1.0 - irradiance.a));
 
     vec3 skyIrradiance = ConvolvedReconstructSH3(global.light.skySH, worldNormal);
