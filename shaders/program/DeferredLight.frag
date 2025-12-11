@@ -227,7 +227,7 @@ void main() {
 					#define viewFlatNormal viewNormal
 				#endif
 
-				float contactShadow = materialID == 39u ? 1.0 : ScreenSpaceShadow(viewPos, viewFlatNormal, dither, sssAmount);
+				float contactShadow = materialID == 39u ? 1.0 : ScreenSpaceShadow(screenPos, viewPos, dither, sssAmount);
 			#else
 				float contactShadow = float(doShadows);
 			#endif
