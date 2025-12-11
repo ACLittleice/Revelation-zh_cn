@@ -110,11 +110,11 @@ void main() {
 	float centerLuma = filteredColVar.r; // We use YCoCg color space
 
 	float frameIndex = texelFetch(colortex2, texelPos, 0).a;
-	float historyFactor = saturate(frameIndex * rcp(16.0)) * 0.9 + 0.1;
+	float historyFactor = saturate(frameIndex * rcp(12.0)) * 0.9 + 0.1;
 
 	// float variance = CalculateVariance(ivec2(localPos + padRadius));
 	float variance = filteredColVar.a;
-	float variancePhi = -2.0 * inversesqrt(variance + EPS);
+	float variancePhi = -inversesqrt(variance + EPS);
 
 	const float sigmaZ = -4.0 * inversesqrt(float(ATROUS_FILTER_SIZE));
 	const float sigmaN = 32.0;

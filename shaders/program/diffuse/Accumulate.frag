@@ -105,15 +105,15 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, in f
             prevDiffuse *= sumWeight;
             prevMoments *= sumWeight;
 
-            float sampleIndex = min(prevDiffuse.a * confidence + 1.0, SSILVB_MAX_ACCUM_FRAMES);
-            float alpha = rcp(sampleIndex);
+            float sampleIndex = min(prevDiffuse.a + 1.0, SSILVB_MAX_ACCUM_FRAMES);
+            float alpha = rcp(sampleIndex * confidence + 1.0);
 
             // See section 4.2 of the paper
             // if (sampleIndex > 4.5) {
                 varianceMoments.xy = mix(prevMoments, varianceMoments.xy, alpha);
             // }
 
-            float mipLevel = 3.0 * saturate(1.0 - sampleIndex * rcp(16.0));
+            float mipLevel = 3.0 * saturate(1.0 - sampleIndex * rcp(12.0));
             indirectCurrent.rgb = textureLod(colortex3, screenPos.xy * 0.5, mipLevel).rgb;
             indirectCurrent.rgb = mix(prevDiffuse.rgb, indirectCurrent.rgb, alpha);
 
