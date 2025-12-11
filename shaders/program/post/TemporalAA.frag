@@ -113,8 +113,8 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
             moment1 += sampleData;
             moment2 += sampleData * sampleData;
         }
-        moment1 *= rcp(8.0);
-        moment2 *= rcp(8.0);
+        moment1 *= rcp(9.0);
+        moment2 *= rcp(9.0);
 
         vec3 clipStdDev = sqrt(abs(moment2 - moment1 * moment1)) * TAA_AGGRESSION;
 
