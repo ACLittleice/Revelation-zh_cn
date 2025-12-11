@@ -197,11 +197,11 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
         dir = SamplePartialSliceDir(normalVVS, normalize(dir * 2.0 - 1.0));
         vec3 smplDirVS = Transform_Vz0Qz0(dir, Q_toV);
 
-        vec3 sliceN = normalize(cross(viewDir, smplDirVS));
+        vec3 sliceN = cross(viewDir, smplDirVS);
         vec3 projN = viewNormal - sliceN * dot(viewNormal, sliceN);
         float cosN = dot(projN, viewDir) * inversesqrt(sdot(projN));
 
-        float angN = signMul(acosFast4(satSnorm(cosN)), dot(projN, cross(viewDir, sliceN)));
+        float angN = signMul(acosFast4(satSnorm(cosN)), dot(viewDir, cross(sliceN, projN)));
         float angOff = angN * rPI + 0.5;
 
         // percentage of the slice we don't use ([0, angN]-integrated slice-relative pdf)
