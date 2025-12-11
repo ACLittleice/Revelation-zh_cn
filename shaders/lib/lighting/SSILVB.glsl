@@ -37,7 +37,7 @@ float SamplePartialSlice(float x, float sin_thVN) {
     float d0 =   a - slp0 * b;
     float d1 = 1.0 - slp1;
 
-    float f0 = d0 * (PI * abs_x - asinFast4(clamp(abs_x, -1.0, 1.0)));
+    float f0 = d0 * (PI * abs_x - asinFast4(satSnorm(abs_x)));
     float f1 = d1 * (abs_x - 1.0);
 
     float kk = k * k;
@@ -75,7 +75,7 @@ float ArcTan11(vec2 dir) { // == ArcTan(dir) / Pi
 
     float f = y / u;
 
-    if (dir.x < 0.0) f = fastSign(dir.y) - f;
+    if (dir.x < 0.0) f = signI(dir.y) - f;
 
     return f;
 }
@@ -201,7 +201,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
         vec3 projN = viewNormal - sliceN * dot(viewNormal, sliceN);
         float cosN = dot(projN, viewDir) * inversesqrt(sdot(projN));
 
-        float angN = fastSign(dot(projN, cross(viewDir, sliceN))) * acosFast4(clamp(cosN, -1.0, 1.0));
+        float angN = signMul(acosFast4(satSnorm(cosN)), dot(projN, cross(viewDir, sliceN)));
         float angOff = angN * rPI + 0.5;
 
         // percentage of the slice we don't use ([0, angN]-integrated slice-relative pdf)
@@ -235,7 +235,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
 
                 vec2 frontBackHorizon = vec2(dot(sampleDirFront, viewDir), dot(sampleDirBack, viewDir));
 
-                frontBackHorizon = acosFast4(clamp(frontBackHorizon, -1.0, 1.0));
+                frontBackHorizon = acosFast4(satSnorm(frontBackHorizon));
                 frontBackHorizon = saturate(frontBackHorizon * rPI + angOff);
 
                 // map to slice relative distribution
