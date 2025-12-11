@@ -227,7 +227,7 @@ void main() {
 					#define viewFlatNormal viewNormal
 				#endif
 
-				float contactShadow = materialID == 39u ? 1.0 : ScreenSpaceShadow(screenPos, viewPos, dither, sssAmount);
+				float contactShadow = ScreenSpaceShadow(screenPos, viewPos, dither, sssAmount);
 			#else
 				float contactShadow = float(doShadows);
 			#endif
@@ -237,13 +237,13 @@ void main() {
 				// Subsurface scattering
 				if (sssAmount > 1e-3) {
 					float cutout = float(clamp(materialID, 1000u, 1003u) == materialID || clamp(materialID, 27u, 28u) == materialID);
-					vec3 sss = mix(shadow, vec3(contactShadow), saturate(distanceFade + cutout * mix(0.5, 0.25, isEyeInWater > 0)));
+					vec3 sss = mix(shadow, vec3(contactShadow), saturate(distanceFade + cutout * 0.3));
 
 					// Wavelength-dependent approximation
 					sss *= pow((albedo + EPS), vec3(cube(saturate(1.0 - mean(sss))) * 2.0 - 0.2)) * sunlightBase;
 
 					float phase = HenyeyGreensteinPhase(-LdotV, 0.7) * 0.25 + uniformPhase * 0.75;
-					sceneOut += sss * phase * (PI * SUBSURFACE_SCATTERING_BRIGHTNESS);
+					sceneOut += sss * phase * (2.0 * SUBSURFACE_SCATTERING_BRIGHTNESS);
 				}
 				if (doShadows) {
 					shadow *= contactShadow * sunlightBase;
