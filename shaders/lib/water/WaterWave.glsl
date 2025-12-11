@@ -29,7 +29,7 @@ vec2 wavedx(vec2 position, vec2 direction, float frequency, float time) {
 		float x = time * c - dot(direction, position) * frequency;
 	#endif
 
-	float wave = exp2(sin(x));
+	float wave = exp(sin(x));
 	float dx = wave * cos(x);
 
 	return vec2(wave, dx);
@@ -45,14 +45,14 @@ float CalculateWaterHeight(in vec2 position) {
 	float sumWeight = 0.0;
 
 	float waveTime = WATER_WAVE_SPEED * frameTimeCounter;
-	position += noise.z * 8.0;
+	position += noise.z * 5.0;
 
 	for (uint i = 0u; i < 14u; ++i) {
 		dir = sincos(Halton2(i) * hPI);
 		frequency *= 1.22;
 		weight *= 0.8;
 
-		vec2 res = wavedx(position + dir * noise.xy * (8.0 * weight), dir, frequency, waveTime);
+		vec2 res = wavedx(position + dir * noise.xy * (5.0 * weight), dir, frequency, waveTime);
 		position -= dir * res.y * weight * 0.2;
 
 		sum += res.x * weight;
@@ -63,7 +63,7 @@ float CalculateWaterHeight(in vec2 position) {
 		sum *= saturate(noise.z * 2.0 - 1.0) * 3.0 + 0.75;
 	#endif
 
-	return sum / sumWeight * (0.125 * WATER_WAVE_HEIGHT);
+	return sum / sumWeight * (0.07 * WATER_WAVE_HEIGHT);
 }
 
 //================================================================================================//
