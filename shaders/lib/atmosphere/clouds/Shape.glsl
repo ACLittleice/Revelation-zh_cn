@@ -129,7 +129,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	coverage *= linearstep(stepEdge.x, stepEdge.y * 0.7, texture(noisetex, rayPos.xz * rcp(512e3)).z);
 
 	// Vertical profile
-	float type = curve(cloudMap.y) * approxSqrt(coverage);
+	float type = approxSqrt(cloudMap.y) * coverage;
 	float gradient = GetVerticalProfile(heightFraction, type);
 
 	// dimensionalProfile = gradient * coverage;
@@ -148,6 +148,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	float baseNoise = texture(baseNoiseTex, noisePos).x;
 	#endif
 
+	// See [Schneider, 2022]
 	float cloudDensity = dimensionalProfile + (baseNoise - 1.0);
 	if (cloudDensity < cloudEpsilon) return 0.0;
 
@@ -172,8 +173,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	// cloudDensity = saturate(cloudDensity - detailNoise * oms(cloudDensity));
 
 	// Density profile
-	float densityMult = mix(CLOUD_CU_DENSITY_T, CLOUD_CU_DENSITY_B, heightFade);
-	return saturate(cloudDensity * densityMult);
+	return saturate(cloudDensity * mix(CLOUD_CU_DENSITY_T, CLOUD_CU_DENSITY_B, heightFade));
 }
 
 #endif // INCLUDE_CLOUDS_SHAPE
