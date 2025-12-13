@@ -49,7 +49,7 @@ float CloudHighDensity(in vec2 rayPos) {
 	vec2 windOffset = windVelocity * worldTimeCounter;
 
 	// Curl noise to simulate wind, makes the positioning of the clouds more natural
-	vec2 curlNoise = texture(curlNoiseTex, rayPos * 5e-5).xy * 0.05;
+	vec2 curlNoise = texture(curlNoiseTex, rayPos * 5e-5).xy * 0.1;
 	vec2 position = (rayPos - windOffset) * 2e-4 + curlNoise;
 
 	float density = 0.0;
@@ -57,13 +57,13 @@ float CloudHighDensity(in vec2 rayPos) {
 	#ifdef CLOUD_CIRRUS
 	/* Cirrus clouds */
 	{
-		float coverage = CLOUD_CI_COVERAGE - 0.4 + texture(noisetex, position * 0.01).z;
+		float coverage = CLOUD_CI_COVERAGE - 0.35 + texture(noisetex, position * 0.01).z;
 		coverage = saturate(coverage - texture(cloudMapTex, (position * 0.01)).x);
 
-		if (coverage > 0.25) {
+		if (coverage > 0.3) {
 			vec2 p = position + coverage * 0.5 - windOffset * 1e-4;
 			float cirrus = textureBicubic(cirroLutTex, p * 0.3).y;
-			cirrus *= smoothstep(0.25, 0.75, coverage) * 0.5;
+			cirrus *= smoothstep(0.3, 1.0, coverage);
 
 			density += sqr(cirrus);
 		}
@@ -98,12 +98,12 @@ float CloudHighDensity(in vec2 rayPos) {
 	}
 #else
 	float GetVerticalProfile(in float h, in float t) {
-		float stratus = linearstep(0.05, 0.1, h) * linearstep(0.2, 0.1, h);
+		float stratus = linearstep(0.1, 0.15, h) * linearstep(0.25, 0.15, h);
 		float stratocumulus = saturate(h * 6.0) * linearstep(0.6, 0.2, h);
-		float cumulus = saturate(h * 8.0) * linearstep(1.0, 0.7, h);
+		float cumulus = saturate(h * 8.0) * linearstep(1.0, 0.75, h);
 
-		float gradient = mix(stratus, stratocumulus, smoothstep(0.0, 0.6, t));
-		return mix(gradient, cumulus, smoothstep(0.5, 1.0, t));
+		float gradient = mix(stratus, stratocumulus, smoothstep(0.0, 0.55, t));
+		return mix(gradient, cumulus, smoothstep(0.55, 1.0, t));
 	}
 #endif
 
@@ -126,7 +126,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	// Coveage profile
 	vec2 stepEdge = mix(vec2(0.8, 1.6) * oms(CLOUD_CU_COVERAGE), vec2(0.1, 0.5), sqr(wetness));
 	float coverage = linearstep(stepEdge.x, stepEdge.y, cloudMap.x);
-	coverage *= linearstep(stepEdge.x * 1.1, stepEdge.y * 0.7, texture(noisetex, rayPos.xz * rcp(512e3)).z);
+	coverage *= linearstep(stepEdge.x * 1.2, stepEdge.y * 0.7, texture(noisetex, rayPos.xz * rcp(512e3)).z);
 
 	// Vertical profile
 	float type = approxSqrt(cloudMap.y) * coverage;
