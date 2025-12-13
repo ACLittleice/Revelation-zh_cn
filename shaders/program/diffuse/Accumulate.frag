@@ -126,7 +126,7 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, in f
     indirectCurrent.rgb = textureLod(colortex3, screenPos.xy * 0.5, 3.0).rgb;
     indirectCurrent.a = sqr(varianceMoments.x);
 
-    return vec4(0.0);
+    return vec4(indirectCurrent.rgb, 1.0);
 }
 
 float SampleDepthMin4x4(in sampler2D depthTex, in vec2 coord) {
