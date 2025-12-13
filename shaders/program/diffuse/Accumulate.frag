@@ -41,8 +41,20 @@ writeonly restrict uniform image2D colorimg2;
 #include "/lib/universal/Fetch.glsl"
 #include "/lib/universal/Random.glsl"
 
-vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, in float viewDistance) {
-    vec2 prevCoord = Reproject(screenPos).xy;
+vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, out float viewDistance) {
+	vec3 viewPos = ScreenToViewSpaceRaw(screenPos);
+    vec3 worldPos = transMAD(gbufferModelViewInverse, viewPos);
+    viewDistance = sdot(worldPos);
+
+    float distInv = inversesqrt(viewDistance);
+    vec3 worldDir = worldPos * distInv;
+    viewDistance *= distInv;
+
+	worldPos += cameraMovement * step(0.56, screenPos.z); // To previous frame's world space
+    worldPos = transMAD(gbufferPreviousModelView, worldPos); // To previous frame's view space
+	worldPos = projMAD(gbufferPreviousProjection, worldPos) * rcp(-worldPos.z); // To previous frame's NDC space
+
+    vec2 prevCoord = worldPos.xy * 0.5 + 0.5;
 
     float luma = texelFetch(colortex3, texel, 0).r; // We use YCoCg color space
     ivec2 texelEnd = ivec2(halfViewEnd) - 1;
@@ -82,7 +94,7 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, in f
         };
 
         ivec2 tileOffset = ivec2(halfViewSize.x, 0);
-		float depthPhi = -8.0 / viewDistance;
+		float depthPhi = -8.0 * abs(dot(worldNormal, worldDir));
 
         for (uint i = 0u; i < 4u; ++i) {
             ivec2 sampleTexel = floorTexel + offset2x2[i];
@@ -162,10 +174,9 @@ void main() {
             #endif
 
             vec3 screenPos = vec3(currentCoord, depth);
-            vec3 viewPos = ScreenToViewSpace(screenPos);
-            float viewDistance = length(viewPos);
-
             vec3 worldNormal = FetchSurfaceNormal(currentTexel);
+
+            float viewDistance;
             vec4 indirectHistory = TemporalFilter(screenTexel, screenPos, worldNormal, viewDistance);
 
             // Vanilla lightmap blending
