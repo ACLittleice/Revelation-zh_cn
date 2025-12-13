@@ -54,7 +54,51 @@ uniform usampler2D colortex11; // Volumetric Fog, linear depth
 #include "/lib/water/WaterFog.glsl"
 
 #include "/lib/surface/BRDF.glsl"
-#include "/lib/surface/Refraction.glsl"
+#include "/lib/surface/SSRT.glsl"
+
+vec2 CalculateRefractedCoord(in ivec2 texelPos, in vec3 viewPos, in vec3 screenPos, in bool waterMask) {
+	vec3 viewNormal = mat3(gbufferModelView) * FetchSurfaceNormal(texelPos);
+	float viewLengthInv = inversesqrt(sdot(viewPos));
+	vec3 viewDir = viewPos * viewLengthInv;
+
+	vec3 refractedDir;
+	if (waterMask) {
+		vec3 viewGeometryNormal = mat3(gbufferModelView) * FetchGeometryNormal(texelPos);
+		refractedDir = refract(viewDir, viewNormal - viewGeometryNormal, 1.0 / WATER_IOR);
+	} else {
+		refractedDir = refract(viewDir, viewNormal, 1.0 / GLASS_IOR);
+	}
+
+	#ifdef RAYTRACED_REFRACTION
+		float dither = BlueNoise(texelPos, frameCounter);
+		vec3 rayPos = screenPos;
+
+		if (!ScreenSpaceRaytrace(viewPos, refractedDir, dither, 16, rayPos)) return screenPos.xy;
+
+		vec2 refractedCoord = rayPos.xy;
+	#else
+		// Estimate refraction depth
+		float depth1 = loadDepth1(texelPos);
+		vec3 viewPos1 = ScreenToViewSpace(vec3(screenPos.xy, depth1));
+		#if defined DISTANT_HORIZONS
+			if (depth1 > 1.0 - EPS) {
+				depth1 = loadDepth1DH(texelPos);
+				viewPos1 = ScreenToViewSpaceDH(vec3(screenPos.xy, depth1));
+			}
+		#endif
+
+		refractedDir *= min(distance(viewPos, viewPos1) * viewLengthInv, 8.0);
+		refractedDir *= mix(0.125, 4.0, waterMask) * REFRACTION_STRENGTH;
+
+		vec2 refractedCoord = ViewToScreenSpace(viewPos + refractedDir).xy;
+	#endif
+
+	float refractedDepth = loadDepth1(uvToTexel(refractedCoord));
+	refractedCoord = mix(refractedCoord, screenPos.xy, step(refractedDepth, screenPos.z));
+
+	vec2 edgeFade = smoothstep(0.8, 1.0, abs(refractedCoord * 2.0 - 1.0));
+	return mix(refractedCoord, screenPos.xy, edgeFade);
+}
 
 //======// Main //================================================================================//
 void main() {
@@ -81,26 +125,7 @@ void main() {
 	// Process refraction
 	ivec2 refractedTexel = screenTexel;
 	if (glassMask || waterMask) {
-		vec3 viewNormal = mat3(gbufferModelView) * FetchSurfaceNormal(screenTexel);
-
-		#ifdef RAYTRACED_REFRACTION
-			vec2 refractedCoord = CalculateRefractedCoord(waterMask, viewPos, viewNormal, screenPos);
-		#else
-			vec3 viewFlatNormal = mat3(gbufferModelView) * FetchGeometryNormal(screenTexel);
-			viewNormal -= float(waterMask) * viewFlatNormal; // Fix water refraction artifacts
-
-			float depth1 = loadDepth1(screenTexel);
-			vec3 viewPos1 = ScreenToViewSpace(vec3(screenCoord, depth1));
-			#if defined DISTANT_HORIZONS
-				if (depth1 > 1.0 - EPS) {
-					depth1 = loadDepth1DH(screenTexel);
-					viewPos1 = ScreenToViewSpaceDH(vec3(screenCoord, depth1));
-				}
-			#endif
-			vec2 refractedCoord = CalculateRefractedCoord(waterMask, viewPos, viewNormal, screenPos, distance(viewPos, viewPos1));
-		#endif
-
-		refractedTexel = uvToTexel(refractedCoord);
+		refractedTexel = uvToTexel(CalculateRefractedCoord(screenTexel, viewPos, screenPos, waterMask));
 	}
 
     sceneOut = loadSceneMain(refractedTexel);
