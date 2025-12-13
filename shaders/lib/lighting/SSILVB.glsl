@@ -6,7 +6,7 @@
 //================================================================================================//
 
 #define SSILVB_SLICE_COUNT 1 // [1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16]
-#define SSILVB_SAMPLE_COUNT 24 // [4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 48 50 52 54 56 58 60 62 64]
+#define SSILVB_SAMPLE_COUNT 32 // [4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 48 50 52 54 56 58 60 62 64]
 #define SSILVB_SECTOR_COUNT 32 // [4 8 16 32 64 128]
 #define SSILVB_HIT_THICKNESS 1.0 // [0.25 0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0 4.5 5.0 5.5 6.0 6.5 7.0 7.5 8.0]
 
@@ -37,19 +37,19 @@ float SamplePartialSlice(float x, float sin_thVN) {
     float d0 =   a - slp0 * b;
     float d1 = 1.0 - slp1;
 
-    float f0 = d0 * (PI * abs_x - asinFast4(satSnorm(abs_x)));
+    float f0 = d0 * (PI * abs_x - asinFast4(abs_x));
     float f1 = d1 * (abs_x - 1.0);
 
     float kk = k * k;
 
-    float h0 = approxSqrt(f0 * f0 + kk) - k;
-    float h1 = approxSqrt(f1 * f1 + kk) - k;
+    float h0 = sqrt(f0 * f0 + kk) - k;
+    float h1 = sqrt(f1 * f1 + kk) - k;
 
     float hh = (h0 * h1) / (h0 + h1);
 
-    float y = abs_x - approxSqrt(hh * (hh + 2.0 * k));
+    float y = abs_x - sqrt(hh * (hh + 2.0 * k));
 
-    return x < 0.0 ? -y : y;
+    return signMul(y, x);
 }
 
 // https://www.shadertoy.com/view/lXBfWm
@@ -104,7 +104,7 @@ vec4 GetQuaternion(vec3 from, vec3 to) {
     vec3 xyz = cross(from, to);
     float s  =   dot(from, to);
 
-    float u = inversesqrt(max(0.0, s * 0.5 + 0.5));// rcp(cosine half-angle formula)
+    float u = inversesqrt(saturate(s * 0.5 + 0.5));// rcp(cosine half-angle formula)
 
     s    = 1.0 / u;
     xyz *= u * 0.5;
@@ -113,12 +113,10 @@ vec4 GetQuaternion(vec3 from, vec3 to) {
 }
 
 vec4 GetQuaternion(vec3 to) {
-    //vec3 from = vec3(0.0, 0.0, 1.0);
-
     vec3 xyz = vec3(-to.y, to.x, 0.0);// cross(from, to);
     float s  =                   to.z;//   dot(from, to);
 
-    float u = inversesqrt(max(0.0, s * 0.5 + 0.5));// rcp(cosine half-angle formula)
+    float u = inversesqrt(saturate(s * 0.5 + 0.5));// rcp(cosine half-angle formula)
 
     s    = 1.0 / u;
     xyz *= u * 0.5;
@@ -235,9 +233,10 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
 				vec3 sampleDiff = samplePos - viewPos;
 
                 vec3 sampleDirFront = sampleDiff * fastRcpSqrtNR0(sdot(sampleDiff));
-                vec3 sampleDirBack = normalize(sampleDiff - viewDir * max(abs(samplePos.z) * hitThickness, 0.2));
+                vec3 sampleDirBack = sampleDiff - viewDir * max(abs(samplePos.z) * hitThickness, 0.25);
 
-                vec2 frontBackHorizon = vec2(dot(sampleDirFront, viewDir), dot(sampleDirBack, viewDir));
+                vec2 frontBackHorizon = vec2(dot(sampleDirFront, viewDir),
+                     fastRcpSqrtNR0(sdot(sampleDirBack)) * dot(sampleDirBack, viewDir));
 
                 frontBackHorizon = acosFast4(satSnorm(frontBackHorizon));
                 frontBackHorizon = saturate(frontBackHorizon * rPI + angOff);
@@ -252,11 +251,11 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
                 uint sampleOccludedBit = sBitMask & ~bitMask;
 
                 if (sampleOccludedBit > 0u) {
-                    vec3 sampleNormal = mat3(gbufferModelView) * FetchSurfaceNormal(sampleTexel);
+                    // vec3 sampleNormal = mat3(gbufferModelView) * FetchSurfaceNormal(sampleTexel);
 
                     vec3 sampleRadiance = texelFetch(colortex4, sampleTexel >> 1, 0).rgb;
                     irradiance.rgb += float(bitCount(sampleOccludedBit)) *
-                        fastSqrtNR0(saturate(-dot(sampleNormal, sampleDirFront))) *
+                        // fastSqrtNR0(saturate(-dot(sampleNormal, sampleDirFront))) *
                         sampleRadiance;
 
                     bitMask |= sBitMask;
@@ -268,7 +267,7 @@ vec4 CalculateSSILVB(in vec2 fragCoord, in vec3 viewPos, in vec3 worldNormal, in
     }
 
     irradiance *= rSliceCount / float(sectorCount);
-    irradiance = vec4(irradiance.rgb * 2.0, saturate(1.0 - irradiance.a));
+    irradiance = vec4(irradiance.rgb, saturate(1.0 - irradiance.a));
 
     vec3 skyIrradiance = ConvolvedReconstructSH3(global.light.skySH, worldNormal);
     irradiance.rgb += skyIrradiance * irradiance.a * cube(skylight);
