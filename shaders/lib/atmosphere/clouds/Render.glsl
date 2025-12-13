@@ -227,7 +227,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 						float opticalDepthSun = CloudVolumeOpticalDepth(rayPos, lightDir, noise.y, CLOUD_LOW_SUNLIGHT_SAMPLES);
 
 						// Approximate sunlight multi-scattering
-						float coarseDensity = dimensionalProfile * 0.25 + stepDensity;
+						float coarseDensity = dimensionalProfile * approxSqrt(stepDensity) * 1.5;
 						float scatteringSun = CloudMultiScatteringApproxHaringPro(opticalDepthSun, phase, coarseDensity, cumulusAlbedo);
 
 						#if CLOUD_CU_SKYLIGHT_SAMPLES > 0
