@@ -25,8 +25,6 @@ layout (location = 1) out float bloomyFogMask;
 
 //======// Uniform //=============================================================================//
 
-uniform usampler2D colortex11; // Volumetric Fog, linear depth
-
 #include "/lib/universal/Uniform.glsl"
 
 //======// SSBO //================================================================================//

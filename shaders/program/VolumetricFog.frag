@@ -24,8 +24,6 @@ out uvec4 packedFogData;
 
 //======// Uniform //=============================================================================//
 
-uniform usampler2D colortex11; // Volumetric Fog, linear depth
-
 uniform sampler2D shadowtex0;
 uniform sampler2D shadowtex1;
 uniform sampler2D shadowcolor0;
