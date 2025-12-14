@@ -57,15 +57,17 @@ float CloudHighDensity(in vec2 rayPos) {
 	#ifdef CLOUD_CIRRUS
 	/* Cirrus clouds */
 	{
-		float coverage = CLOUD_CI_COVERAGE - 0.35 + texture(noisetex, position * 0.01).z;
-		coverage = saturate(coverage - texture(cloudMapTex, (position * 0.01)).x);
+		float coverage = CLOUD_CI_COVERAGE - 0.3 + texture(noisetex, position * 0.01).z;
+		coverage = saturate(coverage - texture(cloudMapTex, (position * 0.01)).y);
 
-		if (coverage > 0.3) {
+		if (coverage > 0.25) {
 			vec2 p = position + coverage * 0.5 - windOffset * 1e-4;
 			float cirrus = textureBicubic(cirroLutTex, p * 0.3).y;
-			cirrus *= smoothstep(0.3, 1.0, coverage);
 
-			density += sqr(cirrus);
+			cirrus *= saturate(cirrus + coverage);
+			cirrus *= sqr(linearstep(0.25, 1.0, coverage));
+
+			density += cirrus;
 		}
 	}
 	#endif
@@ -73,14 +75,14 @@ float CloudHighDensity(in vec2 rayPos) {
 	/* Cirrocumulus clouds */
 	{
 		float coverage = CLOUD_CC_COVERAGE - saturate(texture(noisetex, position * 0.01).z * 2.0);
-		coverage = saturate(texture(cloudMapTex, (position * 0.02)).y + coverage);
+		coverage = saturate(texture(cloudMapTex, (position * 0.01)).x + coverage);
 
-		if (coverage > 0.3) {
+		if (coverage > 0.35) {
 			vec2 p = position + coverage * 0.5 - windOffset * 1e-4;
 			float cirrocumulus = sqr(textureBicubic(cirroLutTex, p * 0.3).x);
 
 			cirrocumulus *= saturate(cirrocumulus + coverage);
-			cirrocumulus *= smoothstep(0.3, 1.0, coverage);
+			cirrocumulus *= linearstep(0.35, 1.0, coverage);
 
 			density += cirrocumulus;
 		}
