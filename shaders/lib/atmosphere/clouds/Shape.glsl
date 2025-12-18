@@ -157,7 +157,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	float heightFade = smoothstep(0.4, 0.2, heightFraction);
 
 	// Detail erosion
-	float detailNoise = 0.125;
+	float detailNoise = 0.1;
 
 	#if !defined PASS_SKY_MAP
 	if (detail) {
@@ -167,7 +167,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 		detailNoise = texture(detailNoiseTex, noisePos * 8.0).x;
 
 		// Transition from wispy shapes to billowy shapes over height
-		detailNoise = sqr(mix(0.75 - detailNoise * 0.5, detailNoise, heightFade)) * 0.5;
+		detailNoise = sqr(mix(0.75 - detailNoise * 0.5, detailNoise, heightFade)) * 0.4;
 	}
 	#endif
 
