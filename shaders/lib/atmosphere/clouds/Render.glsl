@@ -73,7 +73,7 @@ float CloudMultiScatteringApproxOz(in float opticalDepth, in float phase) {
 float CloudMultiScatteringApproxHaringPro(in float opticalDepth, in float phase, in float extinction, in float albedo) {
 	// https://zhuanlan.zhihu.com/p/457997155
 	float msV = albedo * oms(exp2(-8.0 * extinction));
-	float msEnergy = msV / ((2.0 + 1.25 * opticalDepth) * oms(msV));
+	float msEnergy = msV / ((3.0 + opticalDepth) * oms(msV));
 
 	float transmittance = exp2(-rLOG2 * opticalDepth);
 	return transmittance * phase + msEnergy * mix(phase, uniformPhase, msV);
@@ -185,17 +185,19 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 			// Intersect the volume
 			if (intersection.y > 0.0) {
-				float withinVolumeSmooth = linearstep(cumulusThickness + 32.0, cumulusThickness - 64.0, abs(r * 2.0 - (cumulusBottomRadius + cumulusTopRadius)));
-
 				float rayLength = clamp(intersection.y - intersection.x, 0.0, 5e4);
 
 				#if defined PASS_SKY_MAP
 					uint raySteps = CLOUD_LOW_SAMPLES >> 1u;
+
 					// Reduce ray steps for vertical rays
 					raySteps = uint(float(raySteps) * oms(abs(mu) * 0.5));
 				#else
 					uint raySteps = CLOUD_LOW_SAMPLES;
+
 					// Reduce ray steps for vertical rays
+					float withinVolumeSmooth = abs(r * 2.0 - (cumulusBottomRadius + cumulusTopRadius));
+					withinVolumeSmooth = linearstep(cumulusThickness + 32.0, cumulusThickness - 32.0, withinVolumeSmooth);
 					raySteps = uint(float(raySteps) * mix(oms(abs(mu) * 0.5), 4.0, withinVolumeSmooth));
 				#endif
 
