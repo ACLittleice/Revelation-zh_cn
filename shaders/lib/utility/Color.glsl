@@ -1,3 +1,4 @@
+// https://en.wikipedia.org/wiki/SRGB
 // https://github.com/tobspr/GLSL-Color-Spaces/blob/master/ColorSpaces.inc.glsl
 vec3 linearToSRGB(in vec3 color) {
 	return mix(color * 12.92, 1.055 * pow(color, vec3(0.41666666)) - 0.055, lessThan(vec3(0.0031308), color));
@@ -21,10 +22,7 @@ vec3 sRGBtoLinearApprox(in vec3 color) {
 }
 
 float luminance(in vec3 color) {
-    // https://en.wikipedia.org/wiki/Luma_(video)
-    // const vec3 coeff = vec3(0.2722287168, 0.6740817658, 0.0536895174);
-    const vec3 coeff = vec3(0.2126, 0.7152, 0.0722);
-    return dot(color, coeff);
+    return dot(color, vec3(0.2126729, 0.7151522, 0.0721750));
 }
 
 vec3 colorSaturation(in vec3 color, in float saturation) {
