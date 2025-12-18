@@ -9,13 +9,15 @@
 		ivec2 tileOffset = ivec2(halfViewSize.x, 0);
         ivec2 texelEnd = ivec2(halfViewEnd) - 1;
 
+		float depthTolerance = saturate(0.05 + viewDistance * 0.02);
+
 		for (uint i = 0u; i < 8u; ++i) {
 			ivec2 sampleTexel = clamp(texel + offset3x3N[i], ivec2(1), texelEnd);
 
 			vec3 prevData = texelFetch(colortex2, sampleTexel + tileOffset, 0).rgb;
 
-			float weight = pow32(saturate(dot(OctDecodeSnorm(prevData.xy), worldNormal)));
-			weight *= exp2(distance(prevData.z, viewDistance) * sigmaZ);
+			float weight = pow16(saturate(dot(OctDecodeSnorm(prevData.xy), worldNormal)));
+			weight *= exp2(max0(distance(prevData.z, viewDistance) - depthTolerance) * sigmaZ);
 
 			vec3 sampleLight = texelFetch(colortex3, sampleTexel, 0).rgb;
 

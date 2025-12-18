@@ -141,14 +141,16 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, out 
     return vec4(indirectCurrent.rgb, 1.0);
 }
 
-float SampleDepthMin4x4(in sampler2D depthTex, in vec2 coord) {
-	// 4x4 pixel neighborhood using textureGatherOffset
-	float LL = minOf(textureGatherOffset(depthTex, coord, ivec2(-2, -2)));
-	float LR = minOf(textureGatherOffset(depthTex, coord, ivec2(-2,  2)));
-	float UL = minOf(textureGatherOffset(depthTex, coord, ivec2( 2, -2)));
-	float UR = minOf(textureGatherOffset(depthTex, coord, ivec2( 2,  2)));
+float GetClosestDepth(in ivec2 texel) {
+    float depth = loadDepth0(texel);
 
-	return min(min(LL, LR), min(UL, UR));
+    for (uint i = 0u; i < 8u; ++i) {
+        ivec2 sampleTexel = offset3x3N[i] + texel;
+        float sampleDepth = loadDepth0(sampleTexel);
+        depth = min(depth, sampleDepth);
+    }
+
+    return depth;
 }
 
 //======// Main //================================================================================//
@@ -162,7 +164,7 @@ void main() {
         ivec2 screenTexel = ivec2(gl_FragCoord.xy);
 
         ivec2 currentTexel = screenTexel << 1;
-        float depth = SampleDepthMin4x4(depthtex0, currentCoord);
+        float depth = GetClosestDepth(currentTexel);
         #if defined DISTANT_HORIZONS
             bool dhTerrainMask = depth > (1.0 - EPS);
             if (dhTerrainMask) depth = loadDepth0DH(currentTexel);
@@ -186,6 +188,9 @@ void main() {
 
             imageStore(colorimg2, screenTexel, indirectHistory);
             imageStore(colorimg2, screenTexel + ivec2(halfViewSize.x, 0), vec4(OctEncodeSnorm(worldNormal), viewDistance, 1.0));
+        // } else {
+        //     imageStore(colorimg2, screenTexel, vec4(0.0));
+        //     imageStore(colorimg2, screenTexel + ivec2(halfViewSize.x, 0), vec4(0.0));
         }
     }
 }
