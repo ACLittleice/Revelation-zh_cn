@@ -53,15 +53,7 @@ uniform sampler2D tex;
 
 //======// Function //============================================================================//
 
-// Interleaved Gradient Noise
-// https://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare/
-// https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/
-float InterleavedGradientNoiseTemporal(in vec2 coord) {
-	#ifdef TAA_ENABLED
-        coord += 5.588238 * float(frameCounter % 64);
-	#endif
-    return fract(52.9829189 * fract(0.06711056 * coord.x + 0.00583715 * coord.y));
-}
+#include "/lib/universal/Random.glsl"
 
 #ifdef PARALLAX
 	#include "/lib/universal/Transform.glsl"
@@ -101,7 +93,7 @@ float InterleavedGradientNoiseTemporal(in vec2 coord) {
 
 //======// Main //================================================================================//
 void main() {
-	float dither = InterleavedGradientNoiseTemporal(gl_FragCoord.xy);
+	float dither = BlueNoise(ivec2(gl_FragCoord.xy), frameCounter);
 
 	#ifdef PARALLAX
 		#define ReadTexture(tex) textureGrad(tex, parallaxCoord, texGrad[0], texGrad[1])
