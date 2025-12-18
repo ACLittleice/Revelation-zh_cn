@@ -53,6 +53,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 	uint steps = VF_MAX_SAMPLES;
 	steps = min(steps, uint(float(steps) * 0.4 + rayLength * rcp(16.0)));
 
+	#ifdef VF_CLOUD_SHADOWS
 	if (skyMask) {
 		vec2 intersection = RaySphericalShellIntersection(viewerHeight, worldDir.y, atmosphereModel.bottom_radius, cumulusTopRadius);
 
@@ -63,6 +64,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 		rayStart += worldDir * intersection.x;
 		// steps *= 2u;
 	}
+	#endif
 
 	float rSteps = rcp(float(steps));
 
@@ -86,7 +88,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 	#endif
 
 	float LdotV = dot(worldLightVector, worldDir);
-	vec2 phase = vec2(CornetteShanksPhase(LdotV, 0.7), RayleighPhase(LdotV));
+	vec2 phase = vec2(CornetteShanksPhase(LdotV, mie_phase_g), RayleighPhase(LdotV));
 
 	float mieDensityMult = VF_MIE_DENSITY * (1.0 + wetness * VF_MIE_DENSITY_RAIN_MULT);
 
@@ -113,7 +115,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 		atmosphereModel.rayleigh_scattering * VF_RAYLEIGH_DENSITY * 0.05
 	);
 
-	float uniformFog = 8.0 / far;
+	float uniformFog = 16.0 / far;
 
 	vec3 scatteringSun = vec3(0.0);
 	vec3 scatteringSky = vec3(0.0);
