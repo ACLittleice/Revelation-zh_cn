@@ -151,11 +151,9 @@ void main() {
 	FetchNormalData(screenTexel, flatNormal, worldNormal);
 
 	float dither = SampleStbnVec1(screenTexel, frameCounter + 4);
-	float NdotL = 1.0; // Particle has no normal
+	float NdotL = dot(worldNormal, worldLightVector);
 
 	if (notParticle) {
-		NdotL = dot(worldNormal, worldLightVector);
-
 		// Specular indirect
 		lightingOut = CalculateSpecularReflections(screenPos, viewPos, worldNormal, worldDir, dither, lightmap.y, waterMask);
 	} else {
@@ -193,7 +191,7 @@ void main() {
 				float f0 = F0FromIOR(waterMask ? WATER_IOR : GLASS_IOR);
 				lightingOut.rgb += shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, TRANSLUCENT_ROUGHNESS, vec3(f0));
 			} else {
-				lightingOut.rgb += shadow * rPI;
+				lightingOut.rgb += shadow * NdotL * rPI;
 			}
 		}
 	}
