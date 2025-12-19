@@ -126,12 +126,12 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	vec2 cloudMap = texture(cloudMapTex, (rayPos.xz * rcp(cloudMapExtend))).xy;
 
 	// Coveage profile
-	vec2 stepEdge = mix(vec2(0.6, 1.0) - CLOUD_CU_COVERAGE * 0.4, vec2(0.1, 0.5), sqr(wetness));
+	vec2 stepEdge = mix(vec2(0.5, 0.9) - CLOUD_CU_COVERAGE * 0.3, vec2(0.1, 0.5), sqr(wetness));
 	float coverage = linearstep(stepEdge.x, stepEdge.y, cloudMap.x);
-	coverage *= linearstep(stepEdge.x * 1.2, stepEdge.y * 0.7, texture(noisetex, rayPos.xz * rcp(512e3)).z);
+	coverage *= linearstep(stepEdge.x * 1.25, stepEdge.y * 0.75, texture(noisetex, rayPos.xz * rcp(786e3)).z);
 
 	// Vertical profile
-	float type = curve(cloudMap.y) * coverage;
+	float type = curve(cloudMap.y * coverage);
 	float gradient = GetVerticalProfile(heightFraction, type);
 
 	// dimensionalProfile = gradient * coverage;
