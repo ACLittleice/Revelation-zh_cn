@@ -123,6 +123,7 @@ uniform float darknessLightFactor;              // lightmap variations caused by
 uniform bool worldTimeChanged;
 uniform bool viewSizeChanged;
 
+uniform float moonlightMult;
 uniform float wetnessCustom;
 uniform float eyeSkylightSmooth;
 uniform float worldTimeCounter;
