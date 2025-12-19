@@ -104,6 +104,7 @@ void main() {
 	if (screenPos.z > 1.0 - EPS + float(materialID)) {
 		vec3 transmittance;
 		sceneOut = GetSkyRadiance(worldDir, worldSunVector, transmittance) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
+		sceneOut = colorSaturation(sceneOut, 1.0 - wetness * 0.5); // Post-process
 
 		if (dot(transmittance, vec3(1.0)) > EPS) {
 			vec3 celestial = RenderSun(worldDir, worldSunVector);

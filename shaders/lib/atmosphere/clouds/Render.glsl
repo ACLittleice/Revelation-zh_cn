@@ -347,7 +347,6 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 		integralSL  = integralPV.x * PI * directIlluminance;
 		integralSL += integralPV.y * rPI * skyIlluminance;
-		integralSL *= 1.0 - wetness * 0.5;
 
 		// Apply aerial perspective
 		#ifdef CLOUD_AERIAL_PERSPECTIVE

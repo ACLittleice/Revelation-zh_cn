@@ -169,6 +169,7 @@ void main() {
 				density *= exp2(-4.0 * curve(saturate(worldDir.y * 3.0)));
 
 				vec3 skyRadiance = GetSkyRadiance(worldDir, worldSunVector);
+				skyRadiance = colorSaturation(skyRadiance, 1.0 - wetness * 0.5); // Post-process
 				sceneOut = mix(sceneOut, skyRadiance, density);
 			}
 		#endif

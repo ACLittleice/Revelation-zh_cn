@@ -115,7 +115,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 		atmosphereModel.rayleigh_scattering * VF_RAYLEIGH_DENSITY * 0.05
 	);
 
-	float uniformFog = 16.0 / far;
+	float uniformFog = (16.0 + wetness * VF_MIE_DENSITY_RAIN_MULT * 16.0) / far;
 
 	vec3 scatteringSun = vec3(0.0);
 	vec3 scatteringSky = vec3(0.0);
