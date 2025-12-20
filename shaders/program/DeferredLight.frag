@@ -74,20 +74,19 @@ void main() {
 
 	vec3 screenPos = vec3(screenCoord, loadDepth0(texelPos));
 
+	#if defined DISTANT_HORIZONS
+		bool dhTerrainMask = screenPos.z > 1.0 - EPS;
+		if (dhTerrainMask) {
+			screenPos.z = ViewToScreenDepth(ScreenToViewDepthDH(loadDepth0DH(texelPos)));
+		}
+	#endif
+
 	// Hand-depth correction
 	if (screenPos.z < 0.56) {
 		screenPos.z = screenPos.z * rcp(MC_HAND_DEPTH) + (0.5 - 0.5 / MC_HAND_DEPTH);
 	}
 
 	vec3 viewPos = ScreenToViewSpace(screenPos);
-
-	#if defined DISTANT_HORIZONS
-		bool dhTerrainMask = screenPos.z > 1.0 - EPS;
-		if (dhTerrainMask) {
-			screenPos.z = loadDepth0DH(texelPos);
-			viewPos = ScreenToViewSpaceDH(screenPos);
-		}
-	#endif
 
 	vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
 	vec3 worldDir = normalize(worldPos);
@@ -101,7 +100,7 @@ void main() {
 
 	sceneOut = vec3(0.0);
 
-	if (screenPos.z > 1.0 - EPS + float(materialID)) {
+	if (materialID == 0u) { // Sky
 		vec3 transmittance;
 		sceneOut = GetSkyRadiance(worldDir, worldSunVector, transmittance) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
 		sceneOut = colorSaturation(sceneOut, 1.0 - wetness * 0.5); // Post-process
