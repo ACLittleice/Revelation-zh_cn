@@ -141,8 +141,8 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, out 
     return vec4(indirectCurrent.rgb, 1.0);
 }
 
-float GetClosestDepth(in ivec2 texel) {
-    float depth = loadDepth0(texel);
+float GetClosestDepthN(in ivec2 texel) {
+    float depth = 1.0;
 
     for (uint i = 0u; i < 8u; ++i) {
         ivec2 sampleTexel = offset3x3N[i] + texel;
@@ -155,42 +155,44 @@ float GetClosestDepth(in ivec2 texel) {
 
 //======// Main //================================================================================//
 void main() {
-    vec2 currentCoord = gl_FragCoord.xy * viewPixelSize * 2.0;
+    vec2 renderCoord = gl_FragCoord.xy * viewPixelSize * 2.0;
 
     indirectCurrent = vec4(0.0);
     varianceMoments = vec2(0.0);
 
-    if (saturate(currentCoord) == currentCoord) {
-        ivec2 screenTexel = ivec2(gl_FragCoord.xy);
+    if (saturate(renderCoord) == renderCoord) {
+        ivec2 texelPos = ivec2(gl_FragCoord.xy);
 
-        ivec2 currentTexel = screenTexel << 1;
-        float depth = GetClosestDepth(currentTexel);
+        ivec2 renderTexel = texelPos << 1;
+
+        float depth = loadDepth0(renderTexel);
+        bool terrainCheck = min(GetClosestDepthN(renderTexel), depth) < 1.0;
         #if defined DISTANT_HORIZONS
-            bool dhTerrainMask = depth > (1.0 - EPS);
-            if (dhTerrainMask) depth = loadDepth0DH(currentTexel);
+            bool dhTerrainMask = terrainCheck;
+            if (dhTerrainMask) {
+                depth = loadDepth0DH(renderTexel);
+                terrainCheck = depth < 1.0;
+            }
         #endif
 
-        if (depth < 1.0) {
+        if (terrainCheck) {
             #if defined DISTANT_HORIZONS
-                if (dhTerrainMask) depth = ViewToScreenDepth(ScreenToViewDepthDH(depth));
+			    if (dhTerrainMask) depth = ViewToScreenDepth(ScreenToViewDepthDH(depth));
             #endif
 
-            vec3 screenPos = vec3(currentCoord, depth);
-            vec3 worldNormal = FetchSurfaceNormal(currentTexel);
+            vec3 screenPos = vec3(renderCoord, depth);
+            vec3 worldNormal = FetchSurfaceNormal(renderTexel);
 
             float viewDistance;
-            vec4 indirectHistory = TemporalFilter(screenTexel, screenPos, worldNormal, viewDistance);
+            vec4 indirectHistory = TemporalFilter(texelPos, screenPos, worldNormal, viewDistance);
 
             // Vanilla lightmap blending
-            float blocklight = Unpack2x8UX(loadMaterialPack(currentTexel).x);
+            float blocklight = Unpack2x8UX(loadMaterialPack(renderTexel).x);
             blocklight = pow5(blocklight) * exp2(-16.0 * indirectCurrent.x * global.exposure.value);
             indirectCurrent.rgb += sRGBToYCoCg(blackbody(float(BLOCKLIGHT_TEMPERATURE))) * saturate(blocklight) * SSILVB_BLENDED_LIGHTMAP;
 
-            imageStore(colorimg2, screenTexel, indirectHistory);
-            imageStore(colorimg2, screenTexel + ivec2(halfViewSize.x, 0), vec4(OctEncodeSnorm(worldNormal), viewDistance, 1.0));
-        // } else {
-        //     imageStore(colorimg2, screenTexel, vec4(0.0));
-        //     imageStore(colorimg2, screenTexel + ivec2(halfViewSize.x, 0), vec4(0.0));
+            imageStore(colorimg2, texelPos, indirectHistory);
+            imageStore(colorimg2, texelPos + ivec2(halfViewSize.x, 0), vec4(OctEncodeSnorm(worldNormal), viewDistance, 1.0));
         }
     }
 }
