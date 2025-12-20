@@ -62,7 +62,7 @@ void main() {
 	float depth = loadDepth0(renderTexel);
 	bool terrainCheck = min(GetClosestDepthN(renderTexel), depth) < 1.0;
 	#if defined DISTANT_HORIZONS
-		bool dhTerrainMask = terrainCheck;
+        bool dhTerrainMask = !terrainCheck;
 		if (dhTerrainMask) {
 			depth = loadDepth0DH(renderTexel);
 			terrainCheck = depth < 1.0;
