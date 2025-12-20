@@ -73,6 +73,7 @@ vec4 CalculateSpecularReflections(in vec3 screenPos, in vec3 viewPos, in vec3 wo
 	float fresnel = FresnelDielectricN(NdotV, ior);
 	uint raySteps = uint(SSRT_MAX_SAMPLES * (fresnel * 0.5 + 0.5));
 
+	viewPos += mat3(gbufferModelView) * worldNormal * saturate(length(viewPos) * 3e-4);
 	if (ScreenSpaceRaytrace(viewPos, mat3(gbufferModelView) * rayDir, dither, raySteps, screenPos)) {
 		float edgeFade = screenPos.x * screenPos.y * oms(screenPos.x) * oms(screenPos.y);
 		edgeFade *= 1e2 + cube(saturate(1.0 - gbufferModelViewInverse[2].y)) * 4e3;
