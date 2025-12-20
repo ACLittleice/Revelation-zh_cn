@@ -328,18 +328,26 @@ float GetNoHSquared(float radius, float NoL, float NoV, float VoL) {
     return max0(NoH * NoH / HoH);
 }
 
-vec3 SphericalAreaGGX(in float LdotH, in float NdotV, in float NdotL, in float LdotV, in float roughness, in vec3 f0) {
-    float alpha2 = maxEps(roughness * roughness);
+vec3 SphericalAreaGGX(in float LdotH, in float NdotV, in float NdotL, in float LdotV, in float alpha, in vec3 f0) {
+    float radius = atmosphereModel.sun_angular_radius * SUN_RADIUS_MULT;
+
+    // alpha = max(alpha, 1e-2);
+    float alpha2 = alpha * alpha;
 
     // Fresnel term
     vec3 F = FresnelSchlick(LdotH, f0);
 
     // Distribution term
-	float NdotH2 = GetNoHSquared(atmosphereModel.sun_angular_radius * SUN_RADIUS_MULT, NdotL, NdotV, LdotV);
+	float NdotH2 = GetNoHSquared(radius, NdotL, NdotV, LdotV);
 	float D = NDFTrowbridgeReitz(NdotH2, alpha2);
 
     // Geometric term
     float G = G2SmithGGX(NdotL, NdotV, alpha2);
 
-	return F * D * G / (4.0 * NdotV);
+    // Both Karis’ approach and our approach are not truely energy conserving as their normalization is only approximate.
+    // We’re experimenting with different formulas for the normalization to try to improve its accuracy, of which this is one:
+    float alphaSquaredLdotH = alpha2 * (LdotH + 0.001);
+    float normalization = alphaSquaredLdotH / (alphaSquaredLdotH + 0.25 * radius * (3.0 * alpha + radius));
+
+	return min(F * D * G / (4.0 * NdotV) * normalization, 64.0);
 }
