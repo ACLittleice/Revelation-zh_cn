@@ -161,7 +161,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 	// Compute phase function
 	#if 0
 		float phase = TripleLobePhase(LdotV, cloudForwardG, cloudBackwardG, cloudLobeMixer, cloudSilverG, cloudSilverI);
-	#elif 1
+	#elif 0
 		float phase = HgDrainePhase(LdotV, 11.0);
 	#else
 		float phase = NumericalMieFit(LdotV);
