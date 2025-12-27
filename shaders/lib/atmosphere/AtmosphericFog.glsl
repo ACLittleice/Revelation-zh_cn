@@ -64,6 +64,8 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 		rayStart += worldDir * intersection.x;
 		// steps *= 2u;
 	}
+	#else
+		rayLength = min(rayLength, far);
 	#endif
 
 	float rSteps = rcp(float(steps));
