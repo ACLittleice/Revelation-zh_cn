@@ -76,7 +76,7 @@ float CloudMultiScatteringApproxHaringPro(in float opticalDepth, in float phase,
 	float msEnergy = msV / ((3.0 + opticalDepth) * oms(msV));
 
 	float transmittance = exp2(-rLOG2 * opticalDepth);
-	return transmittance * phase + msEnergy * mix(phase, uniformPhase, msV);
+	return transmittance * phase + msEnergy * uniformPhase;
 }
 
 //================================================================================================//
