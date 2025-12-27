@@ -55,14 +55,13 @@ uniform vec2 viewPixelSize;
 
 //======// Function //============================================================================//
 
-const vec2 bloomTileOffset[7] = vec2[7](
+const vec2 bloomTileOffset[6] = vec2[6](
 	vec2(0.0000, 0.0000),
 	vec2(0.0000, 0.5000),
 	vec2(0.2500, 0.5000),
 	vec2(0.2500, 0.6250),
 	vec2(0.3125, 0.6250),
-	vec2(0.3150, 0.6563),
-	vec2(0.3281, 0.6563)
+	vec2(0.3150, 0.6563)
 );
 
 void CombineBloomAndFog(inout vec3 scene, in ivec2 texel, in float exposure) {
@@ -73,10 +72,10 @@ void CombineBloomAndFog(inout vec3 scene, in ivec2 texel, in float exposure) {
 	float sumWeight = 0.0;
 
 	vec2 upscalingCoord = screenCoord;
-	for (uint i = 0u; i < 7u; ++i) {
+	for (uint i = 0u; i < 6u; ++i) {
 		upscalingCoord *= 0.5;
     	vec2 sampleCoord = upscalingCoord + bloomTileOffset[i];
-		sampleCoord += viewPixelSize * float(i * 12);
+		sampleCoord += viewPixelSize * float(i * 8);
 		vec3 sampleTile = textureBicubic(colortex4, sampleCoord).rgb;
 
 		bloomData += sampleTile * weight;
@@ -86,10 +85,10 @@ void CombineBloomAndFog(inout vec3 scene, in ivec2 texel, in float exposure) {
 
 	bloomData *= rcp(sumWeight);
 
-	float bloomIntensity = BLOOM_INTENSITY * 0.1;
-	bloomIntensity /= exposure + 1.0;
+	float bloomIntensity = BLOOM_INTENSITY * 0.25;
+	bloomIntensity /= max(exposure, 0.25) + 1.0;
 
-	scene = mix(scene, bloomData, saturate(bloomIntensity));
+	scene = (scene + bloomData * bloomIntensity) / (1.0 + bloomIntensity * 0.5);
 
 	#ifdef BLOOMY_FOG
 		float mask = saturate(texelFetch(colortex12, texel, 0).x);
@@ -205,7 +204,7 @@ void main() {
 	#endif
 
 	// Bloom and fog
-	#ifdef BLOOM_ENABLED
+	#ifdef BLOOM
 		CombineBloomAndFog(color, texelPos, exposure);
 	#endif
 

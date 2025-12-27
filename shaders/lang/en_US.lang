@@ -339,9 +339,9 @@ option.MOTION_BLUR=Motion Blur
 option.MOTION_BLUR_SAMPLES=Motion Blur Samples
 option.MOTION_BLUR_STRENGTH=Motion Blur Strength
 
-option.BLOOM_ENABLED=Bloom
+option.BLOOM=Bloom
+option.BLOOM_KARIS_AVERAGE=Karis Average
 option.BLOOM_INTENSITY=Bloom Intensity
-option.BLOOM_BLUR_SAMPLES=Bloom Blur Samples
 option.BLOOMY_FOG=Bloomy Fog
 option.BLOOMY_FOG_INTENSITY=Bloomy Fog Intensity
 

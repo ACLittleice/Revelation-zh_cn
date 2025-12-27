@@ -246,8 +246,11 @@ const ivec2 skyMapRes = ivec2(256, 256);
 	#define MOTION_BLUR_STRENGTH 0.5 // Strength of the motion blur. [0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.6 0.7 0.8 0.9 1.0 1.2 1.4 1.5 1.7 2.0 2.5 3.0 3.5 4.0 4.5 5.0 7.0 10.0 12.0 14.0 16.0 18.0 20.0]
 
 /* Bloom */
-	#define BLOOM_ENABLED // Enables bloom
-	#define BLOOMY_FOG // Enables bloomy fog
+	#define BLOOM
+	#define BLOOMY_FOG
+	// #define BLOOM_KARIS_AVERAGE
+	#ifdef BLOOM_KARIS_AVERAGE
+	#endif
 
 /* Exposure */
 	#define MANUAL 0
