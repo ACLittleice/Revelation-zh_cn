@@ -32,10 +32,10 @@
 const float cloudShadowDistortion = 0.75;
 
 const mat4 cloudShadowProj = mat4(
-	0.5 / CLOUD_SHADOW_DISTANCE, 0.0, 0.0, 0.0,
-	0.0, 0.5 / CLOUD_SHADOW_DISTANCE, 0.0, 0.0,
-	0.0, 0.0, -0.5 / CLOUD_SHADOW_DISTANCE, 0.0,
-	0.0, 0.0, 0.0, 1.0
+	1.0 / CLOUD_SHADOW_DISTANCE, 0.0, 0.0, 0.0,
+	0.0, 1.0 / CLOUD_SHADOW_DISTANCE, 0.0, 0.0,
+	0.0, 0.0, -2.0 / 1e6, 0.0,
+	0.0, 0.0, -1.0, 1.0
 );
 
 const mat4 cloudShadowProjInv = inverse(cloudShadowProj);
@@ -74,7 +74,7 @@ vec2 DistortCloudShadowPos(in vec2 shadowPos) {
 #if defined PASS_CLOUD_SM
 #include "/lib/atmosphere/clouds/Shape.glsl"
 
-float CalculateCloudShadows(in vec3 rayPos) {
+float CalculateCloudShadows(in vec3 rayPos, in float dither) {
 	float steps = float(CLOUD_SHADOW_SAMPLES) * (2.0 - worldLightVector.y);
 
 	rayPos.y += viewerHeight;
@@ -84,7 +84,7 @@ float CalculateCloudShadows(in vec3 rayPos) {
 	vec3 rayStep = worldLightVector * stepLength;
 
 	rayPos += worldLightVector * intersection.x;
-	rayPos += rayStep * BlueNoise(ivec2(gl_GlobalInvocationID.xy), frameCounter);
+	rayPos += rayStep * dither;
 
 	float extinction = 0.0;
 	const float maxExtinction = -log2(cloudMinTransmittance) / cumulusExtinction;
