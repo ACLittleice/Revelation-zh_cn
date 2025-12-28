@@ -81,14 +81,6 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 	vec3 shadowStep = diagonal3(shadowProjection) * shadowViewStep;
 	vec3 shadowPos = shadowStart + shadowStep * dither;
 
-	#ifdef VF_CLOUD_SHADOWS
-		const vec2 projectionScale = diagonal2(cloudShadowProj);
-
-		shadowViewStart.xy *= projectionScale;
-		shadowViewStep.xy *= projectionScale;
-		vec2 cloudShadowPos = shadowViewStart.xy + shadowViewStep.xy * dither;
-	#endif
-
 	float LdotV = dot(worldLightVector, worldDir);
 	vec2 phase = vec2(CornetteShanksPhase(LdotV, mie_phase_g), RayleighPhase(LdotV));
 
@@ -155,12 +147,12 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
     #endif
 
 		#ifdef VF_CLOUD_SHADOWS
-			cloudShadowPos += shadowViewStep.xy;
-			vec2 cloudShadowCoord = DistortCloudShadowPos(cloudShadowPos);
-			vec2 fade = saturate(32.0 - abs(cloudShadowCoord - 0.5) * 64.0);
+			vec2 cloudShadowCoord = WorldToCloudShadowScreenPos(rayPos - cameraPosition).xy;
+			// vec2 fade = saturate(32.0 - abs(cloudShadowCoord - 0.5) * 64.0);
 
 			float cloudShadow = texture(cloudShadowTex, cloudShadowCoord).x;
-			sampleShadow *= mix(1.0 - wetness * CLOUD_SHADOW_STRENGTH, cloudShadow, fade.x * fade.y);
+			// cloudShadow = mix(1.0 - wetness * CLOUD_SHADOW_STRENGTH, cloudShadow, fade.x * fade.y);
+			sampleShadow *= cloudShadow;
 		#endif
 
 		vec3 stepExtinction = fogExtinctionCoeff * stepDensity;
@@ -169,7 +161,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 		vec3 stepIntegral = transmittance * oms(stepTransmittance) / maxEps(stepExtinction);
 
 		// https://zhuanlan.zhihu.com/p/457997155
-		vec2 msV = 0.9 * oms(exp(-stepDensity));
+		vec2 msV = 0.8 * oms(exp2(-2.0 * stepDensity));
 		vec2 msEnergy = 0.5 * uniformPhase * msV / oms(msV);
 
 		scatteringSun += fogScatteringCoeff * (stepDensity * (phase * sampleShadow + msEnergy)) * stepIntegral;
