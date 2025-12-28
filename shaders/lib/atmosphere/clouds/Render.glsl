@@ -343,7 +343,8 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 		vec3 sunIrradiance, moonIrradiance;
 		vec3 skyIlluminance = GetSunAndSkyIrradiance(cloudPos, normalize(cloudPos), worldSunVector, sunIrradiance, moonIrradiance) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
 		vec3 directIlluminance = SUN_SPECTRAL_RADIANCE_TO_LUMINANCE * mix(sunIrradiance, moonIrradiance, moonlightFactor);
-		skyIlluminance += lightningShading * 0.05;
+
+		skyIlluminance += LightningContribution(cloudPos - camera);
 
 		integralSL  = integralPV.x * PI * directIlluminance;
 		integralSL += integralPV.y * rPI * skyIlluminance;

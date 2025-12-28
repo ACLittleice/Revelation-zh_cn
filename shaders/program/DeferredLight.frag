@@ -294,13 +294,8 @@ void main() {
 		// Skylight and bounced sunlight
 		#ifndef SSILVB_ENABLED
 			if (lightmap.y > EPS) {
-				// Skylight
-				vec3 skylight = lightningShading;
-				skylight *= 0.02 * (worldNormal.y * 0.5 + 0.5);
-
 				// Spherical harmonics skylight
-				skylight += ConvolvedReconstructSH3(global.light.skySH, worldNormal);
-
+				vec3 skylight = ConvolvedReconstructSH3(global.light.skySH, worldNormal);
 				sceneOut += skylight * cube(lightmap.y) * ao;
 
 				// Fake bounced light
@@ -340,6 +335,9 @@ void main() {
 				sceneOut += irradiance * attenuation * blocklightColor;
 			}
 		#endif
+
+		// Lightning
+		sceneOut += LightningContribution(worldPos, worldNormal);
 
 		// Indirect diffuse lighting
 		#ifdef SSILVB_ENABLED

@@ -187,3 +187,21 @@ vec2 RaySphericalShellIntersection(in float r, in float mu, in float bottomRad, 
 		return vec2(-1.0);
 	}
 }
+
+vec3 LightningContribution(in vec3 pos) {
+	if (lightningBoltPosition.w < 0.5) return vec3(0.0);
+
+    float distSq = sdot(lightningBoltPosition.xyz - pos);
+	return vec3(0.32, 0.3, 1.0) * 5e5 / (1.0 + distSq);
+}
+
+vec3 LightningContribution(in vec3 pos, in vec3 normal) {
+	if (lightningBoltPosition.w < 0.5) return vec3(0.0);
+
+    vec3 vector = lightningBoltPosition.xyz - pos;
+    float distSq = sdot(vector);
+    vec3 lightDir = vector * inversesqrt(distSq);
+
+    float diffuse = saturate(dot(normal, lightDir)) * 0.75 + 0.25;
+	return vec3(0.32, 0.3, 1.0) * 5e3 / (1.0 + distSq) * diffuse;
+}

@@ -119,6 +119,8 @@ uniform float alphaTestRef;                     // alpha test reference value, t
 uniform float darknessFactor;                   // strength of the darkness effect (0.0-1.0)
 uniform float darknessLightFactor;              // lightmap variations caused by the darkness effect (0.0-1.0)
 
+uniform vec4 lightningBoltPosition;
+
 // Custom uniforms
 uniform bool worldTimeChanged;
 uniform bool viewSizeChanged;
@@ -144,7 +146,6 @@ uniform vec3 cameraMovement;
 uniform vec3 worldSunVector;
 uniform vec3 worldLightVector;
 uniform vec3 viewLightVector;
-uniform vec3 lightningShading;
 
 
 #if defined DISTANT_HORIZONS
