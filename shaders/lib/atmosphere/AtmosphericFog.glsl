@@ -177,16 +177,16 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 	#endif
 	scatteringSky *= eyeSkylightSmooth;
 
-	vec3 scattering = scatteringSun * global.light.directIlluminance;
-	scattering += scatteringSky * uniformPhase * global.light.skyIlluminance;
-
 	// Apply rainbows
 	#ifdef RAINBOWS
 		float visibility = wetness * oms(rainStrength);
 		if (visibility > EPS) {
-			scattering *= 1.0 + RenderRainbows(LdotV) * visibility;
+			scatteringSun *= 1.0 + RenderRainbows(LdotV) * visibility * 4.0;
 		}
 	#endif
+
+	vec3 scattering = scatteringSun * global.light.directIlluminance;
+	scattering += scatteringSky * uniformPhase * global.light.skyIlluminance;
 
 	return mat2x3(scattering, transmittance);
 }
