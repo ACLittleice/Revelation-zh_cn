@@ -41,15 +41,15 @@
 		return mat2x3(scattering, transmittance);
 	}
 
-	mat2x3 VolumetricFogSpatialUpscale(in ivec2 texel, in float linearDepth) {
-		const ivec2 offset[4] = ivec2[4](ivec2(1, 0), ivec2(-1, 0), ivec2(0, 1), ivec2(0, -1));
-
+	mat2x3 VolumetricFogSpatialUpscale(in ivec2 texelPos, in float linearDepth) {
+		ivec2 randTexel = ivec2(vec2(texelPos >> 1) + BlueNoise(texelPos, frameCounter));
 		float sigmaZ = -64.0 / linearDepth;
-		mat2x3 sum = UnpackFogData(texelFetch(colortex11, texel, 0).rgb);
+
+		mat2x3 sum = UnpackFogData(texelFetch(colortex11, randTexel, 0).rgb);
 		float sumWeight = 1.0;
 
-		for (uint i = 0u; i < 4u; ++i) {
-			ivec2 sampleTexel = texel + offset[i];
+		for (uint i = 0u; i < 8u; ++i) {
+			ivec2 sampleTexel = randTexel + offset3x3N[i];
 			uvec4 sampleFogData = texelFetch(colortex11, sampleTexel, 0);
 
 			float sampleDepth = uintBitsToFloat(sampleFogData.w);
