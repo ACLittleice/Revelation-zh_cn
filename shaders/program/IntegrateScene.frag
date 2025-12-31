@@ -133,11 +133,11 @@ void main() {
 
 	if (depth < 1.0) {
 		vec4 translucent = ExtractSpecularTex(materialPack);
+		vec3 albedo = sRGBtoLinear(translucent.rgb);
 
 		// Particle translucent
 		if (materialID == 500u) {
 			vec3 diffuseLight = texelFetch(colortex3, texelPos, 0).rgb;
-			vec3 albedo = sRGBtoLinear(translucent.rgb);
 			sceneOut = mix(sceneOut, albedo * diffuseLight, translucent.a);
 		}
 
@@ -145,12 +145,10 @@ void main() {
 		if (glassMask || waterMask) {
 			if (glassMask) {
 				// Absorption
-				vec3 absorption = log2(translucent.rgb);
-				absorption *= 2.0 * sqrt2(translucent.a);
-				sceneOut *= exp2(absorption);
+				sceneOut *= exp(log2(albedo) * approxSqrt(translucent.a));
 
 				// Emissive
-				sceneOut += (2.0 * EMISSIVE_BRIGHTNESS) * Unpack2x8UX(materialPack.x) * cube(translucent.rgb * translucent.a);
+				sceneOut += (2.0 * EMISSIVE_BRIGHTNESS) * Unpack2x8UX(materialPack.x) * mean(albedo) * albedo;
 			}
 
 			// Apply specular lighting
