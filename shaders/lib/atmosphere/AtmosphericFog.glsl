@@ -181,7 +181,8 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 	#ifdef RAINBOWS
 		float visibility = wetness * oms(rainStrength);
 		if (visibility > EPS) {
-			scatteringSun *= 1.0 + RenderRainbows(LdotV) * visibility * 4.0;
+			float distanceFade = saturate(rayLength / far) * visibility;
+			scatteringSun *= 1.0 + RenderRainbows(LdotV) * distanceFade;
 		}
 	#endif
 
