@@ -166,7 +166,7 @@ void main() {
 				float density = saturate(1.0 - exp2(-pow8(sdot(worldPos.xz) * rcp(far * far)) * BORDER_FOG_FALLOFF));
 				density *= exp2(-4.0 * curve(saturate(worldDir.y * 3.0)));
 
-				vec3 skyRadiance = GetSkyRadiance(worldDir, worldSunVector);
+				vec3 skyRadiance = GetSkyRadiance(worldDir, worldSunVector) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
 				skyRadiance = colorSaturation(skyRadiance, 1.0 - wetness * 0.5); // Post-process
 				sceneOut = mix(sceneOut, skyRadiance, density);
 			}
