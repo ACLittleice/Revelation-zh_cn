@@ -36,18 +36,7 @@ const vec2 workGroupsRender = vec2(1.0, 1.0);
 
 writeonly uniform image2D colorimg8; // LDR output
 
-uniform sampler2D colortex0; // Motion blur output
-uniform sampler2D colortex1; // TAA output
-uniform sampler2D colortex4; // Bloom tiles
-uniform sampler2D colortex6; // Rain alpha
-uniform sampler2D colortex12; // Bloomy fog mask
-
-uniform sampler2D skyMapTex;
-
-uniform float aspectRatio;
-uniform float rainStrength;
-
-uniform vec2 viewPixelSize;
+#include "/lib/universal/Uniform.glsl"
 
 //======// SSBO //================================================================================//
 
@@ -213,10 +202,13 @@ void main() {
 
 	// Vignetting
 	#ifdef VIGNETTE_ENABLED
-		vec2 clipCoord = texelToUv(texelPos) * 2.0 - 1.0;
-		clipCoord.x *= mix(1.0, aspectRatio, VIGNETTE_ROUNDNESS);
-		color *= exp2(-0.5 * sdot(clipCoord) * VIGNETTE_STRENGTH);
+		vec2 ndcCoord = texelToUv(texelPos) * 2.0 - 1.0;
+		ndcCoord.x *= mix(1.0, aspectRatio, VIGNETTE_ROUNDNESS);
+		color *= exp2(-0.5 * VIGNETTE_STRENGTH * sdot(ndcCoord));
 	#endif
+
+	// Silly white balance (divide by sun color in sRGB space)
+	color *= 1.0 / vec3(1.0, 0.949, 0.937);
 
 	// Apply DRT
 	{
