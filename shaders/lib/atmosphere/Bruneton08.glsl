@@ -143,15 +143,6 @@ vec3 GetTransmittance(vec3 view_ray) {
 	return GetTransmittanceToTopAtmosphereBoundary(r, mu);
 }
 
-// vec3 GetTransmittance(vec3 ray_origin, vec3 worldDir) {
-// 	float r_sq = dot(ray_origin, ray_origin);
-// 	float rcp_r = inversesqrt(r_sq);
-// 	float mu = dot(ray_origin, worldDir) * rcp_r;
-// 	float r = r_sq * rcp_r;
-
-// 	return GetTransmittanceToTopAtmosphereBoundary(mu, r);
-// }
-
 vec3 GetTransmittanceToSun(
     float r,
     float mu_s

@@ -91,7 +91,7 @@ const AtmosphereParameters atmosphereModel = AtmosphereParameters(
     //     kSolarIrradiance[(440 - kLambdaMin) / 10]
     // ),
 	0.004675,
-    planetRadius - 1e3,
+    planetRadius,
     planetRadius + ATMOSPHERE_THICKNESS,
 //    DensityProfile(DensityProfileLayer[2](DensityProfileLayer(0.000000,0.000000,0.000000,0.000000,0.000000),DensityProfileLayer(0.000000,1.000000,-0.125000,0.000000,0.000000))),
     vec3(6.42905682e-3, 1.08663713e-2, 2.4844733e-2),
