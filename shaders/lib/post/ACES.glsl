@@ -138,6 +138,8 @@ const mat3 D60ToD65_CAT = mat3(
      0.00307257, -0.00509595, 1.08168000
 );
 
+const vec3 AP1_RGB2Y = vec3(0.2722287168, 0.6740817658, 0.0536895174);
+
 // "Glow" module constants
 const float rrtGlowGain  = 0.05;   	// Default: 0.05
 const float rrtGlowMid   = 0.08;   	// Default: 0.08
@@ -244,12 +246,10 @@ vec3 RRTSweeteners(in vec3 aces) {
 	aces.r += hueWeight * saturation * (rrtRedPivot - aces.r) * oms(rrtRedScale);
 
     // --- ACES to RGB rendering space --- //
-    aces = satU16f(aces);
-	vec3 rgbPre = satU16f(aces * AP0_2_AP1);
+	vec3 rgbPre = max0(aces * AP0_2_AP1);
 
 	// --- Global desaturation --- //
-	float luminance = luminance(rgbPre);
-	rgbPre = mix(vec3(luminance), rgbPre, rrtSatFactor);
+	rgbPre = mix(vec3(dot(rgbPre, AP1_RGB2Y)), rgbPre, rrtSatFactor);
 
 	return rgbPre;
 }
@@ -399,7 +399,7 @@ vec3 AcademyFit(in vec3 rgb) {
 	rgb = RRTAndODTFit(rgb);
 
 	// Global desaturation
-	rgb = colorSaturation(rgb, odtSatFactor);
+	rgb = mix(vec3(dot(rgb, AP1_RGB2Y)), rgb, odtSatFactor);
 
 	return rgb * AP1_2_Rec2020;
 }
@@ -423,12 +423,10 @@ vec3 RRT(in vec3 aces) {
 	aces.r += hueWeight * saturation * (rrtRedPivot - aces.r) * oms(rrtRedScale);
 
     // --- ACES to RGB rendering space --- //
-    aces = satU16f(aces);
-	vec3 rgbPre = satU16f(aces * AP0_2_AP1);
+	vec3 rgbPre = max0(aces * AP0_2_AP1);
 
 	// --- Global desaturation --- //
-	float luminance = luminance(rgbPre);
-	rgbPre = mix(vec3(luminance), rgbPre, rrtSatFactor);
+	rgbPre = mix(vec3(dot(rgbPre, AP1_RGB2Y)), rgbPre, rrtSatFactor);
 
     // --- Apply the tonescale independently in rendering-space RGB --- //
     vec3 rgbPost;
@@ -504,8 +502,7 @@ vec3 ODT_sRGB_100nits_dim(in vec3 rgbPre) {
 	linearCV = dark_surround_to_dim_surround(linearCV);
 
 	// Apply desaturation to compensate for luminance difference
-	float luminance = luminance(linearCV);
-	linearCV = mix(vec3(luminance), linearCV, odtSatFactor);
+	linearCV = mix(vec3(dot(linearCV, AP1_RGB2Y)), linearCV, odtSatFactor);
 
     // Convert to display primary encoding
     // Rendering space RGB to XYZ
@@ -564,8 +561,7 @@ vec3 ODT_Rec2020_P3D65limited_100nits_dim(in vec3 rgbPre) {
 	linearCV = dark_surround_to_dim_surround(linearCV);
 
 	// Apply desaturation to compensate for luminance difference
-	float luminance = luminance(linearCV);
-	linearCV = mix(vec3(luminance), linearCV, odtSatFactor);
+	linearCV = mix(vec3(dot(linearCV, AP1_RGB2Y)), linearCV, odtSatFactor);
 
     // Convert to display primary encoding
     // Rendering space RGB to XYZ
