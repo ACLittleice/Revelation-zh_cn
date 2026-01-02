@@ -105,7 +105,7 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, out 
 
                 float weight = -abs(viewDistance - sampleAux.z) * NdotV;
                 weight += log2(saturate(dot(OctDecodeSnorm(sampleAux.xy), worldNormal)));
-                weight = exp2(weight * sampleDiffuse.a * (16.0 / SSILVB_MAX_ACCUM_FRAMES));
+                weight = exp2(weight * sampleDiffuse.a * (8.0 / SSILVB_MAX_ACCUM_FRAMES));
 
                 confidence = max(confidence, weight);
                 weight *= bilinearWeight[i];
