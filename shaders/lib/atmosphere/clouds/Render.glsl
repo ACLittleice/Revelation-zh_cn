@@ -187,21 +187,10 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 			if (intersection.y > 0.0) {
 				float rayLength = clamp(intersection.y - intersection.x, 0.0, 5e4);
 
-				#if defined PASS_SKY_MAP
-					uint raySteps = CLOUD_LOW_SAMPLES >> 1u;
+				float raySteps = float(CLOUD_LOW_SAMPLES_MAX) / 5e4 * rayLength;
+				raySteps = round(max(raySteps, float(CLOUD_LOW_SAMPLES_MIN)));
 
-					// Reduce ray steps for vertical rays
-					raySteps = uint(float(raySteps) * oms(abs(mu) * 0.5));
-				#else
-					uint raySteps = CLOUD_LOW_SAMPLES;
-
-					// Reduce ray steps for vertical rays
-					float withinVolumeSmooth = abs(r * 2.0 - (cumulusBottomRadius + cumulusTopRadius));
-					withinVolumeSmooth = linearstep(cumulusThickness + 32.0, cumulusThickness - 32.0, withinVolumeSmooth);
-					raySteps = uint(float(raySteps) * mix(oms(abs(mu) * 0.5), 4.0, withinVolumeSmooth));
-				#endif
-
-				float stepSize = rayLength * rcp(float(raySteps));
+				float stepSize = rayLength * rcp(raySteps);
 				float rayT = intersection.x + stepSize * noise.x;
 
 				float rayLengthWeighted = 0.0;
@@ -211,7 +200,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 				float transmittance = 1.0;
 
 				// Raymarch through the cloud volume
-				for (uint i = 0u; i < raySteps; ++i, rayT += stepSize) {
+				for (uint i = 0u; i < uint(raySteps); ++i, rayT += stepSize) {
 					vec3 rayPos = camera + rayDir * rayT;
 
 					// Method from [Hillaire, 2016]
