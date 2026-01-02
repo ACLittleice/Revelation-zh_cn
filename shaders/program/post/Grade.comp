@@ -75,7 +75,7 @@ void CombineBloomAndFog(inout vec3 scene, in ivec2 texel, in float exposure) {
 	bloomData *= rcp(sumWeight);
 
 	float bloomIntensity = BLOOM_INTENSITY * 0.25;
-	bloomIntensity /= max(exposure, 0.25) + 1.0;
+	bloomIntensity /= max(exposure, 1.0) + 1.0;
 
 	scene = (scene + bloomData * bloomIntensity) / (1.0 + bloomIntensity * 0.5);
 
