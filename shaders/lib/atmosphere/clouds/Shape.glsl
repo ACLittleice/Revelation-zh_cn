@@ -128,7 +128,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	// Coveage profile
 	vec2 stepEdge = mix(vec2(0.52, 0.9) - CLOUD_CU_COVERAGE * 0.3, vec2(0.1, 0.5), sqr(wetness));
 	float coverage = linearstep(stepEdge.x, stepEdge.y, cloudMap.x);
-	coverage += linearstep(stepEdge.x, stepEdge.y * 0.75, texture(noisetex, rayPos.xz * rcp(786e3)).z);
+	coverage += linearstep(stepEdge.x * 1.3, stepEdge.y * 0.75, texture(noisetex, rayPos.xz * rcp(786e3)).z);
 	coverage = saturate(coverage - 1.0);
 
 	// Vertical profile
