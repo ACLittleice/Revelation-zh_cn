@@ -40,6 +40,8 @@ uniform sampler2D verticalLut;
 uniform sampler2D curlNoiseTex;
 uniform sampler2D cirroLutTex;
 
+uniform sampler2D cloudShadowTex;
+
 //================================================================================================//
 
 uniform int heldItemId;                         // held item ID (main hand), used only for items defined in "item.properties"

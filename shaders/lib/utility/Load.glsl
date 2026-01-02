@@ -19,6 +19,3 @@
 
 #define cloudReconstructTex			colortex9
 #define cloudReconstructImg			colorimg9
-
-#define cloudShadowTex				colortex10
-#define cloudShadowImg				colorimg10
