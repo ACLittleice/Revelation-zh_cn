@@ -100,9 +100,9 @@ float CloudHighDensity(in vec2 rayPos) {
 	}
 #else
 	float GetVerticalProfile(in float h, in float t) {
-		float stratus = saturate(h * 20.0) * linearstep(0.2, 0.1, h);
-		float stratocumulus = saturate(h * 5.0) * linearstep(0.5, 0.2, h);
-		float cumulus = saturate(h * 8.0) * linearstep(1.0, 0.75, h);
+		float stratus = saturate(h * 16.0) * linearstep(0.2, 0.1, h);
+		float stratocumulus = saturate(h * 7.0) * linearstep(0.5, 0.2, h);
+		float cumulus = saturate(h * 9.0) * linearstep(1.0, 0.75, h);
 
 		float gradient = mix(stratus, stratocumulus, smoothstep(0.0, 0.5, t));
 		return mix(gradient, cumulus, linearstep(0.5, 1.0, t));
