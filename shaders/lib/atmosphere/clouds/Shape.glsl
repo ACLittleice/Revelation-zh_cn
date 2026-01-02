@@ -44,7 +44,7 @@ float CloudMidDensity(in vec2 rayPos) {
 // Adapted from [Schneider, 2022]
 float CloudHighDensity(in vec2 rayPos) {
 	// Wind field
-	const float windAngle = radians(30.0);
+	const float windAngle = radians(CLOUD_HIGH_WIND_ANGLE);
 	const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_HIGH_WIND_SPEED;
 	vec2 windOffset = windVelocity * worldTimeCounter;
 
@@ -114,7 +114,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	heightFraction = saturate((length(rayPos) - cumulusBottomRadius) * rcp(cumulusThickness));
 
 	// Wind field
-	const float windAngle = radians(45.0);
+	const float windAngle = radians(CLOUD_LOW_WIND_ANGLE);
 	const vec3 windDir = vec3(cos(windAngle), 0.5, sin(windAngle));
 	const vec3 windVelocity = windDir * CLOUD_LOW_WIND_SPEED;
 	vec3 windOffset = windVelocity * worldTimeCounter;

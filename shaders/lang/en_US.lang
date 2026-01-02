@@ -94,22 +94,28 @@ option.CLOUD_LOW_SUNLIGHT_SAMPLES=Sunlight Samples
 option.CLOUD_LOW_SKYLIGHT_SAMPLES=Skylight Samples
 option.CLOUD_LOW_WIND_SPEED=Wind Speed
 suffix.CLOUD_LOW_WIND_SPEED=m/s
+option.CLOUD_LOW_WIND_ANGLE=Wind Angle
+suffix.CLOUD_LOW_WIND_ANGLE=°
 
 option.CLOUD_MID_ALTITUDE=Altitude
 option.CLOUD_MID_THICKNESS=Thickness
 option.CLOUD_MID_SUNLIGHT_SAMPLES=Sunlight Samples
-option.CLOUD_MID_WIND_SPEED=Wind Speed
 suffix.CLOUD_MID_ALTITUDE=m
 suffix.CLOUD_MID_THICKNESS=m
+option.CLOUD_MID_WIND_SPEED=Wind Speed
 suffix.CLOUD_MID_WIND_SPEED=m/s
+option.CLOUD_MID_WIND_ANGLE=Wind Angle
+suffix.CLOUD_MID_WIND_ANGLE=°
 
 option.CLOUD_HIGH_ALTITUDE=Altitude
 option.CLOUD_HIGH_THICKNESS=Thickness
 option.CLOUD_HIGH_SUNLIGHT_SAMPLES=Sunlight Samples
-option.CLOUD_HIGH_WIND_SPEED=Wind Speed
 suffix.CLOUD_HIGH_ALTITUDE=m
 suffix.CLOUD_HIGH_THICKNESS=m
+option.CLOUD_HIGH_WIND_SPEED=Wind Speed
 suffix.CLOUD_HIGH_WIND_SPEED=m/s
+option.CLOUD_HIGH_WIND_ANGLE=Wind Angle
+suffix.CLOUD_HIGH_WIND_ANGLE=°
 
 option.CLOUD_CUMULUS=Cumulus
 option.CLOUD_CU_COVERAGE=Cumulus Coverage
