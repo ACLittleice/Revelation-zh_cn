@@ -94,19 +94,23 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, out 
         };
 
         ivec2 tileOffset = ivec2(halfViewSize.x, 0);
-		float depthPhi = -8.0 * abs(dot(worldNormal, worldDir));
+		float NdotV = abs(dot(worldNormal, worldDir));
 
         for (uint i = 0u; i < 4u; ++i) {
             ivec2 sampleTexel = floorTexel + offset2x2[i];
             if (clamp(sampleTexel, ivec2(1), texelEnd) == sampleTexel) {
                 vec3 sampleAux = texelFetch(colortex2, sampleTexel + tileOffset, 0).rgb;
 
-                float weight = pow8(saturate(dot(OctDecodeSnorm(sampleAux.xy), worldNormal)));
-                weight *= exp2(abs(viewDistance - sampleAux.z) * depthPhi);
+                vec4 sampleDiffuse = texelFetch(colortex2, sampleTexel, 0);
+
+                float weight = -abs(viewDistance - sampleAux.z) * NdotV;
+                weight += log2(saturate(dot(OctDecodeSnorm(sampleAux.xy), worldNormal)));
+                weight = exp2(weight * sampleDiffuse.a * (16.0 / SSILVB_MAX_ACCUM_FRAMES));
+
                 confidence = max(confidence, weight);
                 weight *= bilinearWeight[i];
 
-                prevDiffuse += texelFetch(colortex2, sampleTexel, 0) * weight;
+                prevDiffuse += sampleDiffuse * weight;
                 prevMoments += texelFetch(colortex14, sampleTexel, 0).xy * weight;
                 sumWeight += weight;
             }
@@ -117,8 +121,8 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, out 
             prevDiffuse *= sumWeight;
             prevMoments *= sumWeight;
 
-            float sampleIndex = min(prevDiffuse.a + 1.0, SSILVB_MAX_ACCUM_FRAMES);
-            float alpha = rcp(sampleIndex * confidence + 1.0);
+            float sampleIndex = min(prevDiffuse.a * confidence + 1.0, SSILVB_MAX_ACCUM_FRAMES);
+            float alpha = rcp(sampleIndex);
 
             // See section 4.2 of the paper
             // if (sampleIndex > 4.5) {
