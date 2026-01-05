@@ -11,10 +11,10 @@ const vec2 falloffScale = -1.0 / vec2(8.0, 32.0);
 const float realShadowMapRes = float(shadowMapResolution) * MC_SHADOW_QUALITY;
 
 vec2 CalculateFogDensity(in vec3 rayPos, in float uniformFog) {
+	rayPos += cameraPosition;
+
 	// float rayLength = length(rayPos + vec3(0.0, planetRadius, 0.0));
 	vec2 density = exp2(max0(rayPos.y - VF_HEIGHT) * falloffScale);
-
-	rayPos += cameraPosition;
 
 #if VF_NOISE_QUALITY == LOW
 	rayPos.xz -= vec2(1.0, 0.75) * worldTimeCounter;
@@ -63,7 +63,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 		vec2 intersection = RaySphericalShellIntersection(viewerHeight, worldDir.y, planetRadius, cumulusTopRadius);
 
 		// Not intersecting the volume
-		if (intersection.y < 0.0) return mat2x3(vec3(0.0), vec3(1.0));
+		if (intersection.y < 0.0 || viewerHeight > cumulusBottomRadius) return mat2x3(vec3(0.0), vec3(1.0));
 
 		rayLength = clamp(intersection.y - intersection.x, 0.0, maxRayLengh);
 		rayStart += worldDir * intersection.x;
