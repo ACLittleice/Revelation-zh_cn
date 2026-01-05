@@ -73,10 +73,10 @@ float CloudMultiScatteringApproxOz(in float opticalDepth, in float phase) {
 float CloudMultiScatteringApproxHaringPro(in float opticalDepth, in float phase, in float extinction, in float albedo) {
 	// https://zhuanlan.zhihu.com/p/457997155
 	float msV = albedo * oms(exp2(-8.0 * extinction));
-	float msEnergy = msV / ((3.0 + opticalDepth) * oms(msV));
+	float msEnergy = msV / ((1.0 + opticalDepth * 0.5) * oms(msV));
 
-	float transmittance = exp2(-rLOG2 * opticalDepth);
-	return transmittance * phase + msEnergy * uniformPhase;
+	float single = exp2(-rLOG2 * opticalDepth) * phase;
+	return single + msEnergy * mix(phase, uniformPhase, msV * (2.0 - msV));
 }
 
 //================================================================================================//
@@ -337,7 +337,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 		vec3 skyIlluminance = GetSunAndSkyIrradiance(cloudPos, normalize(cloudPos), worldSunVector, sunIrradiance, moonIrradiance) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
 		vec3 directIlluminance = SUN_SPECTRAL_RADIANCE_TO_LUMINANCE * mix(sunIrradiance, moonIrradiance, moonlightFactor);
 
-		integralSL  = integralPV.x * PI * directIlluminance;
+		integralSL  = integralPV.x * directIlluminance;
 		integralSL += integralPV.y * rPI * skyIlluminance;
 
 		integralSL += LightningContribution(cloudPos - camera) * sqr(integralPV.y);
