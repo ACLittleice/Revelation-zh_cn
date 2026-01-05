@@ -112,7 +112,7 @@ void main() {
 		cloudOut = textureBicubic(cloudOriginTex, currCoord);
 	} else {
 		// vec4 prevData = max0(textureLanczos(cloudReconstructTex, prevCoord));
-		vec4 prevData = max0(textureCatmullRomFast(cloudReconstructTex, prevCoord));
+		vec4 prevData = max0(textureCatmullRom(cloudReconstructTex, prevCoord));
 
 		ivec2 currTexel = uvToTexel(currCoord);
 		vec4 currData = texelFetch(cloudOriginTex, currTexel, 0);
