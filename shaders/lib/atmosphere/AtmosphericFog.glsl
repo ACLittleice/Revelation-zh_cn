@@ -7,14 +7,14 @@ uniform float biomeGreenVapor;
 //================================================================================================//
 
 // x: Mie y: Rayleigh
-const vec2 falloffScale = -1.0 / vec2(8.0, 32.0);
+const vec2 falloffScale = -1.0 / vec2(12.0, 32.0);
 const float realShadowMapRes = float(shadowMapResolution) * MC_SHADOW_QUALITY;
 
 vec2 CalculateFogDensity(in vec3 rayPos, in float uniformFog) {
 	rayPos += cameraPosition;
 
 	// float rayLength = length(rayPos + vec3(0.0, planetRadius, 0.0));
-	vec2 density = exp2(max0(rayPos.y - VF_HEIGHT) * falloffScale);
+	vec2 density = exp2(abs(rayPos.y - VF_HEIGHT) * oms(step(rayPos.y, VF_HEIGHT) * 0.9) * falloffScale);
 
 #if VF_NOISE_QUALITY == LOW
 	rayPos.xz -= vec2(1.0, 0.75) * worldTimeCounter;
