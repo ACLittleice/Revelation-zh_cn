@@ -278,8 +278,10 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 	// Mid-level clouds
 	#ifdef CLOUD_ALTOSTRATUS
-		if ((mu > 0.0 && r < cloudMidRadius) || (planetIntersection && r > cloudMidRadius)) {
-			float rayLength = (cloudMidRadius - r) / mu;
+		vec2 intersection = RaySphereIntersection(r, mu, cloudMidRadius);
+
+		if (intersection.y > 0.0 && (!planetIntersection || r > cloudMidRadius)) {
+			float rayLength = r > cloudMidRadius ? intersection.x : intersection.y;
 			vec3 rayPos = rayDir * rayLength + camera;
 
 			vec3 cloudTemp = RenderCloudMid(rayPos.xz, lightDir, noise.y, phase);
@@ -300,8 +302,10 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 	// High-level clouds
 	#if defined CLOUD_CIRROCUMULUS || defined CLOUD_CIRRUS
-		if ((mu > 0.0 && r < cloudHighRadius) || (planetIntersection && r > cloudHighRadius)) {
-			float rayLength = (cloudHighRadius - r) / mu;
+		vec2 intersection = RaySphereIntersection(r, mu, cloudHighRadius);
+
+		if (intersection.y > 0.0 && (!planetIntersection || r > cloudHighRadius)) {
+			float rayLength = r > cloudHighRadius ? intersection.x : intersection.y;
 			vec3 rayPos = rayDir * rayLength + camera;
 
 			vec3 cloudTemp = RenderCloudHigh(rayPos.xz, lightDir, noise.y, phase);
