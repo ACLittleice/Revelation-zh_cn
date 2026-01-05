@@ -10,8 +10,11 @@ uniform float biomeGreenVapor;
 const vec2 falloffScale = -1.0 / vec2(8.0, 32.0);
 const float realShadowMapRes = float(shadowMapResolution) * MC_SHADOW_QUALITY;
 
-vec2 CalculateFogDensity(in vec3 rayPos) {
-	vec2 density = exp2(abs(VF_HEIGHT - rayPos.y) * falloffScale);
+vec2 CalculateFogDensity(in vec3 rayPos, in float uniformFog) {
+	// float rayLength = length(rayPos + vec3(0.0, planetRadius, 0.0));
+	vec2 density = exp2(max0(rayPos.y - VF_HEIGHT) * falloffScale);
+
+	rayPos += cameraPosition;
 
 #if VF_NOISE_QUALITY == LOW
 	rayPos.xz -= vec2(1.0, 0.75) * worldTimeCounter;
@@ -26,8 +29,10 @@ vec2 CalculateFogDensity(in vec3 rayPos) {
 	noise -= Calculate3DNoise(rayPos * 4.0 - windOffset);
 #endif
 
-	density.x *= sqr(noise) * (4.0 + biomeSandstorm * 8.0 + biomeSnowstorm * 4.0);
-	return density;
+	density.x *= sqr(noise) * (2.0 + biomeSandstorm * 8.0 + biomeSnowstorm * 4.0);
+	density += uniformFog;
+
+	return density * linearstep(cumulusTopAltitude, cumulusBottomAltitude, rayPos.y);
 }
 
 //================================================================================================//
@@ -53,26 +58,23 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 	uint steps = VF_MAX_SAMPLES;
 	steps = min(steps, uint(float(steps) * 0.4 + rayLength * rcp(16.0)));
 
-	#ifdef VF_CLOUD_SHADOWS
+	float maxRayLengh = max(far, 2e4);
 	if (skyMask) {
-		vec2 intersection = RaySphericalShellIntersection(viewerHeight, worldDir.y, atmosphereModel.bottom_radius, cumulusTopRadius);
+		vec2 intersection = RaySphericalShellIntersection(viewerHeight, worldDir.y, planetRadius, cumulusTopRadius);
 
 		// Not intersecting the volume
 		if (intersection.y < 0.0) return mat2x3(vec3(0.0), vec3(1.0));
 
-		rayLength = clamp(intersection.y - intersection.x, 0.0, far);
+		rayLength = clamp(intersection.y - intersection.x, 0.0, maxRayLengh);
 		rayStart += worldDir * intersection.x;
-		// steps *= 2u;
+		steps *= 2u;
 	}
-	#else
-		rayLength = min(rayLength, far);
-	#endif
 
 	float rSteps = rcp(float(steps));
 
 	float stepLength = rayLength * rSteps;
 	vec3 rayStep = stepLength * worldDir;
-	vec3 rayPos = rayStart + rayStep * dither + cameraPosition;
+	vec3 rayPos = rayStart + rayStep * dither;
 
 	vec3 shadowViewStart = transMAD(shadowModelView, rayStart);
 	vec3 shadowStart = projMAD(shadowProjection, shadowViewStart);
@@ -109,15 +111,14 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 		atmosphereModel.rayleigh_scattering * VF_RAYLEIGH_DENSITY * 0.05
 	);
 
-	float uniformFog = (16.0 + wetness * VF_MIE_DENSITY_RAIN_MULT * 16.0) / far;
+	float uniformFog = (16.0 + wetness * VF_MIE_DENSITY_RAIN_MULT * 16.0) / maxRayLengh;
 
 	vec3 scatteringSun = vec3(0.0);
 	vec3 scatteringSky = vec3(0.0);
 	vec3 transmittance = vec3(1.0);
 
 	for (uint i = 0u; i < steps; ++i, rayPos += rayStep, shadowPos += shadowStep) {
-		vec2 stepDensity = CalculateFogDensity(rayPos);
-		stepDensity += linearstep(cumulusTopAltitude, cumulusBottomAltitude, rayPos.y) * uniformFog;
+		vec2 stepDensity = CalculateFogDensity(rayPos, uniformFog);
 
 		if (dot(stepDensity, vec2(1.0)) < EPS) continue; // Faster than maxOf()
 
@@ -147,12 +148,12 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
     #endif
 
 		#ifdef VF_CLOUD_SHADOWS
-			vec2 cloudShadowCoord = WorldToCloudShadowScreenPos(rayPos - cameraPosition).xy;
-			// vec2 fade = saturate(32.0 - abs(cloudShadowCoord - 0.5) * 64.0);
+			vec2 cloudShadowCoord = WorldToCloudShadowScreenPos(rayPos).xy;
 
-			float cloudShadow = texture(cloudShadowTex, cloudShadowCoord).x;
-			// cloudShadow = mix(1.0 - wetness * CLOUD_SHADOW_STRENGTH, cloudShadow, fade.x * fade.y);
-			sampleShadow *= cloudShadow;
+			if (saturate(cloudShadowCoord) == cloudShadowCoord) {
+				float cloudShadow = texture(cloudShadowTex, cloudShadowCoord).x;
+				sampleShadow *= cloudShadow;
+			}
 		#endif
 
 		vec3 stepExtinction = fogExtinctionCoeff * stepDensity;
@@ -161,10 +162,10 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 		vec3 stepIntegral = transmittance * oms(stepTransmittance) / maxEps(stepExtinction);
 
 		// https://zhuanlan.zhihu.com/p/457997155
-		vec2 msV = 0.8 * oms(exp2(-2.0 * stepDensity));
-		vec2 msEnergy = 0.5 * uniformPhase * msV / oms(msV);
+		vec2 msV = 0.75 * oms(exp2(-2.0 * stepDensity));
+		vec2 msEnergy = uniformPhase * msV / oms(msV);
 
-		scatteringSun += fogScatteringCoeff * (stepDensity * (phase * sampleShadow + msEnergy)) * stepIntegral;
+		scatteringSun += fogScatteringCoeff * (stepDensity * (phase + msEnergy) * sampleShadow) * stepIntegral;
 		scatteringSky += fogScatteringCoeff * stepDensity * stepIntegral;
 
 		transmittance *= stepTransmittance;
