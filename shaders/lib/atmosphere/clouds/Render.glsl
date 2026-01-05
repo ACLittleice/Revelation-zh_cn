@@ -230,7 +230,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 						#endif
 
 						// Estimate the light optical depth of the ground from the cloud volume
-						float scatteringGround = oms(dimensionalProfile * saturate(heightFraction * 2.0)) * 0.2 * uniformPhase;
+						float scatteringGround = oms(dimensionalProfile * saturate(heightFraction * 2.0)) * 0.5 * uniformPhase;
 
 						// Compute In-Scatter Probability
 						// See slide 92 of [Schneider, 2017]
