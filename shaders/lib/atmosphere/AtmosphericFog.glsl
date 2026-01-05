@@ -156,16 +156,29 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 			}
 		#endif
 
+		// Raymarch sunlight transmittance
+		vec2 opticalDepthSun = vec2(0.0);
+
+		float stepSize = 4.0;
+		vec3 lightPos = rayPos;
+		for (uint i = 0u; i < 3u; ++i) {
+			stepSize *= 1.5;
+			lightPos += worldLightVector * stepSize;
+
+			vec2 density = CalculateFogDensity(lightPos, uniformFog);
+			opticalDepthSun += density * stepSize;
+		}
+
+		// https://zhuanlan.zhihu.com/p/457997155
+		vec2 msV = 0.8 * oms(exp2(-4.0 * stepDensity));
+		vec2 msEnergy = phase * exp(-opticalDepthSun) + uniformPhase * msV / oms(msV);
+
 		vec3 stepExtinction = fogExtinctionCoeff * stepDensity;
 		vec3 stepTransmittance = exp(-stepLength * stepExtinction);
 
 		vec3 stepIntegral = transmittance * oms(stepTransmittance) / maxEps(stepExtinction);
 
-		// https://zhuanlan.zhihu.com/p/457997155
-		vec2 msV = 0.75 * oms(exp2(-2.0 * stepDensity));
-		vec2 msEnergy = uniformPhase * msV / oms(msV);
-
-		scatteringSun += fogScatteringCoeff * (stepDensity * (phase + msEnergy) * sampleShadow) * stepIntegral;
+		scatteringSun += fogScatteringCoeff * (stepDensity * msEnergy * sampleShadow) * stepIntegral;
 		scatteringSky += fogScatteringCoeff * stepDensity * stepIntegral;
 
 		transmittance *= stepTransmittance;
