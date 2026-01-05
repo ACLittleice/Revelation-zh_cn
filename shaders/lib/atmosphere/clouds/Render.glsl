@@ -203,11 +203,6 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 				for (uint i = 0u; i < uint(raySteps); ++i, rayT += stepSize) {
 					vec3 rayPos = camera + rayDir * rayT;
 
-					// Method from [Hillaire, 2016]
-					// Accumulate the weighted ray length
-					rayLengthWeighted += rayT * transmittance;
-					raySumWeight += transmittance;
-
 					// Compute sample cloud density
 					float heightFraction, dimensionalProfile;
 					float stepDensity = CloudVolumeDensity(rayPos, heightFraction, dimensionalProfile, rayT < 16e3);
@@ -256,6 +251,11 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 						stepScattering += scattering * stepIntegral;
 						transmittance *= stepTransmittance;
 
+						// Method from [Hillaire, 2016]
+						// Accumulate the weighted ray length
+						rayLengthWeighted += rayT * transmittance;
+						raySumWeight += transmittance;
+
 						// Break if the transmittance is too small (optimization)
 						if (transmittance < cloudMinTransmittance) {
 							transmittance = 0.0;
@@ -268,7 +268,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 				if (transmittance < 1.0) {
 					integralPV = stepScattering * cumulusAlbedo;
 					integralT = transmittance;
-					cloudDepth = rayLengthWeighted / raySumWeight;
+					cloudDepth = min(rayLengthWeighted / raySumWeight, cloudDepth);
 				}
 			}
 		}
