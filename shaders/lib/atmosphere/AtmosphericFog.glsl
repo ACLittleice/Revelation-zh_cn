@@ -170,7 +170,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 		}
 
 		// https://zhuanlan.zhihu.com/p/457997155
-		vec2 msV = 0.8 * oms(exp2(-4.0 * stepDensity));
+		vec2 msV = 0.85 * oms(exp2(-2.0 * stepDensity));
 		vec2 msEnergy = phase * exp(-opticalDepthSun) + uniformPhase * msV / oms(msV);
 
 		vec3 stepExtinction = fogExtinctionCoeff * stepDensity;
