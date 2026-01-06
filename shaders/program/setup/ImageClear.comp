@@ -1,0 +1,17 @@
+/*
+--------------------------------------------------------------------------------
+
+	Revelation Shaders
+
+	Copyright (C) 2024 HaringPro
+	Apache License 2.0
+
+--------------------------------------------------------------------------------
+*/
+
+writeonly uniform image2D CLEAR_IMAGE;
+
+void main() {
+    ivec2 tid = ivec2(gl_GlobalInvocationID.xy);
+    imageStore(CLEAR_IMAGE, tid, CLEAR_COLOR);
+}

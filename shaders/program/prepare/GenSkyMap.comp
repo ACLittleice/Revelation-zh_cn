@@ -43,11 +43,10 @@ writeonly uniform image2D skyMapImg;
 //======// Main //================================================================================//
 void main() {
 	ivec2 tid = ivec2(gl_GlobalInvocationID.xy);
-	bool historyReset = viewSizeChanged || worldTimeChanged;
 
     // Checkerboard render
 	ivec2 offset = checkerboardOffset2x2[frameCounter % 4];
-	if (tid % 2 == offset || historyReset) {
+	if (tid % 2 == offset || worldTimeChanged) {
 		vec2 uv = (vec2(tid) + 0.5) * rcp(skyMapRes);
 
 		vec3 worldDir = UnprojectSky(uv);
@@ -71,7 +70,7 @@ void main() {
 
 		// Accumulate
 		vec4 history = texelFetch(skyMapTex, tid, 0);
-		history.a *= float(!historyReset);
+		history.a *= float(!worldTimeChanged);
 
 		skyRadiance = mix(history.rgb, skyRadiance, rcp(++history.a));
 		imageStore(skyMapImg, tid, vec4(skyRadiance, min(history.a, 128.0)));
