@@ -92,10 +92,10 @@ void main() {
     vec2 prevCoord = Reproject(screenPos).xy;
 
     if (saturate(prevCoord) == prevCoord && !worldTimeChanged) {
-        uvec4 reprojectedData = texture(colortex11, prevCoord);
+        uvec4 reprojectedData = texelFetch(colortex11, uvToTexel(prevCoord) >> 1, 0);
 		mat2x3 reprojectedFog = UnpackFogData(reprojectedData.rgb);
 
-		float blendWeight = 0.8;
+		float blendWeight = 0.9;
 		blendWeight *= exp2(abs(uintBitsToFloat(reprojectedData.a) + viewPos.z) * 32.0 / viewPos.z);
 
         volFogData[0] = mix(volFogData[0], reprojectedFog[0], blendWeight);
