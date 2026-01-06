@@ -80,7 +80,7 @@ vec3 CalculateSSPT(in vec3 screenPos, in vec3 viewPos, in vec3 worldNormal, in v
 				// vec3 skyRadiance = texture(skyMapTex, ProjectSky(rayDirWorld)).rgb;
 
 				float occulusion = saturate(dot(viewNormal, rayDir));
-				vec3 skyRadiance = ConvolvedReconstructSH3(global.light.skySH, worldNormal);
+				vec3 skyRadiance = ConvolvedReconstructSH3(global.skySH, worldNormal);
 				sum += skyRadiance * lightmap.y * occulusion;
 				// break;
 			}

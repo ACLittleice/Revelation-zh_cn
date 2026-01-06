@@ -86,7 +86,7 @@ void HistogramDisplay(inout vec3 color, in ivec2 texel) {
 
     if (all(lessThan(texel, ivec2(HISTOGRAM_BIN_COUNT * binWidth, 256)))) {
 		int binIndex = texel.x / binWidth;
-		uint binValue = global.exposure.histogram[binIndex];
+		uint binValue = exposure.histogram[binIndex];
 
 		color = vec3(step(texel.y + 1, binValue));
 	}

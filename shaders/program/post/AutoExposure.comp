@@ -72,7 +72,7 @@ void ParallelSum(in uint index) {
 
 void ParallelPrefixSum(in uint index) {
     #ifdef SUBGROUP_OPS
-        uint prefix = subgroupInclusiveAdd(global.exposure.histogram[index]);
+        uint prefix = subgroupInclusiveAdd(exposure.histogram[index]);
         if (gl_SubgroupInvocationID == gl_SubgroupSize - 1u) {
             sharedPrefix[gl_SubgroupID] = prefix;
         }
@@ -86,7 +86,7 @@ void ParallelPrefixSum(in uint index) {
         prefix += gl_SubgroupID > 0u ? sharedPrefix[gl_SubgroupID - 1u] : 0u;
         sharedPrefix[index] = prefix;
     #else
-        sharedPrefix[index] = global.exposure.histogram[index];
+        sharedPrefix[index] = exposure.histogram[index];
         for (uint stride = 1u; stride < HISTOGRAM_BIN_COUNT; stride <<= 1u) {
             uint dstIndex = index + stride;
             if (dstIndex < HISTOGRAM_BIN_COUNT) {
@@ -129,12 +129,12 @@ void main() {
         float exposureCurve = mix(0.65, 1.0, nightVision);
 
         float targetExposure = exp2(AUTO_EV_BIAS - exposureCurve * avgLuminance) * 0.18;
-        float prevExposure = global.exposure.value;
+        float prevExposure = exposure.value;
 
         float exposureRate = targetExposure > prevExposure ? EXPOSURE_SPEED_DOWN : EXPOSURE_SPEED_UP;
-        global.exposure.value = mix(targetExposure, prevExposure, exp2(-exposureRate * frameTime));
+        exposure.value = mix(targetExposure, prevExposure, exp2(-exposureRate * frameTime));
 	}
 
     // Clear histogram bin
-    global.exposure.histogram[index] = 0u;
+    exposure.histogram[index] = 0u;
 }

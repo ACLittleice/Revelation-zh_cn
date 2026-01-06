@@ -200,8 +200,8 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 		}
 	#endif
 
-	vec3 scattering = scatteringSun * global.light.directIlluminance;
-	scattering += scatteringSky * uniformPhase * global.light.skyIlluminance;
+	vec3 scattering = scatteringSun * global.directIlluminance;
+	scattering += scatteringSky * uniformPhase * global.skyIlluminance;
 
 	return mat2x3(scattering, transmittance);
 }

@@ -6,7 +6,7 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-	Pass: Compute volumetric fog, reprojection
+	Pass: Compute and accumulate volumetric fog
 
 --------------------------------------------------------------------------------
 */

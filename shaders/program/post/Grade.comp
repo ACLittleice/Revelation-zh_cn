@@ -171,7 +171,7 @@ void main() {
  	#if EXPOSURE_MODE == MANUAL
 		float exposure = exp2(-MANUAL_EV);
 	#else
-		float exposure = global.exposure.value;
+		float exposure = exposure.value;
 	#endif
 
 	#ifdef MOTION_BLUR

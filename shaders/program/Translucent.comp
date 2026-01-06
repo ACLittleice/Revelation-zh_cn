@@ -159,7 +159,7 @@ void main() {
 		lightingOut = CalculateSpecularReflections(screenPos, viewPos, worldNormal, worldDir, dither, lightmap.y, waterMask);
 	} else {
 		// Skylight
-		lightingOut.rgb = global.light.skyIlluminance * cube(lightmap.y);
+		lightingOut.rgb = global.skyIlluminance * cube(lightmap.y);
 
 		// Blocklight
 		vec3 blocklightColor = blackbody(float(BLOCKLIGHT_TEMPERATURE));
@@ -175,7 +175,7 @@ void main() {
 	#endif
 
 	// Sunlight
-	vec3 sunlightMult = cloudShadow * saturate(lightmap.y * 1e6) * global.light.directIlluminance;
+	vec3 sunlightMult = cloudShadow * saturate(lightmap.y * 1e6) * global.directIlluminance;
 	if (NdotL > 1e-3) {
 		vec3 normalOffset = flatNormal * (approxSqrt(worldDistSquared) * 2e-3 + 2e-2) * (2.0 - saturate(NdotL));
 		vec3 shadow = CalculatePCSS(worldPos, normalOffset, dither, 0.0);

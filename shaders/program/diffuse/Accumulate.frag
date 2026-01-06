@@ -192,7 +192,7 @@ void main() {
 
             // Vanilla lightmap blending
             float blocklight = Unpack2x8UX(loadMaterialPack(renderTexel).x);
-            blocklight = pow5(blocklight) * exp2(-16.0 * indirectCurrent.x * global.exposure.value);
+            blocklight = pow5(blocklight) * exp2(-16.0 * indirectCurrent.x * exposure.value);
             indirectCurrent.rgb += sRGBToYCoCg(blackbody(float(BLOCKLIGHT_TEMPERATURE))) * saturate(blocklight) * SSILVB_BLENDED_LIGHTMAP;
 
             imageStore(colorimg2, texelPos, indirectHistory);

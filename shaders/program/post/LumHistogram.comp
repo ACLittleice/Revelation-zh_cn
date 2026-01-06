@@ -67,6 +67,6 @@ void main() {
 
 	// Store histogram
 	if (index < HISTOGRAM_BIN_COUNT) {
-    	atomicAdd(global.exposure.histogram[index], sharedHistogram[index]);
+    	atomicAdd(exposure.histogram[index], sharedHistogram[index]);
 	}
 }

@@ -197,7 +197,7 @@ void main() {
 		#endif
 
 		// Sunlight
-		vec3 sunlightBase = cloudShadow * saturate(lightmap.y * 1e6 + float(isEyeInWater)) * global.light.directIlluminance;
+		vec3 sunlightBase = cloudShadow * saturate(lightmap.y * 1e6 + float(isEyeInWater)) * global.directIlluminance;
 		vec3 specularDirect = vec3(0.0);
 
 		float worldDistSquared = sdot(worldPos);
@@ -295,7 +295,7 @@ void main() {
 		#ifndef SSILVB_ENABLED
 			if (lightmap.y > EPS) {
 				// Spherical harmonics skylight
-				vec3 skylight = ConvolvedReconstructSH3(global.light.skySH, worldNormal);
+				vec3 skylight = ConvolvedReconstructSH3(global.skySH, worldNormal);
 				sceneOut += skylight * cube(lightmap.y) * ao;
 
 				// Fake bounced light

@@ -120,9 +120,9 @@ void main() {
 
 	// Store SH coefficients in thread 0
 	if (index == 0u) {
-		global.light.skySH = shCoeff;
+		global.skySH = shCoeff;
 
 		// Evaluate sky illuminance from SH coefficients (facing up)
-		global.light.skyIlluminance = ReconstructSH3(shCoeff, vec3(0.0, 1.0, 0.0));
+		global.skyIlluminance = ReconstructSH3(shCoeff, vec3(0.0, 1.0, 0.0));
 	}
 }

@@ -6,7 +6,7 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-	Pass: Compute refraction, combine translucent, reflections and fog
+	Pass: Compute refraction, combine translucent and fog
 
 --------------------------------------------------------------------------------
 */
