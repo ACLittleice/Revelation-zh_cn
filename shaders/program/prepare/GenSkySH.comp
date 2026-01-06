@@ -28,6 +28,7 @@ const ivec3 workGroups = ivec3(1, 1, 1);
 
 //======// SSBO //================================================================================//
 
+#define SSBO_DECLARED_TPYE writeonly
 #include "/lib/universal/SSBO.glsl"
 
 //======// Shared Memory //=======================================================================//
