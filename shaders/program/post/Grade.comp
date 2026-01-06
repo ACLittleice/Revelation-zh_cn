@@ -101,7 +101,7 @@ vec3 PurkinjeShift(in vec3 color) {
 	vec3 scotopic = xyz * max0(1.33 * (1.0 + (xyz.y + xyz.z) / xyz.x) - 1.68);
 
 	float rodLuminance = dot(scotopic * XYZ_2_sRGB, rodResponse);
-	float mesopicFactor = linearstep(-8.0, -1.0, log2(rodLuminance * rcp(PURKINJE_SHIFT_STRENGTH)));
+	float mesopicFactor = linearstep(-16.0, -1.0, log2(rodLuminance * rcp(PURKINJE_SHIFT_STRENGTH)));
 	return mix(rodLuminance * vec3(0.56, 0.78, 1.0), color, mesopicFactor);
 }
 
