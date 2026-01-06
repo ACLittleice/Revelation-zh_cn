@@ -94,14 +94,15 @@ void CombineBloomAndFog(inout vec3 scene, in ivec2 texel, in float exposure) {
 //================================================================================================//
 
 // See section 3.4 of http://www.diva-portal.org/smash/get/diva2:24136/FULLTEXT01.pdf
-vec3 PurkinjeShift(in vec3 image) {
+vec3 PurkinjeShift(in vec3 color) {
 	const vec3 rodResponse = vec3(0.05, 0.55, 0.60);
 
-	vec3 xyz = image * sRGB_2_XYZ;
+	vec3 xyz = color * sRGB_2_XYZ;
 	vec3 scotopic = xyz * max0(1.33 * (1.0 + (xyz.y + xyz.z) / xyz.x) - 1.68);
 
 	float rodLuminance = dot(scotopic * XYZ_2_sRGB, rodResponse);
-	return mix(image, rodLuminance * vec3(0.56, 0.78, 1.0), exp2(-(16.0 / PURKINJE_SHIFT_STRENGTH) * rodLuminance));
+	float mesopicFactor = linearstep(-8.0, -1.0, log2(rodLuminance * rcp(PURKINJE_SHIFT_STRENGTH)));
+	return mix(rodLuminance * vec3(0.56, 0.78, 1.0), color, mesopicFactor);
 }
 
 vec3 None(in vec3 x) {
