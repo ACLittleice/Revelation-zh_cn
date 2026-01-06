@@ -14,7 +14,7 @@ vec2 CalculateFogDensity(in vec3 rayPos, in float uniformFog) {
 	rayPos += cameraPosition;
 
 	// float rayLength = length(rayPos + vec3(0.0, planetRadius, 0.0));
-	vec2 density = exp2(abs(rayPos.y - VF_HEIGHT) * oms(step(rayPos.y, VF_HEIGHT) * 0.9) * falloffScale);
+	vec2 density = exp2(abs(rayPos.y - VF_HEIGHT) * oms(step(rayPos.y, VF_HEIGHT) * 0.8) * falloffScale);
 
 #if VF_NOISE_QUALITY == LOW
 	rayPos.xz -= vec2(1.0, 0.75) * worldTimeCounter;
@@ -25,6 +25,7 @@ vec2 CalculateFogDensity(in vec3 rayPos, in float uniformFog) {
 
 	rayPos *= 0.03;
 	rayPos -= windOffset;
+
 	float noise = Calculate3DNoise(rayPos) * 2.5;
 	noise -= Calculate3DNoise(rayPos * 4.0 - windOffset);
 #endif
@@ -170,8 +171,9 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 		}
 
 		// https://zhuanlan.zhihu.com/p/457997155
-		vec2 msV = 0.85 * oms(exp2(-2.0 * stepDensity));
-		vec2 msEnergy = phase * exp(-opticalDepthSun) + uniformPhase * msV / oms(msV);
+		vec2 msV = 0.9 * oms(exp2(-8.0 * stepDensity));
+		vec2 msEnergy = phase * exp(-opticalDepthSun);
+		msEnergy += uniformPhase * msV / (oms(msV) * (1.0 + opticalDepthSun * 0.25));
 
 		vec3 stepExtinction = fogExtinctionCoeff * stepDensity;
 		vec3 stepTransmittance = exp(-stepLength * stepExtinction);
