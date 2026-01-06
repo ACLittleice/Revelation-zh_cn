@@ -102,7 +102,7 @@ vec3 SampleGGXVNDF(in vec2 u, in vec3 wi, in float alpha, in vec3 n) {
     return wm;
 }
 
-//======// Fresnel //=============================================================================//
+//================================================================================================//
 
 // Schlick approximation
 float FresnelSchlick(in float cosTheta, in float f0) {
@@ -176,7 +176,7 @@ vec3 FresnelConductor(in float cosTheta, in vec3 n, in vec3 k) {
     return saturate(0.5 * (r1 + r2));
 }
 
-//======// Normal Distribution //=================================================================//
+//================================================================================================//
 
 float NDFBeckmann(in float NdotH2, in float alpha2) {
     return maxEps(rcp(PI * alpha2 * NdotH2 * NdotH2) * exp((NdotH2 - 1.0) / (alpha2 * NdotH2)));
@@ -187,40 +187,15 @@ float NDFGaussian(in float NdotH, in float alpha2) {
     return exp(-thetaH * thetaH / alpha2);
 }
 
-float NDFGGX(in float NdotH2, in float alpha) {
-    float tanNdotH2 = oms(NdotH2) / NdotH2;
-    return rPI * sqr(alpha / (NdotH2 * (sqr(alpha) + tanNdotH2)));
-}
-
 float NDFTrowbridgeReitz(in float NdotH2, in float alpha2) {
 	return alpha2 * rPI / sqr(1.0 + (alpha2 - 1.0) * NdotH2);
 }
 
-//======// Geometric GGX //=======================================================================//
+//================================================================================================//
 
 // Smith-based
-// float lambda(in float cosTheta, in float alpha2) {
-//     return (sqrt(alpha2 + oms(alpha2) * cosTheta * cosTheta) / cosTheta - 1.0) * 0.5;
-// }
-
-// float G1SmithGGX(in float cosTheta, in float alpha2) {
-//     return rcp(1.0 + lambda(cosTheta, alpha2));
-// }
-
-// float G1SmithGGXInverse(in float cosTheta, in float alpha2) {
-//     return 1.0 + lambda(cosTheta, alpha2);
-// }
-
-// float G2SmithGGX(in float NdotL, in float NdotV, in float alpha2) {
-//     return rcp(1.0 + lambda(NdotL, alpha2) + lambda(NdotV, alpha2));
-// }
-
 float G1SmithGGX(in float cosTheta, in float alpha2) {
     return 2.0 * cosTheta * rcp(sqrt(alpha2 + oms(alpha2) * cosTheta * cosTheta) + cosTheta);
-}
-
-float G1SmithGGXInverse(in float cosTheta, in float alpha2) {
-    return (sqrt(alpha2 + oms(alpha2) * cosTheta * cosTheta) + cosTheta) * (0.5 / cosTheta);
 }
 
 float G2SmithGGX(in float NdotL, in float NdotV, in float alpha2) {
@@ -350,4 +325,11 @@ vec3 SphericalAreaGGX(in float LdotH, in float NdotV, in float NdotL, in float L
     float normalization = alphaSquaredLdotH / (alphaSquaredLdotH + 0.25 * radius * (3.0 * alpha + radius));
 
 	return min(F * D * G / (4.0 * NdotV) * normalization, 64.0);
+}
+
+float SpecularThroughputGGX(in float NdotV, in float NdotL, in float alpha) {
+    float alpha2 = alpha * alpha;
+	float G1 = G1SmithGGX(NdotV, alpha2);
+	float G2 = G2SmithGGX(NdotL, NdotV, alpha2);
+	return G2 / G1;
 }

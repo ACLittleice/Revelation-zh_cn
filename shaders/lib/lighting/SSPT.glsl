@@ -40,13 +40,6 @@ vec3 SampleRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in vec3 r
 	return vec3(1e6);
 }
 
-// struct TracingData {
-// 	vec3 rayPos;
-//     vec3 rayDir;
-//     vec3 viewNormal;
-// 	vec3 contribution;
-// };
-
 vec3 CalculateSSPT(in vec3 screenPos, in vec3 viewPos, in vec3 worldNormal, in vec2 lightmap) {
 	lightmap.y *= lightmap.y * lightmap.y;
 
@@ -63,9 +56,6 @@ vec3 CalculateSSPT(in vec3 screenPos, in vec3 viewPos, in vec3 worldNormal, in v
 	vec3 sum = vec3(0.0);
 
     for (uint spp = 0u; spp < SSPT_SPP; ++spp) {
-		// Initialize tracing data.
-		// TracingData target = TracingData(screenPos, vec3(0.0), viewNormal, vec3(1.0));
-
 		// for (uint bounce = 1u; bounce <= SSPT_BOUNCES; ++bounce) {
 			vec3 rayDir = SampleCosineHemisphere(viewNormal, nextVec2(noiseGenerator));
 
@@ -75,14 +65,12 @@ vec3 CalculateSSPT(in vec3 screenPos, in vec3 viewPos, in vec3 worldNormal, in v
 			if (hitPos.z < screenDepthMax) {
 				vec3 sampleRadiance = texelFetch(colortex4, ivec2(hitPos.xy) >> 1, 0).rgb;
 				sum += sampleRadiance;
-			} else if (dot(lightmap, vec2(1.0)) > EPS) {
-				// vec3 rayDirWorld = mat3(gbufferModelViewInverse) * rayDir;
-				// vec3 skyRadiance = texture(skyMapTex, ProjectSky(rayDirWorld)).rgb;
+			} else if (lightmap.y > EPS) {
+				vec3 rayDirWorld = mat3(gbufferModelViewInverse) * rayDir;
+				vec3 skyRadiance = texture(skyMapTex, ProjectSky(rayDirWorld)).rgb;
 
-				float occulusion = saturate(dot(viewNormal, rayDir));
-				vec3 skyRadiance = ConvolvedReconstructSH3(global.skySH, worldNormal);
-				sum += skyRadiance * lightmap.y * occulusion;
-				// break;
+				sum += skyRadiance * lightmap.y;
+				break;
 			}
 
             // Russian roulette

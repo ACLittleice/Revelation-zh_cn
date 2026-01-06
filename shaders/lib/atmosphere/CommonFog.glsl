@@ -2,8 +2,8 @@ void RenderVanillaFog(inout vec3 scene, inout float fogTransmittance, in float v
     // Lava fog
 	#ifdef LAVA_FOG
 		if (isEyeInWater == 2) {
-			fogTransmittance = saturate(viewDistance);
-			scene = mix(scene, vec3(3.96, 0.68, 0.02) * EMISSIVE_BRIGHTNESS, fogTransmittance);
+			fogTransmittance = exp2(-4.0 * viewDistance);
+			scene = mix(vec3(3.96, 0.68, 0.02) * EMISSIVE_BRIGHTNESS, scene, fogTransmittance);
 		}
 	#endif
 

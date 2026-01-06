@@ -23,12 +23,6 @@ vec3 RenderSun(in vec3 worldDir, in vec3 sunVector) {
         vec3 finalLuminance = sunRadiance * factor;
 
         return finalLuminance;
-    // } else {
-    //     // Fake sun bloom
-    //     float offset = cosRadius - cosTheta;
-    //     vec3 sunBloom = sunRadiance / (1.0 + offset * 2e5) * sqr(cosTheta);
-
-    //     return sunBloom * 1e-3;
     }
     return vec3(0.0);
 }
