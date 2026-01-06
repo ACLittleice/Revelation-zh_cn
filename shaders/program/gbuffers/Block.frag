@@ -78,11 +78,11 @@ void main() {
     vec3 deltaPos1 = dFdx(worldPos);
     vec3 deltaPos2 = dFdy(worldPos);
 
-	vec3 flatNormal = normalize(cross(deltaPos1, deltaPos2));
+	vec3 geoNormal = normalize(cross(deltaPos1, deltaPos2));
 
 	#ifdef NORMAL_MAPPING
-        vec3 deltaPos1Perp = cross(flatNormal, deltaPos1);
-        vec3 deltaPos2Perp = cross(deltaPos2, flatNormal);
+        vec3 deltaPos1Perp = cross(geoNormal, deltaPos1);
+        vec3 deltaPos2Perp = cross(deltaPos2, geoNormal);
 
         vec2 deltaUv1 = dFdx(texCoord);
         vec2 deltaUv2 = dFdy(texCoord);
@@ -92,7 +92,7 @@ void main() {
 
         float invmax = inversesqrt(max(sdot(tangent), sdot(bitangent)));
 
-        mat3 tbnMatrix = mat3(tangent * invmax, bitangent * invmax, flatNormal);
+        mat3 tbnMatrix = mat3(tangent * invmax, bitangent * invmax, geoNormal);
     #endif
 
 	if (albedo.a < 0.1) { discard; return; }
@@ -130,7 +130,7 @@ void main() {
 		materialOut.w = Packup2x8U(specularTex.zw);
 	#endif
 
-	normalOut.xy = OctEncodeUnorm(flatNormal);
+	normalOut.xy = OctEncodeUnorm(geoNormal);
 
 	#if defined NORMAL_MAPPING
         vec3 normalTex = texture(normals, texCoord).rgb;

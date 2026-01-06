@@ -54,8 +54,8 @@ void main() {
 		materialOut.zw = uvec2(0);
 	#endif
 
-	vec3 flatNormal = normalize(cross(dFdx(worldPos), dFdy(worldPos)));
+	vec3 geoNormal = normalize(cross(dFdx(worldPos), dFdy(worldPos)));
 
-	normalOut.xy = OctEncodeUnorm(flatNormal);
+	normalOut.xy = OctEncodeUnorm(geoNormal);
 	normalOut.zw = normalOut.xy;
 }

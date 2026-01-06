@@ -7,15 +7,14 @@ in ivec2 vaUV2;
 
 #include "/lib/Utility.glsl"
 
-#define WAVING_FOLIAGE // Enables waving foilage effect
-#define UNLABELLED_FOILAGE_DETECTION // Enables unlabelled foilage detection
+#define WAVING_FOLIAGE
+#define UNLABELLED_FOILAGE_DETECTION
 
 //======// Output //==============================================================================//
 
+flat out uint normalPack;
 #if defined NORMAL_MAPPING
-	flat out mat3 tbnMatrix;
-#else
-	flat out vec3 flatNormal;
+flat out uvec2 tangentPack;
 #endif
 
 out vec3 vertColor;
@@ -76,12 +75,13 @@ void main() {
 
 	materialID = uint(max(mc_Entity.x - 1e4, 1));
 
+	// Encode normal and tangent
+	vec3 normal = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
+	normalPack = packSnorm2x16(OctEncodeSnorm(normal));
 	#if defined NORMAL_MAPPING
-		tbnMatrix[2] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
-		tbnMatrix[0] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * at_tangent.xyz);
-		tbnMatrix[1] = signMul(cross(tbnMatrix[0], tbnMatrix[2]), at_tangent.w);
-	#else
-		flatNormal = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
+		vec3 tangent = mat3(gbufferModelViewInverse) * normalize(normalMatrix * at_tangent.xyz);
+		tangentPack.x = packSnorm2x16(OctEncodeSnorm(tangent));
+		tangentPack.y = (floatBitsToUint(at_tangent.w) & 0x80000000u) | 0x3F800000u;
 	#endif
 
 	#ifdef WAVING_FOLIAGE

@@ -9,7 +9,8 @@ in ivec2 vaUV2;
 
 //======// Output //==============================================================================//
 
-flat out mat3 tbnMatrix;
+flat out uint normalPack;
+flat out uvec2 tangentPack;
 
 out vec4 vertColor;
 out vec2 texCoord;
@@ -66,9 +67,12 @@ void main() {
 
 	vertColor = vaColor;
 
-    tbnMatrix[2] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
-	tbnMatrix[0] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * at_tangent.xyz);
-	tbnMatrix[1] = signMul(cross(tbnMatrix[0], tbnMatrix[2]), at_tangent.w);
+	// Encode normal and tangent
+	vec3 normal = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
+	normalPack = packSnorm2x16(OctEncodeSnorm(normal));
+	vec3 tangent = mat3(gbufferModelViewInverse) * normalize(normalMatrix * at_tangent.xyz);
+	tangentPack.x = packSnorm2x16(OctEncodeSnorm(tangent));
+	tangentPack.y = (floatBitsToUint(at_tangent.w) & 0x80000000u) | 0x3F800000u;
 
 	materialID = mc_Entity.x == 10003.0 ? 3u : 2u;
 

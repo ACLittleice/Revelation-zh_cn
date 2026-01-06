@@ -30,7 +30,8 @@ uniform sampler2D tex;
 
 //======// Input //===============================================================================//
 
-flat in mat3 tbnMatrix;
+flat in uint normalPack;
+flat in uvec2 tangentPack;
 
 in vec4 vertColor;
 in vec2 texCoord;
@@ -55,7 +56,13 @@ in vec3 worldPos;
 
 //======// Main //================================================================================//
 void main() {
-	normalOut.xy = OctEncodeUnorm(tbnMatrix[2]);
+	normalOut.xy = unpackSnorm2x16(normalPack) * 0.5 + 0.5;
+
+	// Construct TBN matrix
+	vec3 tangent = OctDecodeSnorm(unpackSnorm2x16(tangentPack.x));
+	vec3 normal = OctDecodeUnorm(normalOut.xy);
+	vec3 bitangent = cross(tangent, normal) * uintBitsToFloat(tangentPack.y);
+	mat3 tbnMatrix = mat3(tangent, bitangent, normal);
 
 	if (materialID == 3u) { // water
 		ivec2 texel = ivec2(gl_FragCoord.xy);

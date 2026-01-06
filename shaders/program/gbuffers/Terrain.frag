@@ -17,11 +17,9 @@ layout (location = 3) out float parallaxShadowOut;
 
 //======// Input //===============================================================================//
 
+flat in uint normalPack;
 #if defined NORMAL_MAPPING
-	flat in mat3 tbnMatrix;
-	#define flatNormal tbnMatrix[2]
-#else
-	flat in vec3 flatNormal;
+flat in uvec2 tangentPack;
 #endif
 
 in vec3 vertColor;
@@ -95,6 +93,16 @@ uniform sampler2D tex;
 void main() {
 	float dither = BlueNoise(ivec2(gl_FragCoord.xy), frameCounter);
 
+	normalOut.xy = unpackSnorm2x16(normalPack) * 0.5 + 0.5;
+
+	// Construct TBN matrix
+	#if defined NORMAL_MAPPING
+		vec3 tangent = OctDecodeSnorm(unpackSnorm2x16(tangentPack.x));
+		vec3 normal = OctDecodeUnorm(normalOut.xy);
+		vec3 bitangent = cross(tangent, normal) * uintBitsToFloat(tangentPack.y);
+		mat3 tbnMatrix = mat3(tangent, bitangent, normal);
+	#endif
+
 	#ifdef PARALLAX
 		#define ReadTexture(tex) textureGrad(tex, parallaxCoord, texGrad[0], texGrad[1])
 
@@ -160,7 +168,7 @@ void main() {
 
 			normalOut.zw = OctEncodeUnorm(tbnMatrix * normalTex);
 		#else
-			normalOut.zw = OctEncodeUnorm(flatNormal);
+			normalOut.zw = normalOut.xy;
 		#endif
 	#endif
 
@@ -173,8 +181,6 @@ void main() {
 	#ifdef WHITE_WORLD
 		albedoOut = vec4(1.0);
 	#endif
-
-	normalOut.xy = OctEncodeUnorm(flatNormal);
 
 	materialOut.x = PackupDithered2x8U(lightmap, dither);
 	materialOut.y = materialID;

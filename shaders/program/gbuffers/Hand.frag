@@ -12,11 +12,9 @@ layout (location = 2) out vec4 normalOut;
 
 //======// Input //===============================================================================//
 
+flat in uint normalPack;
 #if defined NORMAL_MAPPING
-	flat in mat3 tbnMatrix;
-	#define flatNormal tbnMatrix[2]
-#else
-	flat in vec3 flatNormal;
+flat in uvec2 tangentPack;
 #endif
 
 in vec4 vertColor;
@@ -61,9 +59,15 @@ void main() {
 		materialOut.w = Packup2x8U(specularTex.zw);
 	#endif
 
-	normalOut.xy = OctEncodeUnorm(flatNormal);
+	normalOut.xy = unpackSnorm2x16(normalPack) * 0.5 + 0.5;
 
 	#if defined NORMAL_MAPPING
+		// Construct TBN matrix
+		vec3 tangent = OctDecodeSnorm(unpackSnorm2x16(tangentPack.x));
+		vec3 normal = OctDecodeUnorm(normalOut.xy);
+		vec3 bitangent = cross(tangent, normal) * uintBitsToFloat(tangentPack.y);
+		mat3 tbnMatrix = mat3(tangent, bitangent, normal);
+
         vec3 normalTex = texture(normals, texCoord).rgb;
         DecodeNormalTex(normalTex);
 		normalOut.zw = OctEncodeUnorm(tbnMatrix * normalTex);

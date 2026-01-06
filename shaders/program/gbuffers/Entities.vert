@@ -10,9 +10,9 @@ in ivec2 vaUV2;
 //======// Output //==============================================================================//
 
 #if defined NORMAL_MAPPING
-	out mat3 tbnMatrix; // Not use flat because of the Physics mod snow
+	out mat3 tbnMatrix;
 #else
-	out vec3 flatNormal;
+	out vec3 geoNormal;
 #endif
 
 out vec4 vertColor;
@@ -71,7 +71,7 @@ void main() {
 		tbnMatrix[0] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * at_tangent.xyz);
 		tbnMatrix[1] = signMul(cross(tbnMatrix[0], tbnMatrix[2]), at_tangent.w);
 	#else
-		flatNormal = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
+		geoNormal = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
 	#endif
 
 	// 829925: Physics mod snow

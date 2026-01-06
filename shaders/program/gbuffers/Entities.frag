@@ -29,10 +29,10 @@ uniform vec4 entityColor;
 //======// Input //===============================================================================//
 
 #if defined NORMAL_MAPPING
-	in mat3 tbnMatrix; // Not use flat because of the Physics mod snow
-	#define flatNormal tbnMatrix[2]
+	in mat3 tbnMatrix;
+	#define geoNormal tbnMatrix[2]
 #else
-	in vec3 flatNormal;
+	in vec3 geoNormal;
 #endif
 
 in vec4 vertColor;
@@ -71,7 +71,7 @@ void main() {
 		materialOut.w = Packup2x8U(specularTex.zw);
 	#endif
 
-	normalOut.xy = OctEncodeUnorm(flatNormal);
+	normalOut.xy = OctEncodeUnorm(geoNormal);
 
 	#if defined NORMAL_MAPPING
         vec3 normalTex = texture(normals, texCoord).rgb;

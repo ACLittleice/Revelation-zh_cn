@@ -33,8 +33,8 @@ void main() {
 	materialOut.z = Packup2x8U(albedo.xy);
 	materialOut.w = Packup2x8U(albedo.zw);
 
-	vec3 flatNormal = normalize(cross(dFdx(worldPos), dFdy(worldPos)));
+	vec3 geoNormal = normalize(cross(dFdx(worldPos), dFdy(worldPos)));
 
-	normalOut.xy = OctEncodeUnorm(flatNormal);
+	normalOut.xy = OctEncodeUnorm(geoNormal);
 	normalOut.zw = normalOut.xy;
 }
