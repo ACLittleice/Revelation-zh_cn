@@ -54,7 +54,7 @@ bool ScreenSpaceRaytrace(in vec3 viewPos, in vec3 viewDir, in float dither, in u
             float sampleViewZ = ScreenToViewDepth(sampleDepth);
             float stepViewZ = ScreenToViewDepth(rayPos.z);
 
-            if (distance(sampleViewZ, stepViewZ) > 0.1 * stepViewZ) {
+            if (distance(sampleViewZ, stepViewZ) < -0.2 * stepViewZ) {
                 screenPos = rayPos;
                 hit = true;
                 break;
