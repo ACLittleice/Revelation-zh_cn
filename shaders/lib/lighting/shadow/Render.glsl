@@ -2,9 +2,6 @@
 #define PCSS_SEARCH_SAMPLES 8 // [4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 48 64]
 #define PCSS_FILTER_SAMPLES 16 // [4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 48 64]
 
-const float shadowDistanceRenderMul = 1.0; // [-1.0 1.0]
-const float realShadowMapRes = float(shadowMapResolution) * MC_SHADOW_QUALITY;
-
 //================================================================================================//
 
 #include "Common.glsl"

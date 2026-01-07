@@ -24,7 +24,7 @@ const vec2 workGroupsRender = vec2(1.0, 1.0);
 
 //======// Uniform //=============================================================================//
 
-layout (r11f_g11f_b10f) restrict uniform image2D colorimg0; // Scene data
+writeonly uniform image2D colorimg0; // Scene data
 writeonly uniform image2D colorimg3; // Lighting output
 
 #include "/lib/universal/Uniform.glsl"
@@ -47,6 +47,8 @@ writeonly uniform image2D colorimg3; // Lighting output
 #ifdef CLOUD_SHADOWS
 	#include "/lib/atmosphere/clouds/Shadows.glsl"
 #endif
+
+#include "/lib/atmosphere/AtmosphericFog.glsl"
 
 #include "/lib/water/WaterFog.glsl"
 
@@ -85,8 +87,8 @@ vec4 CalculateSpecularReflections(in vec3 screenPos, in vec3 viewPos, in vec3 wo
 
 //======// Main //================================================================================//
 void main() {
-    ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
-	uvec2 materialPack = loadMaterialPack(screenTexel).xy;
+    ivec2 texelPos = ivec2(gl_GlobalInvocationID.xy);
+	uvec2 materialPack = loadMaterialPack(texelPos).xy;
 
 	uint materialID = materialPack.y;
 	bool notParticle = materialID != 500u;
@@ -94,10 +96,10 @@ void main() {
 	// Skip opaque fragments
 	if (clamp(materialID, 2u, 3u) != materialID && notParticle) return;
 
-	vec3 screenPos = vec3(texelToUv(screenTexel), loadDepth0(screenTexel));
+	vec3 screenPos = vec3(texelToUv(texelPos), loadDepth0(texelPos));
 	#if defined DISTANT_HORIZONS
 		if (screenPos.z > 1.0 - EPS) {
-			screenPos.z = ViewToScreenDepth(ScreenToViewDepthDH(loadDepth0DH(screenTexel)));
+			screenPos.z = ViewToScreenDepth(ScreenToViewDepthDH(loadDepth0DH(texelPos)));
 		}
 	#endif
 
@@ -113,34 +115,47 @@ void main() {
 	vec3 worldDir = worldPos * inversesqrt(worldDistSquared);
 	worldPos += gbufferModelViewInverse[3].xyz;
 
-	vec2 waterData = texelFetch(colortex12, screenTexel, 0).xy;
+	vec2 waterData = texelFetch(colortex12, texelPos, 0).xy;
 	bool waterMask = waterData.x > 0.0;
 
 	vec2 lightmap = Unpack2x8U(materialPack.x);
+	float dither = BlueNoise(texelPos, frameCounter + 4);
 
-	// Process water
-	if (waterMask && isEyeInWater == 0) {
-		mat2x3 waterFog = AnalyticWaterFog(lightmap.y, waterData.x * 255.0, dot(worldLightVector, worldDir));
+	if (isEyeInWater == 0) {
+		vec3 sceneOut = loadSceneMain(texelPos);
 
-		vec3 sceneOut = ApplyFog(imageLoad(colorimg0, screenTexel).rgb, waterFog);
+		// Front to back fog
+		#ifdef VOLUMETRIC_FOG
+			vec3 screenPosBack = vec3(screenPos.xy, loadDepth1(texelPos));
+			vec3 viewPosBack = ScreenToViewSpace(screenPosBack);
+			vec3 worldPosBack = transMAD(gbufferModelViewInverse, viewPosBack);
+			mat2x3 airFog = RaymarchAtmosphericFog(worldPos, worldPosBack, dither, screenPosBack.z > 1.0 - EPS, VF_MAX_SAMPLES >> 1);
+			sceneOut = ApplyFog(sceneOut, airFog);
+		#endif
 
-		// Skybox reflection for occluded water
-		if (materialID == 2u) {
-			vec3 worldNormal = OctDecodeUnorm(Unpack2x8(waterData.y));
+		// Process water
+		if (waterMask) {
+			mat2x3 waterFog = AnalyticWaterFog(lightmap.y, waterData.x * 255.0, dot(worldLightVector, worldDir));
+			sceneOut = ApplyFog(sceneOut, waterFog);
 
-			float NdotV = abs(dot(worldNormal, worldDir));
-			vec3 rayDir = worldDir + worldNormal * NdotV * 2.0;
+			// Skybox reflection for occluded water
+			if (materialID == 2u) {
+				vec3 worldNormal = OctDecodeUnorm(Unpack2x8(waterData.y));
 
-			vec2 skyViewCoord = OctEncodeUnorm(rayDir);
-			vec3 skyRadiance = textureBicubic(skyMapTex, skyViewCoord).rgb;
+				float NdotV = abs(dot(worldNormal, worldDir));
+				vec3 rayDir = worldDir + worldNormal * NdotV * 2.0;
 
-			vec3 reflection = skyRadiance * linearstep(0.3, 0.7, cube(lightmap.y));
-			float fresnel = FresnelDielectricN(NdotV, WATER_IOR);
+				vec2 skyViewCoord = OctEncodeUnorm(rayDir);
+				vec3 skyRadiance = textureBicubic(skyMapTex, skyViewCoord).rgb;
 
-			sceneOut = mix(sceneOut, reflection, fresnel);
+				vec3 reflection = skyRadiance * linearstep(0.3, 0.7, cube(lightmap.y));
+				float fresnel = FresnelDielectricN(NdotV, WATER_IOR);
+
+				sceneOut = mix(sceneOut, reflection, fresnel);
+			}
 		}
 
-		imageStore(colorimg0, screenTexel, vec4(sceneOut, 1.0));
+		imageStore(colorimg0, texelPos, vec4(sceneOut, 1.0));
 	}
 
 	//============================================================================================//
@@ -149,9 +164,8 @@ void main() {
 	vec4 lightingOut = vec4(0.0);
 
 	vec3 flatNormal, worldNormal;
-	FetchNormalData(screenTexel, flatNormal, worldNormal);
+	FetchNormalData(texelPos, flatNormal, worldNormal);
 
-	float dither = SampleStbnVec1(screenTexel, frameCounter + 4);
 	float NdotL = dot(worldNormal, worldLightVector);
 
 	if (notParticle) {
@@ -197,5 +211,5 @@ void main() {
 		}
 	}
 
-	imageStore(colorimg3, screenTexel, lightingOut);
+	imageStore(colorimg3, texelPos, lightingOut);
 }

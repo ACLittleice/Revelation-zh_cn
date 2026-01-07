@@ -8,7 +8,6 @@ uniform float biomeGreenVapor;
 
 // x: Mie y: Rayleigh
 const vec2 falloffScale = -1.0 / vec2(12.0, 32.0);
-const float realShadowMapRes = float(shadowMapResolution) * MC_SHADOW_QUALITY;
 
 vec2 CalculateFogDensity(in vec3 rayPos, in float uniformFog) {
 	rayPos += cameraPosition;
@@ -42,7 +41,7 @@ vec2 CalculateFogDensity(in vec3 rayPos, in float uniformFog) {
 	#undef VF_CLOUD_SHADOWS
 #endif
 
-mat2x3 RaymarchAtmosphericFog(in vec3 startPos, in vec3 endPos, in float dither, in bool skyMask) {
+mat2x3 RaymarchAtmosphericFog(in vec3 startPos, in vec3 endPos, in float dither, in bool skyMask, in uint steps) {
 	#if defined DISTANT_HORIZONS
 		#define far float(dhRenderDistance)
 	#endif
@@ -54,7 +53,6 @@ mat2x3 RaymarchAtmosphericFog(in vec3 startPos, in vec3 endPos, in float dither,
 	vec3 worldDir = (endPos - startPos) * norm;
 
 	// Adaptive step count
-	uint steps = VF_MAX_SAMPLES;
 	steps = min(steps, uint(float(steps) * 0.4 + rayLength * rcp(16.0)));
 
 	float maxRayLengh = max(far, 2e4);
@@ -121,9 +119,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 startPos, in vec3 endPos, in float dither,
 
 		if (dot(stepDensity, vec2(1.0)) < EPS) continue; // Faster than maxOf()
 
-    #if defined PASS_SKY_MAP
-        const float sampleShadow = 1.0;
-    #else
+    #if defined PASS_VOLUMETRIC_FOG
 		vec3 shadowScreenPos = DistortShadowSpace(shadowPos) * 0.5 + 0.5;
 		#ifdef COLORED_VOLUMETRIC_FOG
 			vec3 sampleShadow = vec3(1.0);
@@ -144,6 +140,8 @@ mat2x3 RaymarchAtmosphericFog(in vec3 startPos, in vec3 endPos, in float dither,
 				sampleShadow = step(shadowScreenPos.z, texelFetch(shadowtex1, shadowTexel, 0).x);
 			}
 		#endif
+    #else
+        float sampleShadow = 1.0;
     #endif
 
 		#ifdef VF_CLOUD_SHADOWS
