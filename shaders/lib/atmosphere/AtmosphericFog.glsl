@@ -42,18 +42,16 @@ vec2 CalculateFogDensity(in vec3 rayPos, in float uniformFog) {
 	#undef VF_CLOUD_SHADOWS
 #endif
 
-mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask) {
+mat2x3 RaymarchAtmosphericFog(in vec3 startPos, in vec3 endPos, in float dither, in bool skyMask) {
 	#if defined DISTANT_HORIZONS
 		#define far float(dhRenderDistance)
 	#endif
 
-	vec3 rayStart = gbufferModelViewInverse[3].xyz;
-
-	float rayLength = sdot(worldPos);
+	float rayLength = sdot(endPos - startPos);
 	float norm = inversesqrt(rayLength);
 	rayLength *= norm;
 
-	vec3 worldDir = worldPos * norm;
+	vec3 worldDir = (endPos - startPos) * norm;
 
 	// Adaptive step count
 	uint steps = VF_MAX_SAMPLES;
@@ -67,7 +65,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 		if (intersection.y < 0.0 || viewerHeight > cumulusBottomRadius) return mat2x3(vec3(0.0), vec3(1.0));
 
 		rayLength = clamp(intersection.y - intersection.x, 0.0, maxRayLengh);
-		rayStart += worldDir * intersection.x;
+		startPos += worldDir * intersection.x;
 		steps *= 2u;
 	}
 
@@ -75,9 +73,9 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 
 	float stepLength = rayLength * rSteps;
 	vec3 rayStep = stepLength * worldDir;
-	vec3 rayPos = rayStart + rayStep * dither;
+	vec3 rayPos = startPos + rayStep * dither;
 
-	vec3 shadowViewStart = transMAD(shadowModelView, rayStart);
+	vec3 shadowViewStart = transMAD(shadowModelView, startPos);
 	vec3 shadowStart = projMAD(shadowProjection, shadowViewStart);
 
 	vec3 shadowViewStep = mat3(shadowModelView) * rayStep;
@@ -180,7 +178,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 worldPos, in float dither, in bool skyMask
 
 		vec3 stepIntegral = transmittance * oms(stepTransmittance) / maxEps(stepExtinction);
 
-		scatteringSun += fogScatteringCoeff * (stepDensity * msEnergy * sampleShadow) * stepIntegral;
+		scatteringSun += fogScatteringCoeff * (stepDensity * msEnergy) * stepIntegral * sampleShadow;
 		scatteringSky += fogScatteringCoeff * stepDensity * stepIntegral;
 
 		transmittance *= stepTransmittance;

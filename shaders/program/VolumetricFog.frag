@@ -71,7 +71,7 @@ void main() {
 		}
 	#endif
 
-	vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
+	vec3 worldPos = transMAD(gbufferModelViewInverse, viewPos);
 
 	float dither = BlueNoise(texelPos, frameCounter);
 
@@ -79,12 +79,12 @@ void main() {
 
 	#ifdef VOLUMETRIC_FOG
 		if (isEyeInWater == 0) {
-			volFogData = RaymarchAtmosphericFog(worldPos, dither, screenPos.z > 1.0 - EPS);
+			volFogData = RaymarchAtmosphericFog(gbufferModelViewInverse[3].xyz, worldPos, dither, screenPos.z > 1.0 - EPS);
 		}
 	#endif
 	#ifdef UW_VOLUMETRIC_FOG
 		if (isEyeInWater == 1) {
-			volFogData = RaymarchWaterFog(worldPos, dither);
+			volFogData = RaymarchWaterFog(worldPos - gbufferModelViewInverse[3].xyz, dither);
 		}
 	#endif
 
