@@ -95,7 +95,7 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 lightDir, in float noise, in float 
 
 		float opticalDepthSun = 0.0; {
 			const float rSteps = 1.0 / float(CLOUD_HIGH_SUNLIGHT_SAMPLES);
-			const float rayLength = cloudHighThickness * 1.0;
+			const float rayLength = cloudHighThickness * 0.5;
 			const float stepLength = rayLength * rSteps * rSteps;
 
 			vec2 rayStep = lightDir.xz * stepLength;
@@ -113,7 +113,7 @@ vec3 RenderCloudHigh(in vec2 rayPos, in vec3 lightDir, in float noise, in float 
 		}
 
 		// Approximate sunlight multi-scattering
-		float coarseDensity = approxSqrt(density + 0.1);
+		float coarseDensity = approxSqrt(density);
 		float scatteringSun = CloudMultiScatteringApproxHaringPro(opticalDepthSun, phase, coarseDensity, cirrusAlbedo);
 
 		// float opticalDepthSky = density * (cloudHighThickness * 0.5 * cirrusExtinction * -rLOG2);
