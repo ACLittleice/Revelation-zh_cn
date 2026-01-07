@@ -16,6 +16,14 @@ float FetchNoiseSmooth(in vec2 coord, in float t) {
 float CalculateWaterHeight(in vec2 position) {
 	vec2 pos = 0.01 * position;
 	float waveTime = 0.02 * WATER_WAVE_SPEED * frameTimeCounter;
+
+	float waveHeight = WATER_WAVE_HEIGHT * 0.5;
+	#if !defined PASS_SHADOW
+		float lfNoise = texture(noisetex, pos * 0.2 + waveTime * 0.1).z;
+		waveHeight *= saturate(lfNoise * 2.0 - 0.75) + 0.25;
+		pos += lfNoise * 0.1;
+	#endif
+
 	float waves = FetchNoise(pos, waveTime);
 
 	pos = goldenRotate * (1.75 * pos) + waves * 0.05;
@@ -26,20 +34,23 @@ float CalculateWaterHeight(in vec2 position) {
 	waveTime *= 1.25;
 	waves += FetchNoise(pos, waveTime) * 0.15;
 
-	// pos = goldenRotate * (1.5 * pos);
-	// waves += FetchNoise(pos, waveTime) * 0.1;
+	pos = goldenRotate * (1.5 * pos);
+	waves += FetchNoise(pos, waveTime) * 0.1;
 
-	#if !defined PASS_SHADOW
-		float localHeight = texture(noisetex, pos * 0.2 + waveTime * 0.1).z;
-		waves *= saturate(localHeight * 2.0 - 0.75) + 0.25;
-	#endif
-
-	return WATER_WAVE_HEIGHT * 0.5 * waves;
+	return waveHeight * waves;
 }
 
 float CalculateWaterHeightFull(in vec2 position) {
 	vec2 pos = 0.01 * position;
 	float waveTime = 0.02 * WATER_WAVE_SPEED * frameTimeCounter;
+
+	float waveHeight = WATER_WAVE_HEIGHT * 0.5;
+	#if !defined PASS_SHADOW
+		float lfNoise = texture(noisetex, pos * 0.2 + waveTime * 0.1).z;
+		waveHeight *= saturate(lfNoise * 2.0 - 0.75) + 0.25;
+		pos += lfNoise * 0.1;
+	#endif
+
 	float waves = FetchNoiseSmooth(pos, waveTime);
 
 	pos = goldenRotate * (1.75 * pos) + waves * 0.05;
@@ -53,12 +64,10 @@ float CalculateWaterHeightFull(in vec2 position) {
 	pos = goldenRotate * (1.5 * pos);
 	waves += FetchNoise(pos, waveTime) * 0.1;
 
-	#if !defined PASS_SHADOW
-		float localHeight = texture(noisetex, pos * 0.2 + waveTime * 0.1).z;
-		waves *= saturate(localHeight * 2.0 - 0.75) + 0.25;
-	#endif
+	pos = goldenRotate * (1.25 * pos);
+	waves += FetchNoise(pos, waveTime) * 0.1;
 
-	return WATER_WAVE_HEIGHT * 0.5 * waves;
+	return waveHeight * waves;
 }
 
 //================================================================================================//
