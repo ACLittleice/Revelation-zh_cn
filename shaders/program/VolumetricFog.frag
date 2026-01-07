@@ -41,12 +41,11 @@ uniform sampler2D shadowcolor1;
 #include "/lib/universal/Fetch.glsl"
 #include "/lib/universal/Random.glsl"
 
-#include "/lib/atmosphere/Common.glsl"
-#include "/lib/atmosphere/clouds/Shadows.glsl"
-
 #include "/lib/lighting/shadow/Common.glsl"
 
+#include "/lib/atmosphere/Common.glsl"
 #include "/lib/atmosphere/AtmosphericFog.glsl"
+
 #include "/lib/water/WaterFog.glsl"
 
 mat2x3 UnpackFogData(in uvec3 data) {
