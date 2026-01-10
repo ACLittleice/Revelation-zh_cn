@@ -126,7 +126,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	vec2 cloudMap = texture(cloudMapTex, (rayPos.xz * rcp(cloudMapExtend))).xy;
 
 	// Coveage profile
-	vec2 stepEdge = mix(vec2(0.52, 0.9) - CLOUD_CU_COVERAGE * 0.3, vec2(0.1, 0.5), sqr(wetness));
+	vec2 stepEdge = mix(vec2(0.5, 0.9) - CLOUD_CU_COVERAGE * 0.3, vec2(0.1, 0.5), sqr(wetness));
 	float coverage = linearstep(stepEdge.x, stepEdge.y, cloudMap.x);
 	coverage += linearstep(stepEdge.x * 1.25, stepEdge.y * 0.75, texture(noisetex, rayPos.xz * rcp(512e3)).z);
 	coverage = saturate(coverage - 1.0);
@@ -140,7 +140,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	if (dimensionalProfile < 0.1) return 0.0;
 
 	vec3 noisePos = (rayPos - windDir * heightFraction * cumulusTopOffset) * rcp(3e3);
-		noisePos.y *= 1.25;
+	noisePos.y += dot(noisePos.xz, vec2(0.2, 0.3)); // Reduce repetition pattern
 
 	#if 0
 	vec2 billowyNoise = texture(baseNoiseTex, fract(noisePos)).xy;
