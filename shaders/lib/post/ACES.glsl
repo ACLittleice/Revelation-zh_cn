@@ -1,4 +1,3 @@
-
 // https://github.com/ampas/aces-dev/blob/dev
 
 /*
@@ -57,7 +56,10 @@
 */
 
 float rgbToSaturation(in vec3 rgb) {
-	return (max(maxOf(rgb), 1e-10) - max(minOf(rgb), 1e-10)) / max(maxOf(rgb), 1e-2);
+	float minC = min(min(rgb.r, rgb.g), rgb.b);
+	float maxC = max(max(rgb.r, rgb.g), rgb.b);
+
+	return (max(maxC, 1e-10) - max(minC, 1e-10)) / max(maxC, 1e-2);
 }
 
 // Returns a geometric hue angle in degrees (0-360) based on RGB values
@@ -80,7 +82,7 @@ float rgbToYc(in vec3 rgb) {
 
 	float chroma = sqrt(rgb.b * (rgb.b - rgb.g) + rgb.g * (rgb.g - rgb.r) + rgb.r * (rgb.r - rgb.b));
 
-	return (rgb.r + rgb.g + rgb.b + yc_radius_weight * chroma) / 3.0;
+	return (rgb.r + rgb.g + rgb.b + yc_radius_weight * chroma) * rcp(3.0);
 }
 
 const mat3 Rec2020_2_AP0 = mat3(
@@ -254,7 +256,6 @@ vec3 RRTSweeteners(in vec3 aces) {
 	return rgbPre;
 }
 
-
 #define log10(x) (log2(x) * rcp(log2(10.0)))
 
 // Textbook monomial to basis-function conversion matrix
@@ -350,7 +351,7 @@ float segmented_spline_c9_fwd(float x, SegmentedSplineParams_c9 params) { // par
     float logMidPoint = log10(params.midPoint.x);
     float logMaxPoint = log10(params.maxPoint.x);
 
-    float logx = log10(max(x, 1e-6));
+    float logx = log10(maxEps(x));
     float logy;
 
     if ( logx <= logMinPoint ) {
@@ -389,7 +390,6 @@ vec3 RRTAndODTFit(in vec3 rgb) {
 }
 
 vec3 AcademyFit(in vec3 rgb) {
-	rgb *= 1.4;
 	rgb *= Rec2020_2_AP0;
 
 	// Apply RRT sweeteners
@@ -586,7 +586,6 @@ vec3 ODT_Rec2020_P3D65limited_100nits_dim(in vec3 rgbPre) {
 }
 
 vec3 AcademyFull(in vec3 rgb) {
-	rgb *= 1.4;
 	rgb *= Rec2020_2_AP0;
 
 	// Apply RRT
