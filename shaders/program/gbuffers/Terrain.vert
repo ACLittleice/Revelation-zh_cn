@@ -26,8 +26,6 @@ flat out uint materialID;
 	out vec2 tileBase;
 	flat out vec2 tileScale;
 	flat out vec2 tileOffset;
-
-	out vec3 tangentViewPos;
 #endif
 
 //======// Attribute //===========================================================================//
@@ -122,8 +120,6 @@ void main() {
 		tileBase = signI(minMidCoord) * 0.5 + 0.5;
 		tileScale = abs(minMidCoord) * 2.0;
 		tileOffset = min(texCoord, mc_midTexCoord - minMidCoord);
-
-		tangentViewPos = (worldPos - gbufferModelViewInverse[3].xyz) * tbnMatrix;
 	#endif
 
 	gl_Position = diagonal4(projectionMatrix) * transMAD(gbufferModelView, worldPos).xyzz + projectionMatrix[3];

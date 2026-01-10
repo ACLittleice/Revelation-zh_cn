@@ -31,8 +31,6 @@ flat in uint materialID;
 	in vec2 tileBase;
 	flat in vec2 tileScale;
 	flat in vec2 tileOffset;
-
-	in vec3 tangentViewPos;
 #endif
 
 //======// Uniform //=============================================================================//
@@ -117,10 +115,13 @@ void main() {
 		#endif
 
 		if (normalTex.w < (1.0 - r255)) {
-			float tangentViewLength = length(tangentViewPos);
-			float parallaxFade = smoothstep(64.0, 32.0, tangentViewLength);
+			vec3 viewPos = ScreenToViewSpace(vec3(gl_FragCoord.xy * viewPixelSize, gl_FragCoord.z));
+			vec3 tangentPos = mat3(gbufferModelViewInverse) * viewPos * tbnMatrix;
 
-			vec3 offsetCoord = CalculateParallax(tangentViewPos / tangentViewLength, dither, parallaxFade);
+			float tangentLength = length(tangentPos);
+			float parallaxFade = smoothstep(64.0, 32.0, tangentLength);
+
+			vec3 offsetCoord = CalculateParallax(tangentPos / tangentLength, dither, parallaxFade);
 			parallaxCoord = atlasCoord(offsetCoord.xy);
 
 			normalTex = ReadTexture(normals);
