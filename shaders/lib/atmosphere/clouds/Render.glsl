@@ -346,6 +346,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 		#ifdef CLOUD_AERIAL_PERSPECTIVE
 			vec3 aerialT;
 			vec3 aerialSL = GetSkyRadianceToPoint(cloudPos, worldSunVector, aerialT) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
+			aerialSL = colorSaturation(aerialSL, 1.0 - wetness * 0.5); // Post-process
 
 			integralSL *= aerialT;
 			integralSL += aerialSL * oms(integralT);
