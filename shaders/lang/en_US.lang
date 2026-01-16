@@ -184,6 +184,8 @@ option.RAIN_SCALE_Y=Rain/Snow Scale Y
 
 # Foliage
 option.WAVING_FOLIAGE=Waving Foliage
+option.WAVING_FOLIAGE_SPEED=Waving Speed
+option.WAVING_FOLIAGE_STRENGTH=Waving Strength
 option.UNLABELLED_FOILAGE_DETECTION=Unlabelled Foliage Detection
 
 

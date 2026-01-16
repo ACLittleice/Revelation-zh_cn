@@ -1,9 +1,9 @@
 const int noiseTextureResolution = 256;
 const float noiseTexturePixelSize = 1.0 / noiseTextureResolution;
 
-float Calculate3DNoise(in vec3 position) {
-    vec3 p = floor(position);
-	vec3 b = curve(position - p);
+float Pseudo3DNoise(in vec3 pos) {
+    vec3 p = floor(pos);
+	vec3 b = curve(pos - p);
 
 	vec2 uv = p.xy + b.xy + 97.0 * p.z;
     vec2 rg = texture(noisetex, (uv + 0.5) * noiseTexturePixelSize).xy;

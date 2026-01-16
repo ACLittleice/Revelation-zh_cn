@@ -184,6 +184,8 @@ option.RAIN_SCALE_Y=雨雪缩放-纵向
 
 # Foliage
 option.WAVING_FOLIAGE=植物晃动
+option.WAVING_FOLIAGE_SPEED=晃动速度
+option.WAVING_FOLIAGE_STRENGTH=晃动强度
 option.UNLABELLED_FOILAGE_DETECTION=植物判定补充
 
 

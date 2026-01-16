@@ -26,8 +26,8 @@ vec2 CalculateFogDensity(in vec3 rayPos, in float uniformFog) {
 	rayPos *= 0.03;
 	rayPos -= windOffset;
 
-	float noise = Calculate3DNoise(rayPos) * 2.5;
-	noise -= Calculate3DNoise(rayPos * 4.0 - windOffset);
+	float noise = Pseudo3DNoise(rayPos) * 2.5;
+	noise -= Pseudo3DNoise(rayPos * 4.0 - windOffset);
 #endif
 
 	density.x *= sqr(noise) * (2.0 + biomeSandstorm * 8.0 + biomeSnowstorm * 4.0);
