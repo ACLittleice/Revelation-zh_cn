@@ -80,7 +80,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 startPos, in vec3 endPos, in float dither,
 	vec3 shadowPos = shadowStart + shadowStep * dither;
 
 	float LdotV = dot(worldLightVector, worldDir);
-	vec2 phase = vec2(CornetteShanksPhase(LdotV, mie_phase_g), RayleighPhase(LdotV));
+	vec2 phase = vec2(AerosolPhase(LdotV), RayleighPhase(LdotV));
 
 	float mieDensityMult = VF_MIE_DENSITY * (1.0 + wetness * VF_MIE_DENSITY_RAIN_MULT);
 

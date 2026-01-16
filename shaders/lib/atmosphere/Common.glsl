@@ -66,7 +66,8 @@ struct AtmosphereParameters {
 //================================================================================================//
 
 const float planetRadius = 6371e3; // The average radius of the Earth: 6,371 kilometers
-const float mie_phase_g = 0.8;
+const float aerosol_g = 0.8; // Asymmetry factor for mie phase function
+const float aerosol_d = 1.6; // Mean diameter in µm
 
 float viewerHeight = planetRadius + VIEWER_BASE_ALTITUDE + eyeAltitude;
 
@@ -169,6 +170,18 @@ vec2 RaySphericalShellIntersection(in float r, in float mu, in float bottomRad, 
 	} else {
 		return vec2(-1.0);
 	}
+}
+
+// HG-Draine for aerosols
+float AerosolPhase(in float mu) {
+    const float ld = log(aerosol_d);
+
+    const float gHG = 0.0604931 * log(ld) + 0.940256;
+    const float gD 	= 0.500411 - 0.081287 / (-2.0 * ld + tan(ld) + 1.27551);
+    const float a 	= 7.30354 * ld + 6.31675;
+    const float wD 	= 0.026914 * (ld - cos(5.68947 * (log(ld) - 0.0292149))) + 0.376475;
+
+	return mix(HenyeyGreensteinPhase(mu, gHG), DrainePhase(mu, gD, a), wD);
 }
 
 vec3 LightningContribution(in vec3 pos) {
