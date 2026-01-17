@@ -402,5 +402,5 @@ vec3 GT7(in vec3 color) {
 
     applyToneMapping(color, tm);
 
-    return color;
+    return color * Rec2020_2_sRGB;
 }
