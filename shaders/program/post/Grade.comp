@@ -214,13 +214,13 @@ void main() {
 	// Apply DRT
 	{
 		// Working to DRT space
-		color *= sRGB_2_Rec2020;
+		// color *= sRGB_2_Rec2020;
 
 		// Tone mapping
 		color = TONE_MAPPER(color);
 
 		// DRT to working space
-		color *= Rec2020_2_sRGB;
+		// color *= Rec2020_2_sRGB;
 
 		// Working to display space
 		color = saturate(linearToSRGB(color));

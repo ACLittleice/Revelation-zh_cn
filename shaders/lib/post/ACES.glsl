@@ -134,6 +134,12 @@ const mat3 XYZ_2_AP1 = mat3(
 const mat3 AP0_2_AP1 = AP0_2_XYZ * XYZ_2_AP1;
 const mat3 AP1_2_AP0 = AP1_2_XYZ * XYZ_2_AP0;
 
+const mat3 sRGB_2_AP0 = sRGB_2_XYZ * XYZ_2_AP0;
+const mat3 AP0_2_sRGB = AP0_2_XYZ * XYZ_2_sRGB;
+
+const mat3 sRGB_2_AP1 = sRGB_2_XYZ * XYZ_2_AP1;
+const mat3 AP1_2_sRGB = AP1_2_XYZ * XYZ_2_sRGB;
+
 const mat3 D60ToD65_CAT = mat3(
      0.98722400, -0.00611327, 0.01595330,
     -0.00759836,  1.00186000, 0.00533002,
@@ -390,7 +396,7 @@ vec3 RRTAndODTFit(in vec3 rgb) {
 }
 
 vec3 AcademyFit(in vec3 rgb) {
-	rgb *= Rec2020_2_AP0;
+	rgb *= sRGB_2_AP0;
 
 	// Apply RRT sweeteners
 	rgb = RRTSweeteners(rgb);
@@ -401,7 +407,7 @@ vec3 AcademyFit(in vec3 rgb) {
 	// Global desaturation
 	rgb = mix(vec3(dot(rgb, AP1_RGB2Y)), rgb, odtSatFactor);
 
-	return rgb * AP1_2_Rec2020;
+	return rgb * AP1_2_sRGB;
 }
 
 //======// ACES Full //===========================================================================//
@@ -586,7 +592,7 @@ vec3 ODT_Rec2020_P3D65limited_100nits_dim(in vec3 rgbPre) {
 }
 
 vec3 AcademyFull(in vec3 rgb) {
-	rgb *= Rec2020_2_AP0;
+	rgb *= sRGB_2_AP0;
 
 	// Apply RRT
 	rgb = RRT(rgb);
