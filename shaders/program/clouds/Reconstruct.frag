@@ -108,11 +108,12 @@ void main() {
 		// Return smoothed origin
 		cloudOut = textureBicubic(cloudOriginTex, currCoord);
 	} else {
-		// vec4 prevData = max0(textureLanczos(cloudReconstructTex, prevCoord));
-		vec4 prevData = max0(textureCatmullRom(cloudReconstructTex, prevCoord));
-
 		ivec2 currTexel = uvToTexel(currCoord) / CLOUD_TAAU_SCALE;
 		vec4 currData = texelFetch(cloudOriginTex, currTexel, 0);
+
+		vec4 prevData;
+		prevData.xyw = max0(textureCatmullRom(cloudReconstructTex, prevCoord).xyw);
+		prevData.z = min(texture(cloudReconstructTex, prevCoord).z, currData.z);
 
 		#ifdef CLOUD_TAAU_CLIPPING
 			vec3 moment1 = currData.xyw;
