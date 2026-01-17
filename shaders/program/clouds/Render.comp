@@ -77,14 +77,12 @@ void main() {
 
 	#ifdef CLOUD_TAAU_ENABLED
 		vec2 renderCoord = (coord + taaOffset * 0.5) * CLOUD_TAAU_SCALE;
-		ivec2 renderTexel = uvToTexel(renderCoord);
 	#else
 		#define renderCoord coord
-		#define renderTexel texelPos
 	#endif
 
+	// x: sunlight, y: skylight, z: depth, w: transmittance
 	vec4 cloudOut = vec4(0.0, 0.0, 0.0, 1.0);
-	float cloudDepth = -1.0;
 
 	if (SkyCheck4x4(renderCoord)) {
 		vec2 noise = SampleStbnVec2(texelPos, frameCounter + 11);
@@ -92,9 +90,8 @@ void main() {
 		vec3 viewDir  = ScreenToViewVectorRaw(renderCoord);
 		vec3 worldDir = mat3(gbufferModelViewInverse) * viewDir;
 
-		cloudOut = RenderClouds(worldDir, noise, cloudDepth);
+		cloudOut = RenderClouds(worldDir, noise);
 	}
 
 	imageStore(cloudOriginImg, texelPos, cloudOut);
-	imageStore(cloudOriginImg, texelPos + ivec2(halfViewSize), vec4(cloudDepth));
 }

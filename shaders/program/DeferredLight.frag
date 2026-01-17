@@ -49,9 +49,8 @@ uniform sampler2D cloudOriginTex;
 #include "/lib/atmosphere/Bruneton08.glsl"
 #include "/lib/atmosphere/Celestial.glsl"
 
-#ifdef CLOUD_SHADOWS
-	#include "/lib/atmosphere/clouds/Shadows.glsl"
-#endif
+#include "/lib/atmosphere/clouds/Render.glsl"
+#include "/lib/atmosphere/clouds/Shadows.glsl"
 
 #include "/lib/lighting/Common.glsl"
 #include "/lib/lighting/shadow/Render.glsl"
@@ -126,7 +125,8 @@ void main() {
 				screenCoord += viewPixelSize * (dither - 0.5);
 				vec4 cloudData = textureBicubic(cloudOriginTex, screenCoord);
 			#endif
-			sceneOut = sceneOut * cloudData.a + cloudData.rgb;
+
+			CompositeClouds(sceneOut, cloudData, worldDir);
 		#endif
 
 		imageStore(colorimg7, texelPos, uvec4(0));

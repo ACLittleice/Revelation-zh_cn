@@ -147,11 +147,9 @@ float[cloudMsCount] SetupParticipatingMediaPhases(in float primaryPhase, in floa
 	return phases;
 }
 
-vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
-	// Initialize
-	vec2 integralPV = vec2(0.0);
-	float integralT = 1.0;
-	cloudDepth = 128e3;
+vec4 RenderClouds(in vec3 rayDir, in vec2 noise) {
+	// x: sunlight, y: skylight, z: depth, w: transmittance
+	vec4 cloudData = vec4(0.0, 0.0, 1e6, 1.0);
 
 	float moonlightFactor = smoothstep(-0.03, -0.05, worldSunVector.y);
     vec3 lightDir = normalize(worldSunVector * oms(2.0 * moonlightFactor));
@@ -266,9 +264,9 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 
 				// Update integral data
 				if (transmittance < 1.0) {
-					integralPV = stepScattering * cumulusAlbedo;
-					integralT = transmittance;
-					cloudDepth = min(rayLengthWeighted / raySumWeight, cloudDepth);
+					cloudData.xy = stepScattering * cumulusAlbedo;
+					cloudData.w = transmittance;
+					cloudData.z = min(rayLengthWeighted / raySumWeight, cloudData.z);
 				}
 			}
 		}
@@ -289,13 +287,13 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 			// Update integral data
 			if (cloudTemp.z < 1.0) {
 				// Blend layers
-				integralPV = mix(integralPV + cloudTemp.xy * integralT, integralPV * cloudTemp.z + cloudTemp.xy, step(cloudMidRadius, r));
+				cloudData.xy = mix(cloudData.xy + cloudTemp.xy * cloudData.w, cloudData.xy * cloudTemp.z + cloudTemp.xy, step(cloudMidRadius, r));
 
 				// Update transmittance
-				integralT *= cloudTemp.z;
+				cloudData.w *= cloudTemp.z;
 
 				// Update cloud depth
-				cloudDepth = min(rayLength, cloudDepth);
+				cloudData.z = min(rayLength, cloudData.z);
 			}
 		}
 	#endif
@@ -313,45 +311,38 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise, out float cloudDepth) {
 			// Update integral data
 			if (cloudTemp.z < 1.0) {
 				// Blend layers
-				integralPV = mix(integralPV + cloudTemp.xy * integralT, integralPV * cloudTemp.z + cloudTemp.xy, step(cloudHighRadius, r));
+				cloudData.xy = mix(cloudData.xy + cloudTemp.xy * cloudData.w, cloudData.xy * cloudTemp.z + cloudTemp.xy, step(cloudHighRadius, r));
 
 				// Update transmittance
-				integralT *= cloudTemp.z;
+				cloudData.w *= cloudTemp.z;
 
 				// Update cloud depth
-				cloudDepth = min(rayLength, cloudDepth);
+				cloudData.z = min(rayLength, cloudData.z);
 			}
 		}
 	#endif
 
-	//================================================================================================//
+    return cloudData;
+}
 
-    vec3 integralSL = vec3(0.0);
-
-	// Composite
-	if (integralT < 1.0) {
-		vec3 cloudPos = camera + rayDir * cloudDepth;
+void CompositeClouds(inout vec3 skyRadiance, in vec4 cloudData, in vec3 rayDir) {
+	// x: sunlight, y: skylight, z: depth, w: transmittance
+	if (cloudData.w < 1.0) {
+		vec3 camera = vec3(0.0, viewerHeight, 0.0);
+		vec3 cloudPos = camera + rayDir * cloudData.z;
 
 		// Compute irradiance
 		vec3 sunIrradiance, moonIrradiance;
 		vec3 skyIlluminance = GetSunAndSkyIrradiance(cloudPos, normalize(cloudPos), worldSunVector, sunIrradiance, moonIrradiance) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
-		vec3 directIlluminance = SUN_SPECTRAL_RADIANCE_TO_LUMINANCE * mix(sunIrradiance, moonIrradiance, moonlightFactor);
+		vec3 directIlluminance = SUN_SPECTRAL_RADIANCE_TO_LUMINANCE * (sunIrradiance + moonIrradiance);
 
-		integralSL  = integralPV.x * directIlluminance;
-		integralSL += integralPV.y * rPI * skyIlluminance;
+		vec3 scattering = cloudData.x * directIlluminance;
+		scattering += cloudData.y * rPI * skyIlluminance;
 
-		integralSL += LightningContribution(cloudPos - camera) * sqr(integralPV.y);
+		scattering += LightningContribution(cloudPos - camera) * sqr(cloudData.y);
 
-		// Apply aerial perspective
-		#ifdef CLOUD_AERIAL_PERSPECTIVE
-			vec3 aerialT;
-			vec3 aerialSL = GetSkyRadianceToPoint(cloudPos, worldSunVector, aerialT) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
-			aerialSL = colorSaturation(aerialSL, 1.0 - wetness * 0.5); // Post-process
-
-			integralSL *= aerialT;
-			integralSL += aerialSL * oms(integralT);
-		#endif
+		// Aerial perspective
+		vec3 aerialT = GetTransmittance(cloudPos);
+		skyRadiance = skyRadiance * oms(oms(cloudData.w) * aerialT) + scattering * aerialT;
 	}
-
-    return vec4(integralSL, integralT);
 }

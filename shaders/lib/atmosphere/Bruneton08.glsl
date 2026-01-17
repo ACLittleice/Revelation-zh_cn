@@ -117,30 +117,34 @@ vec3 GetTransmittance(
         }
 }
 
-vec3 GetTransmittance(vec3 view_ray) {
-	vec3 camera = vec3(0.0, viewerHeight, 0.0);
-    // Compute the distance to the top atmosphere boundary along the view ray,
-    // assuming the viewer is in space (or NaN if the view ray does not intersect
-    // the atmosphere).
-    float r = length(camera);
-    float rmu = dot(camera, view_ray);
-    float distance_to_top_atmosphere_boundary = -rmu - sqrt(rmu * rmu - r * r + atmosphere_top_radius_sq);
+vec3 GetTransmittance(
+    //vec3 camera,
+    vec3 point
+    ) {
+		vec3 camera = vec3(0.0, viewerHeight, 0.0);
+        // Compute the distance to the top atmosphere boundary along the view ray,
+        // assuming the viewer is in space (or NaN if the view ray does not intersect
+        // the atmosphere).
+        vec3 view_ray = normalize(point - camera);
+        float r = length(camera);
+        float rmu = dot(camera, view_ray);
+        float distance_to_top_atmosphere_boundary = -rmu - sqrt(rmu * rmu - r * r + atmosphere_top_radius_sq);
 
-    // If the viewer is in space and the view ray intersects the atmosphere, move
-    // the viewer to the top atmosphere boundary (along the view ray):
-    if (distance_to_top_atmosphere_boundary > 0.0) {
-        camera += view_ray * distance_to_top_atmosphere_boundary;
-        r = atmosphereModel.top_radius;
-        rmu += distance_to_top_atmosphere_boundary;
-    } else if (r > atmosphereModel.top_radius) {
-        // If the view ray does not intersect the atmosphere, simply return 0.
-        return vec3(1.0);
-    }
+        // If the viewer is in space and the view ray intersects the atmosphere, move
+        // the viewer to the top atmosphere boundary (along the view ray):
+        if (distance_to_top_atmosphere_boundary > 0.0) {
+            camera += view_ray * distance_to_top_atmosphere_boundary;
+            r = atmosphereModel.top_radius;
+            rmu += distance_to_top_atmosphere_boundary;
+        }
 
-    // Compute the r, mu, mu_s and nu parameters needed for the texture lookups.
-    float mu = rmu / r;
+        // Compute the r, mu, mu_s and nu parameters for the first texture lookup.
+        float mu = rmu / r;
+		float d = length(point - camera);
 
-	return GetTransmittanceToTopAtmosphereBoundary(r, mu);
+        bool ray_r_mu_intersects_ground = RayIntersectsGround(r, mu);
+
+        return GetTransmittance(r, mu, d, ray_r_mu_intersects_ground);
 }
 
 vec3 GetTransmittanceToSun(

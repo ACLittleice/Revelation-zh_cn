@@ -78,18 +78,15 @@ vec3 ReprojectClouds(in vec2 coord, in float depth) {
 
 //======// Main //================================================================================//
 void main() {
-	// Initialize
-	cloudOut = vec4(0.0, 0.0, 0.0, 1.0);
+	// x: sunlight, y: skylight, z: depth, w: transmittance
+	cloudOut = vec4(0.0, 0.0, 1e6, 1.0);
 	frameOut = 0u;
 
 	vec2 screenCoord = gl_FragCoord.xy * viewPixelSize;
-
-	const float currScale = rcp(float(CLOUD_TAAU_SCALE));
-	vec2 currCoord = screenCoord * currScale - taaOffset * 0.5;
-	currCoord = min(currCoord, currScale - viewPixelSize * 2.0);
+	vec2 currCoord = screenCoord - taaOffset * (0.5 * float(CLOUD_TAAU_SCALE));
 
 	// Fetch closest cloud depth
-	float cloudDepth = minOf(textureGather(cloudOriginTex, currCoord + 0.5));
+	float cloudDepth = minOf(textureGather(cloudOriginTex, currCoord, 2));
 
 	// Skip ground
 	if (cloudDepth < EPS) return;
@@ -114,16 +111,16 @@ void main() {
 		// vec4 prevData = max0(textureLanczos(cloudReconstructTex, prevCoord));
 		vec4 prevData = max0(textureCatmullRom(cloudReconstructTex, prevCoord));
 
-		ivec2 currTexel = uvToTexel(currCoord);
+		ivec2 currTexel = uvToTexel(currCoord) / CLOUD_TAAU_SCALE;
 		vec4 currData = texelFetch(cloudOriginTex, currTexel, 0);
 
 		#ifdef CLOUD_TAAU_CLIPPING
-			vec4 moment1 = currData;
-			vec4 moment2 = currData * currData;
+			vec3 moment1 = currData.xyw;
+			vec3 moment2 = currData.xyw * currData.xyw;
 
 			// Fetch 3x3 neighbour pixels
 			for (uint i = 0u; i < 8u; ++i) {
-				vec4 sampleData = texelFetch(cloudOriginTex, currTexel + offset3x3N[i], 0);
+				vec3 sampleData = texelFetch(cloudOriginTex, currTexel + offset3x3N[i], 0).xyw;
 
 				moment1 += sampleData;
 				moment2 += sampleData * sampleData;
@@ -132,18 +129,18 @@ void main() {
 			moment2 *= rcp(9.0);
 
 			// Ellipsoid intersection clipping
-			vec4 clipStdDevInv = inversesqrt(abs(moment2 - moment1 * moment1) + EPS);
-			prevData -= moment1;
-			prevData *= saturate(inversesqrt(sdot(prevData * clipStdDevInv * 0.25)));
-			prevData += moment1;
+			vec3 clipStdDevInv = inversesqrt(abs(moment2 - moment1 * moment1) + EPS);
+			prevData.xyw -= moment1;
+			prevData.xyw *= saturate(inversesqrt(sdot(prevData.xyw * clipStdDevInv * 0.25)));
+			prevData.xyw += moment1;
 		#endif
 
 		// Accumulate
-		float currLum = luminance(currData.rgb), prevLum = luminance(prevData.rgb);
+		float currLum = mean(currData.xy), prevLum = mean(prevData.xy);
 		float temporalContrast = saturate(abs(currLum - prevLum) / max(currLum, prevLum));
 		float antiFlicker = 1.0 + sqr(temporalContrast) * CLOUD_TAAU_ANTIFLICKER;
 
 		frameOut = min(frameIndex + 1u, CLOUD_MAX_ACCUM_FRAMES);
-		cloudOut = mix(prevData, currData, rcp(antiFlicker * float(frameOut)));
+		cloudOut = mix(prevData, currData, rcp(float(frameOut)));
 	}
 }
