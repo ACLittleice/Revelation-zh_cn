@@ -56,14 +56,14 @@ mat2x3 RaymarchAtmosphericFog(in vec3 startPos, in vec3 endPos, in float dither,
 	// Adaptive step count
 	steps = min(steps, uint(float(steps) * 0.4 + rayLength * rcp(16.0)));
 
-	float maxRayLengh = max(far, 1e4);
+	float maxDist = far * sqrt(2.0);
 	if (skyMask) {
 		// vec2 intersection = RaySphericalShellIntersection(viewerHeight, worldDir.y, planetRadius, cumulusTopRadius);
 
 		// // Not intersecting the volume
 		// if (intersection.y < 0.0 || viewerHeight > cumulusBottomRadius) return mat2x3(vec3(0.0), vec3(1.0));
 
-		rayLength = clamp((cumulusTopRadius - viewerHeight) / max0(worldDir.y), 0.0, maxRayLengh);
+		rayLength = clamp((cumulusTopRadius - viewerHeight) / max0(worldDir.y), 0.0, maxDist);
 	}
 
 	float rSteps = rcp(float(steps));
@@ -107,7 +107,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 startPos, in vec3 endPos, in float dither,
 		atmosphereModel.rayleigh_scattering * VF_RAYLEIGH_DENSITY * 0.05
 	);
 
-	float uniformFog = (16.0 + wetness * VF_MIE_DENSITY_RAIN_MULT * 16.0) / maxRayLengh;
+	float uniformFog = (16.0 + wetness * VF_MIE_DENSITY_RAIN_MULT * 16.0) / maxDist;
 
 	vec3 scatteringSun = vec3(0.0);
 	vec3 scatteringSky = vec3(0.0);
@@ -192,7 +192,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 startPos, in vec3 endPos, in float dither,
 	#ifdef RAINBOWS
 		float visibility = wetness * oms(rainStrength);
 		if (visibility > EPS) {
-			float distanceFade = saturate(rayLength / maxRayLengh) * visibility;
+			float distanceFade = saturate(rayLength / maxDist) * visibility;
 			scatteringSun *= 1.0 + RenderRainbows(LdotV) * distanceFade;
 		}
 	#endif
