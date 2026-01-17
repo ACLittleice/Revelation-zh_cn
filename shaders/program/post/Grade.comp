@@ -209,9 +209,6 @@ void main() {
 		color *= exp2(-0.5 * VIGNETTE_STRENGTH * sdot(ndcCoord));
 	#endif
 
-	// Silly white balance (divide by sun color in sRGB space)
-	color *= 1.0 / vec3(1.0, 0.949, 0.937);
-
 	// Apply DRT
 	{
 		// Working to DRT space
