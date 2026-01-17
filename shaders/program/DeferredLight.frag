@@ -104,6 +104,19 @@ void main() {
 		sceneOut = GetSkyRadiance(worldDir, worldSunVector, transmittance) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
 		sceneOut = colorSaturation(sceneOut, 1.0 - wetness * 0.5); // Post-process
 
+		#ifdef CLOUDS
+			#ifdef CLOUD_TAAU_ENABLED
+				vec4 cloudData = texture(cloudReconstructTex, screenCoord);
+			#else
+				// Dither offset
+				screenCoord += viewPixelSize * (dither - 0.5);
+				vec4 cloudData = textureBicubic(cloudOriginTex, screenCoord);
+			#endif
+
+			CompositeClouds(sceneOut, cloudData, worldDir);
+			transmittance *= cloudData.w;
+		#endif
+
 		if (dot(transmittance, vec3(1.0)) > EPS) {
 			vec3 celestial = RenderSun(worldDir, worldSunVector);
 			vec3 vanillaMoon = albedo;
@@ -116,18 +129,6 @@ void main() {
 
 			sceneOut += celestial * transmittance;
 		}
-
-		#ifdef CLOUDS
-			#ifdef CLOUD_TAAU_ENABLED
-				vec4 cloudData = texture(cloudReconstructTex, screenCoord);
-			#else
-				// Dither offset
-				screenCoord += viewPixelSize * (dither - 0.5);
-				vec4 cloudData = textureBicubic(cloudOriginTex, screenCoord);
-			#endif
-
-			CompositeClouds(sceneOut, cloudData, worldDir);
-		#endif
 
 		imageStore(colorimg7, texelPos, uvec4(0));
 	} else {
