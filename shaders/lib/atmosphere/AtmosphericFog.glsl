@@ -56,7 +56,7 @@ mat2x3 RaymarchAtmosphericFog(in vec3 startPos, in vec3 endPos, in float dither,
 	// Adaptive step count
 	steps = min(steps, uint(float(steps) * 0.4 + rayLength * rcp(16.0)));
 
-	float maxDist = far * sqrt(2.0);
+	float maxDist = far;
 	if (skyMask) {
 		// vec2 intersection = RaySphericalShellIntersection(viewerHeight, worldDir.y, planetRadius, cumulusTopRadius);
 
