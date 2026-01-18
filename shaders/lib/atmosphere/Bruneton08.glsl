@@ -390,7 +390,7 @@ vec3 GetSkyRadiance(
         transmittance = ray_r_mu_intersects_ground ? vec3(0.0) : GetTransmittanceToTopAtmosphereBoundary(r, mu);
 
         #ifndef PLANET_GROUND
-            ray_r_mu_intersects_ground = ray_r_mu_intersects_ground && (r > planetRadius + 512.0);
+            ray_r_mu_intersects_ground = ray_r_mu_intersects_ground && (r > planetRadius + 1e3);
         #endif
 
         vec3 sun_single_mie_scattering;
@@ -468,7 +468,7 @@ vec3 GetSkyRadiance(
         bool ray_r_mu_intersects_ground = RayIntersectsGround(r, mu);
 
         #ifndef PLANET_GROUND
-            ray_r_mu_intersects_ground = ray_r_mu_intersects_ground && (r > planetRadius + 512.0);
+            ray_r_mu_intersects_ground = ray_r_mu_intersects_ground && (r > planetRadius + 1e3);
         #endif
 
         vec3 ground = vec3(0.0);
