@@ -1,7 +1,7 @@
 
 //======// Utility //=============================================================================//
 
-#include "/settings.glsl"
+#include "/lib/Utility.glsl"
 
 //======// Output //==============================================================================//
 
@@ -26,12 +26,13 @@ uniform vec2 taaOffset;
 
 //======// Main //================================================================================//
 void main() {
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(vaPosition + chunkOffset, 1.0);
+	vec3 viewPos = transMAD(modelViewMatrix, vaPosition + chunkOffset);
+	gl_Position = diagonal4(projectionMatrix) * viewPos.xyzz + projectionMatrix[3];
 
 	#ifdef TAA_ENABLED
 		gl_Position.xy += taaOffset * gl_Position.w;
 	#endif
 
 	vertColor = vaColor;
-    texCoord = vec2(textureMatrix * vec4(vaUV0, 0.0, 1.0));
+    texCoord = mat2(textureMatrix) * vaUV0 + textureMatrix[3].xy;
 }
