@@ -294,7 +294,7 @@ const ivec2 skyMapRes = ivec2(256, 256);
 	// #define DEBUG_CLOUD_NOISE
 	// #define DEBUG_CLOUD_SHADOWS
 	// #define DEBUG_SKY_COLOR
-	// #define DEBUG_RESHADING
+	// #define DEBUG_TONE_MAPPING_PLOT
 	// #define FORCE_DISABLE_SUBGROUP_OPS
 
 #endif

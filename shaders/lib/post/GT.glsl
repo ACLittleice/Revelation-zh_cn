@@ -1,3 +1,37 @@
+//======// GT //==================================================================================//
+
+// Uchimura 2017, "HDR theory and practice"
+// Math: https://www.desmos.com/calculator/gslcdxvipg
+// Source: https://www.slideshare.net/nikuque/hdr-theory-and-practicce-jp
+vec3 GT(in vec3 x) {
+    const float maxDisplayBrightness = 1.0;
+    const float contrast			 = 1.0;
+    const float linearStart			 = 0.2;
+    const float linearLength		 = 0.1;
+    const float black				 = 1.33;
+    const float pedestal			 = 0.0;
+
+    const float l0 = ((maxDisplayBrightness - linearStart) * linearLength) / contrast;
+    const float L0 = linearStart - linearStart / contrast;
+    const float L1 = linearStart + oms(linearStart) / contrast;
+    const float S0 = linearStart + l0;
+    const float S1 = linearStart + contrast * l0;
+    const float C2 = contrast * maxDisplayBrightness / (maxDisplayBrightness - S1);
+    const float CP = -1.44269502 * C2 / maxDisplayBrightness;
+
+    vec3 w0 = 1.0 - smoothstep(0.0, linearStart, x);
+    vec3 w2 = step(S0, x);
+    vec3 w1 = 1.0 - w0 - w2;
+
+    vec3 T = pow(x, vec3(black)) / pow(linearStart, black - 1.0) + pedestal;
+    vec3 S = maxDisplayBrightness - (maxDisplayBrightness - S1) * exp2(CP * (x - S0));
+    vec3 L = linearStart + contrast * (x - linearStart);
+
+	return T * w0 + L * w1 + S * w2;
+}
+
+//======// GT7 //=================================================================================//
+
 // Source: https://blog.selfshadow.com/publications/s2025-shading-course/pdi/supplemental/gt7_tone_mapping.cpp
 
 // MIT License

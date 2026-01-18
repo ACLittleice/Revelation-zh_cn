@@ -91,8 +91,6 @@ void CombineBloomAndFog(inout vec3 scene, in ivec2 texel, in float exposure) {
 	}
 }
 
-//================================================================================================//
-
 // See section 3.4 of http://www.diva-portal.org/smash/get/diva2:24136/FULLTEXT01.pdf
 vec3 ScotopicVision(in vec3 color, in float exposure) {
 	const vec3 rodResponse = vec3(0.05, 0.55, 0.60);
@@ -106,38 +104,6 @@ vec3 ScotopicVision(in vec3 color, in float exposure) {
 }
 
 vec3 None(in vec3 x) {
-	return x;
-}
-
-// Uchimura 2017, "HDR theory and practice"
-// Math: https://www.desmos.com/calculator/gslcdxvipg
-// Source: https://www.slideshare.net/nikuque/hdr-theory-and-practicce-jp
-vec3 GT(in vec3 x) {
-    const float maxDisplayBrightness = 1.0;
-    const float contrast			 = 1.0;
-    const float linearStart			 = 0.2;
-    const float linearLength		 = 0.1;
-    const float black				 = 1.33;
-    const float pedestal			 = 0.0;
-
-    const float l0 = ((maxDisplayBrightness - linearStart) * linearLength) / contrast;
-    const float L0 = linearStart - linearStart / contrast;
-    const float L1 = linearStart + oms(linearStart) / contrast;
-    const float S0 = linearStart + l0;
-    const float S1 = linearStart + contrast * l0;
-    const float C2 = contrast * maxDisplayBrightness / (maxDisplayBrightness - S1);
-    const float CP = -1.44269502 * C2 / maxDisplayBrightness;
-
-    vec3 w0 = 1.0 - smoothstep(0.0, linearStart, x);
-    vec3 w2 = step(S0, x);
-    vec3 w1 = 1.0 - w0 - w2;
-
-    vec3 T = pow(x, vec3(black)) / pow(linearStart, black - 1.0) + pedestal;
-    vec3 S = maxDisplayBrightness - (maxDisplayBrightness - S1) * exp2(CP * (x - S0));
-    vec3 L = linearStart + contrast * (x - linearStart);
-
-    x = T * w0 + L * w1 + S * w2;
-
 	return x;
 }
 
@@ -163,7 +129,7 @@ vec3 Lottes(in vec3 x) {
 
 #include "/lib/post/ACES.glsl"
 #include "/lib/post/AgX.glsl"
-#include "/lib/post/GT7.glsl"
+#include "/lib/post/GT.glsl"
 
 //======// Main //================================================================================//
 void main() {
@@ -223,6 +189,18 @@ void main() {
 		// Working to display space
 		color = saturate(linearToSRGB(color));
 	}
+
+	// Debug tone mapping plot
+	#ifdef DEBUG_TONE_MAPPING_PLOT
+		const float scale = 1.5;
+
+		vec2 uv = texelToUv(texelPos) * vec2(aspectRatio, 1.0) * scale;
+		float plot = smoothstep(0.0, scale * viewPixelSize.y, abs(uv.y - TONE_MAPPER(vec3(uv.x)).x));
+
+		// Show LDR range
+		color = vec3(0.25) * step(uv.x, 1.0);
+		color = mix(vec3(1.0), color, plot);
+	#endif
 
 	imageStore(colorimg8, texelPos, vec4(color, 1.0));
 }
