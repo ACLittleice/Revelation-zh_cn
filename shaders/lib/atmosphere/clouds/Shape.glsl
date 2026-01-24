@@ -104,7 +104,7 @@ float CloudHighDensity(in vec2 rayPos) {
 		float stratocumulus = saturate(h * 6.0) * linearstep(0.6, 0.2, h);
 		float cumulus = saturate(h * 8.0) * linearstep(1.0, 0.7, h);
 
-		float gradient = mix(stratus, stratocumulus, sqr(saturate(t * 2.5)));
+		float gradient = mix(stratus, stratocumulus, smoothstep(0.0, 0.5, t));
 		return mix(gradient, cumulus, smoothstep(0.5, 1.0, t));
 	}
 #endif
@@ -126,16 +126,16 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	vec2 cloudMap = texture(cloudMapTex, (rayPos.xz * rcp(cloudMapExtend))).xy;
 
 	// Coveage profile
-	vec2 stepEdge = mix(vec2(0.51, 0.92) - CLOUD_CU_COVERAGE * 0.3, vec2(0.1, 0.5), sqr(wetness));
+	vec2 stepEdge = mix(vec2(0.6, 1.0) - CLOUD_CU_COVERAGE * 0.4, vec2(0.2, 0.5), sqr(wetness));
 	float coverage = linearstep(stepEdge.x, stepEdge.y, cloudMap.x);
-	coverage *= linearstep(stepEdge.x * 1.25, stepEdge.y * 0.75, texture(noisetex, rayPos.xz * rcp(512e3)).z);
+	coverage *= linearstep(stepEdge.x, stepEdge.y * 0.7, texture(noisetex, rayPos.xz * rcp(512e3)).z);
 
 	// Vertical profile
 	float type = min(curve(cloudMap.y), coverage);
 	float gradient = GetVerticalProfile(heightFraction, type);
 
-	#if 1
-	dimensionalProfile = curve(gradient * coverage);
+	#if 0
+	dimensionalProfile = (gradient * coverage);
 	#else
 	dimensionalProfile = saturate(gradient + coverage - 1.0);
 	#endif
@@ -157,7 +157,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	float cloudDensity = dimensionalProfile + (baseNoise - 1.0);
 	if (cloudDensity < cloudEpsilon) return 0.0;
 
-	float heightFade = smoothstep(0.4, 0.2, heightFraction);
+	float heightFade = smoothstep(0.1, 0.5, heightFraction);
 
 	// Detail erosion
 	float detailNoise = 0.1;
@@ -170,7 +170,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 		detailNoise = texture(detailNoiseTex, noisePos * 8.0).x;
 
 		// Transition from wispy shapes to billowy shapes over height
-		detailNoise = sqr(mix(0.75 - detailNoise * 0.5, detailNoise, heightFade)) * 0.4;
+		detailNoise = sqr(mix(detailNoise, 0.75 - detailNoise * 0.5, heightFade)) * 0.4;
 	}
 	#endif
 
@@ -178,7 +178,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	// cloudDensity = saturate(cloudDensity - detailNoise * oms(cloudDensity));
 
 	// Density profile
-	return cloudDensity * mix(CLOUD_CU_DENSITY_T, CLOUD_CU_DENSITY_B, heightFade);
+	return cloudDensity * mix(CLOUD_CU_DENSITY_B, CLOUD_CU_DENSITY_T, heightFade);
 }
 
 #endif // INCLUDE_CLOUDS_SHAPE
