@@ -28,7 +28,7 @@ const vec2 workGroupsRender = vec2(0.5, 0.5);
 
 //======// SSBO //================================================================================//
 
-#define SSBO_DECLARED_TPYE writeonly
+#define SSBO_DECLARED_TPYE restrict
 #include "/lib/universal/SSBO.glsl"
 
 //======// Shared Memory //=======================================================================//
