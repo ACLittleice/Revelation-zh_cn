@@ -112,6 +112,7 @@ void main() {
 		vec4 currData = texelFetch(cloudOriginTex, currTexel, 0);
 
 		vec4 prevData = max0(textureCatmullRom(cloudReconstructTex, prevCoord));
+		prevData.z = mix(prevData.z, min(prevData.z, currData.z), prevData.w);
 
 		#ifdef CLOUD_TAAU_CLIPPING
 			vec3 moment1 = currData.xyw;

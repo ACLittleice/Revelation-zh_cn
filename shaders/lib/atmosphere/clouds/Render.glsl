@@ -263,9 +263,11 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise) {
 				}
 
 				// Update integral data
-				cloudData.xy = stepScattering * cumulusAlbedo;
-				cloudData.w = transmittance;
-				cloudData.z = min(rayLengthWeighted / raySumWeight, intersection.y);
+				if (transmittance < 1.0) {
+					cloudData.xy = stepScattering * cumulusAlbedo;
+					cloudData.w = transmittance;
+					cloudData.z = min(rayLengthWeighted / raySumWeight, intersection.y);
+				}
 			}
 		}
 	#endif
