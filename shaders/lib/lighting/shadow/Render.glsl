@@ -131,7 +131,7 @@ vec3 CalculatePCSS(in vec3 worldPos, in vec3 normalOffset, in float dither, in f
 	if (saturate(shadowScreenPos) == shadowScreenPos) {
 		float blockerDepth = BlockerSearch(shadowScreenPos, dither, 0.25 * distortionFactor);
 
-		const float minRadius = 0.025;
+		const float minRadius = 0.015;
 		float sharpenFactor = saturate(blockerDepth * rcp(minRadius));
 
 		blockerDepth = max(blockerDepth, minRadius);
