@@ -48,9 +48,12 @@ float CloudHighDensity(in vec2 rayPos) {
 	const vec2 windVelocity = vec2(cos(windAngle), sin(windAngle)) * CLOUD_HIGH_WIND_SPEED;
 	vec2 windOffset = windVelocity * worldTimeCounter;
 
+	rayPos -= windOffset;
+	rayPos += cameraPosition.xz;
+
 	// Curl noise to simulate wind, makes the positioning of the clouds more natural
 	vec2 curlNoise = texture(curlNoiseTex, rayPos * 5e-5).xy * 0.1;
-	vec2 position = (rayPos - windOffset) * 2e-4 + curlNoise;
+	vec2 position = rayPos * 2e-4 + curlNoise;
 
 	float density = 0.0;
 
