@@ -125,19 +125,16 @@ vec3 CalculatePCSS(in vec3 worldPos, in vec3 normalOffset, in float dither, in f
 	vec3 shadowScreenPos = WorldToShadowScreenSpace(worldPos + normalOffset, distortionFactor);
 	shadowScreenPos.z -= 3e-8 * (1.0 + dither) * shadowProjectionInverse[1].y * distortionFactor;
 
-	dither *= TAU;
-
 	vec3 pcss = vec3(1.0);
 	if (saturate(shadowScreenPos) == shadowScreenPos) {
-		float blockerDepth = BlockerSearch(shadowScreenPos, dither, 0.25 * distortionFactor);
+		float blockerDepth = BlockerSearch(shadowScreenPos, dither * TAU, 0.25 * distortionFactor);
+		blockerDepth += sssAmount * fract(dither + PHI) * SUBSURFACE_SCATTERING_RADIUS;
 
 		const float minRadius = 0.015;
 		float sharpenFactor = saturate(blockerDepth * rcp(minRadius));
-
 		blockerDepth = max(blockerDepth, minRadius);
-		blockerDepth += sssAmount * SUBSURFACE_SCATTERING_RADIUS * (dither * 0.5 + 1.0);
 
-		pcss = PercentageCloserFilter(shadowScreenPos, worldPos, dither, blockerDepth * distortionFactor, sssAmount);
+		pcss = PercentageCloserFilter(shadowScreenPos, worldPos, dither * TAU, blockerDepth * distortionFactor, sssAmount);
 		pcss = mix(smoothstep(0.3, 0.7, pcss), pcss, sharpenFactor); // Sharpen the edges of the shadow
 	}
 
