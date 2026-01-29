@@ -133,7 +133,7 @@ void main() {
 
 	if (depth < 1.0) {
 		vec4 translucent = ExtractSpecularTex(materialPack);
-		vec3 albedo = sRGBtoLinear(translucent.rgb);
+		vec3 albedo = sRGBToLinear(translucent.rgb);
 
 		// Particle translucent
 		if (materialID == 500u) {

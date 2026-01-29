@@ -93,7 +93,7 @@ void main() {
 	uvec4 materialPack = loadMaterialPack(texelPos);
 	uint materialID = materialPack.y;
 
-	vec3 albedo = sRGBtoLinear(loadAlbedo(texelPos));
+	vec3 albedo = sRGBToLinear(loadAlbedo(texelPos));
 
 	float dither = BlueNoise(texelPos, frameCounter);
 
@@ -344,9 +344,9 @@ void main() {
 		#ifdef SSILVB_ENABLED
 			#ifdef SVGF_ENABLED
 				float NdotV = abs(dot(worldNormal, worldDir));
-				sceneOut += YCoCgToSRGB(SpatialUpscale(texelPos >> 1, worldNormal, length(viewPos), NdotV));
+				sceneOut += YCoCgToRGB(SpatialUpscale(texelPos >> 1, worldNormal, length(viewPos), NdotV));
 			#else
-				sceneOut += YCoCgToSRGB(texelFetch(colortex3, texelPos >> 1, 0).rgb);
+				sceneOut += YCoCgToRGB(texelFetch(colortex3, texelPos >> 1, 0).rgb);
 			#endif
 		#endif
 

@@ -124,7 +124,7 @@ vec3 Lottes(in vec3 x) {
 	const vec3 b = -curvedMidIn + curvedHdrMax * midOut;
 	const vec3 c = pow(hdrMax, ad) * curvedMidIn - curvedHdrMax * pow(midIn, ad) * midOut;
 
-	return sRGBtoLinear(pow(x, a) * (pow(hdrMax, ad) - pow(midIn, ad)) * midOut / (pow(x, ad) * b + c));
+	return sRGBToLinear(pow(x, a) * (pow(hdrMax, ad) - pow(midIn, ad)) * midOut / (pow(x, ad) * b + c));
 }
 
 #include "/lib/post/ACES.glsl"

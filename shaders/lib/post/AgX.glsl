@@ -288,5 +288,5 @@ vec3 AgXConfigurable(in vec3 rgb) {
 }
 
 vec3 AgX_Full(in vec3 rgb) {
-    return sRGBtoLinear(AgXConfigurable(rgb));
+    return sRGBToLinear(AgXConfigurable(rgb));
 }

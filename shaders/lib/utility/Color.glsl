@@ -1,78 +1,3 @@
-// https://en.wikipedia.org/wiki/SRGB
-// https://github.com/tobspr/GLSL-Color-Spaces/blob/master/ColorSpaces.inc.glsl
-vec3 linearToSRGB(in vec3 color) {
-	return mix(color * 12.92, 1.055 * pow(color, vec3(0.41666666)) - 0.055, lessThan(vec3(0.0031308), color));
-}
-
-vec3 sRGBtoLinear(in vec3 color) {
-	return mix(color * 0.07739938, pow((color + 0.055) * 0.94786729, vec3(2.4)), lessThan(vec3(0.04045), color));
-}
-
-// https://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html
-vec3 linearToSRGBApprox(in vec3 color) {
-    // vec3 S1 = color * inversesqrt(color);
-    // vec3 S2 = S1 * inversesqrt(S1);
-    // vec3 S3 = S2 * inversesqrt(S2);
-    // return 0.585122381 * S1 + 0.783140355 * S2 - 0.368262736 * S3;
-    return pow(color, vec3(1.0 / 2.223));
-}
-
-vec3 sRGBtoLinearApprox(in vec3 color) {
-    return color * (color * (color * 0.305306011 + 0.682171111) + 0.012522878);
-}
-
-float luminance(in vec3 color) {
-    return dot(color, vec3(0.2126729, 0.7151522, 0.0721750));
-}
-
-vec3 colorSaturation(in vec3 color, in float saturation) {
-    return mix(vec3(luminance(color)), color, saturation);
-}
-
-// Modified from https://github.com/Jessie-LC/open-source-utility-code/blob/main/advanced/blackbody.glsl
-vec3 plancks(in float t, in vec3 lambda) {
-    const float h = 6.62607015e-16; // Planck's constant
-    const float c = 2.99792458e17;  // The speed of light in a vacuum
-    const float k = 1.38064852e-5;  // Boltzmann's constant
-
-    vec3 p1 = (2.0 * h * sqr(c)) / pow5(lambda);
-    vec3 p2 = exp(h * c / (lambda * k * t)) - vec3(1.0);
-    return p1 / p2;
-}
-
-vec3 blackbody(in float t) {
-    vec3 color = plancks(t, vec3(660.0, 550.0, 440.0));
-    return color * rcp(maxOf(color)); // Normalize to 1.0
-}
-
-float karisAverage(in vec3 color) {
-    return rcp(1.0 + luminance(color));
-}
-
-vec3 reinhard(in vec3 hdr) {
-    return hdr * rcp(1.0 + luminance(hdr));
-}
-vec3 invReinhard(in vec3 sdr) {
-    return sdr * rcp(1.0 - luminance(sdr));
-}
-
-//================================================================================================//
-
-// https://en.wikipedia.org/wiki/YCoCg
-vec3 sRGBToYCoCg(in vec3 rgb) {
-    return mat3(
-        0.25,  0.50, -0.25,
-        0.50,  0.00,  0.50,
-        0.25, -0.50, -0.25
-    ) * rgb;
-}
-vec3 YCoCgToSRGB(in vec3 YCoCg) {
-    return mat3(
-         1.0,  1.0,  1.0,
-         1.0,  0.0, -1.0,
-        -1.0,  1.0, -1.0
-    ) * YCoCg;
-}
 
 const mat3 Rec2020_2_sRGB = mat3(
      1.6603034854, -0.5875701425, -0.0728900602,
@@ -109,6 +34,79 @@ const mat3 Rec2020_2_XYZ = mat3(
     0.2627002120, 0.6779980715, 0.0593017165,
     0.0000000000, 0.0280726930, 1.0609850577
 );
+
+// https://en.wikipedia.org/wiki/SRGB
+// https://github.com/tobspr/GLSL-Color-Spaces/blob/master/ColorSpaces.inc.glsl
+vec3 linearToSRGB(in vec3 color) {
+	return mix(color * 12.92, 1.055 * pow(color, vec3(0.41666666)) - 0.055, step(vec3(0.0031308), color));
+}
+
+vec3 sRGBToLinear(in vec3 color) {
+	return mix(color * 0.07739938, pow((color + 0.055) * 0.94786729, vec3(2.4)), step(vec3(0.04045), color));
+}
+
+// https://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html
+vec3 linearToSRGBApprox(in vec3 color) {
+    vec3 S1 = color * inversesqrt(color);
+    vec3 S2 = S1 * inversesqrt(S1);
+    vec3 S3 = S2 * inversesqrt(S2);
+    return 0.585122381 * S1 + 0.783140355 * S2 - 0.368262736 * S3;
+}
+
+vec3 sRGBToLinearApprox(in vec3 color) {
+    return color * (color * (color * 0.305306011 + 0.682171111) + 0.012522878);
+}
+
+// https://en.wikipedia.org/wiki/YCoCg
+vec3 RGBToYCoCg(in vec3 rgb) {
+    return mat3(
+        0.25,  0.50, -0.25,
+        0.50,  0.00,  0.50,
+        0.25, -0.50, -0.25
+    ) * rgb;
+}
+vec3 YCoCgToRGB(in vec3 YCoCg) {
+    return mat3(
+         1.0,  1.0,  1.0,
+         1.0,  0.0, -1.0,
+        -1.0,  1.0, -1.0
+    ) * YCoCg;
+}
+
+float luminance(in vec3 color) {
+    return dot(color, vec3(0.2126729, 0.7151522, 0.0721750));
+}
+
+vec3 colorSaturation(in vec3 color, in float saturation) {
+    return mix(vec3(luminance(color)), color, saturation);
+}
+
+// Modified from https://github.com/Jessie-LC/open-source-utility-code/blob/main/advanced/blackbody.glsl
+vec3 plancks(in float t, in vec3 lambda) {
+    const float h = 6.62607015e-16; // Planck's constant
+    const float c = 2.99792458e17;  // The speed of light in a vacuum
+    const float k = 1.38064852e-5;  // Boltzmann's constant
+
+    vec3 p1 = (2.0 * h * sqr(c)) / pow5(lambda);
+    vec3 p2 = exp(h * c / (lambda * k * t)) - vec3(1.0);
+    return p1 / p2;
+}
+
+vec3 blackbody(in float t) {
+    vec3 color = plancks(t, vec3(660.0, 550.0, 440.0));
+    return color * rcp(maxOf(color)); // Normalize to 1.0
+}
+
+float karisAverage(in vec3 color) {
+    return rcp(1.0 + luminance(color));
+}
+
+vec3 reinhard(in vec3 hdr) {
+    return hdr * rcp(1.0 + luminance(hdr));
+}
+vec3 invReinhard(in vec3 sdr) {
+    return sdr * rcp(1.0 - luminance(sdr));
+}
 
 //================================================================================================//
 

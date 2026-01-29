@@ -132,7 +132,7 @@ void main() {
 
     #if defined SPECULAR_COMBINE_PASS
         vec3 sceneOut = loadSceneMain(texelPos);
-        vec3 albedo = sRGBtoLinear(loadAlbedo(texelPos));
+        vec3 albedo = sRGBToLinear(loadAlbedo(texelPos));
 
         float NdotV = abs(dot(worldNormal, worldDir));
         vec2 brdf = texture(brdfLutTex, vec2(material.roughness, NdotV)).xy;

@@ -600,5 +600,5 @@ vec3 AcademyFull(in vec3 rgb) {
 	// Apply ODT
 	rgb = ODT_sRGB_100nits_dim(rgb);
 
-	return sRGBtoLinear(rgb);
+	return sRGBToLinear(rgb);
 }

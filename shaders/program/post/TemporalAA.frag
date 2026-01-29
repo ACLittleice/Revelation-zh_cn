@@ -96,8 +96,8 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
         vec4 temporalData = texture(colortex1, prevCoord);
     #endif
 
-    vec3 prevData = sRGBToYCoCg(temporalData.rgb);
-    currData = sRGBToYCoCg(currData);
+    vec3 prevData = RGBToYCoCg(temporalData.rgb);
+    currData = RGBToYCoCg(currData);
 
     float currLum = currData.x, prevLum = prevData.x;
     float temporalContrast = saturate(abs(currLum - prevLum) / max(currLum, prevLum));
@@ -108,7 +108,7 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
 
 	    for (uint i = 0u; i < 8u; ++i) {
             vec3 sampleData = texelFetch(colortex0, texel + offset3x3N[i], 0).rgb;
-            sampleData = sRGBToYCoCg(sampleData);
+            sampleData = RGBToYCoCg(sampleData);
 
             moment1 += sampleData;
             moment2 += sampleData * sampleData;
@@ -136,7 +136,7 @@ vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
     blendWeight *= 1.0 + sqr(temporalContrast) * TAA_ANTIFLICKER;
 
     currData = mix(perceptualWeight(prevData), perceptualWeight(currData), rcp(blendWeight));
-    return vec4(YCoCgToSRGB(perceptualWeightInv(currData)), temporalData.a);
+    return vec4(YCoCgToRGB(perceptualWeightInv(currData)), temporalData.a);
 }
 
 //======// Main //================================================================================//
