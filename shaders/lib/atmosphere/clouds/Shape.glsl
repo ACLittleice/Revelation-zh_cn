@@ -52,7 +52,7 @@ float CloudHighDensity(in vec2 rayPos) {
 	rayPos += cameraPosition.xz;
 
 	// Curl noise to simulate wind, makes the positioning of the clouds more natural
-	vec2 curlNoise = texture(curlNoiseTex, rayPos * 5e-5).xy * 0.1;
+	vec2 curlNoise = texture(curlNoiseTex, rayPos * 4e-5).xy * 0.1;
 	vec2 position = rayPos * 2e-4 + curlNoise;
 
 	float density = 0.0;
@@ -65,7 +65,7 @@ float CloudHighDensity(in vec2 rayPos) {
 
 		if (coverage > 0.25) {
 			vec2 p = position + coverage * 0.5 - windOffset * 1e-4;
-			float cirrus = textureBicubic(cirroLutTex, p * 0.3).y;
+			float cirrus = textureBicubic(cirroLutTex, p * 0.25).y;
 
 			cirrus *= saturate(cirrus + coverage);
 			cirrus *= sqr(linearstep(0.25, 1.0, coverage));
@@ -82,7 +82,7 @@ float CloudHighDensity(in vec2 rayPos) {
 
 		if (coverage > 0.3) {
 			vec2 p = position + coverage * 0.5 - windOffset * 1e-4;
-			float cirrocumulus = sqr(textureBicubic(cirroLutTex, p * 0.3).x);
+			float cirrocumulus = sqr(textureBicubic(cirroLutTex, p * 0.25).x);
 
 			cirrocumulus *= saturate(cirrocumulus + coverage);
 			cirrocumulus *= smoothstep(0.3, 1.0, coverage);
@@ -104,8 +104,8 @@ float CloudHighDensity(in vec2 rayPos) {
 #else
 	float GetVerticalProfile(in float h, in float t) {
 		float stratus = saturate(h * 16.0) * linearstep(0.2, 0.1, h);
-		float stratocumulus = saturate(h * 5.0) * linearstep(0.6, 0.2, h);
-		float cumulus = saturate(h * 7.0) * linearstep(1.0, 0.7, h);
+		float stratocumulus = saturate(h * 6.0) * linearstep(0.6, 0.2, h);
+		float cumulus = saturate(h * 8.0) * linearstep(1.0, 0.7, h);
 
 		float gradient = mix(stratus, stratocumulus, smoothstep(0.0, 0.5, t));
 		return mix(gradient, cumulus, smoothstep(0.5, 1.0, t));

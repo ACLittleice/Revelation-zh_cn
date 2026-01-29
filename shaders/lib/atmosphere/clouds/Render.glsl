@@ -72,11 +72,11 @@ float CloudMultiScatteringApproxOz(in float opticalDepth, in float phase) {
 
 float CloudMultiScatteringApproxHaringPro(in float opticalDepth, in float phase, in float extinction, in float albedo) {
 	// https://zhuanlan.zhihu.com/p/457997155
-	float msV = albedo * oms(exp2(-8.0 * extinction));
-	float msEnergy = msV / ((1.0 + opticalDepth) * oms(msV));
+	float msV = albedo * oms(exp2(-12.0 * extinction));
+	float msEnergy = msV / (1.0 - msV) * approxExp(-0.2 * opticalDepth - 1.0);
 
 	float single = exp2(-rLOG2 * opticalDepth) * phase;
-	return single + msEnergy * mix(phase, uniformPhase, msV * (2.0 - msV));
+	return single + msEnergy * mix(phase, uniformPhase, msV);
 }
 
 //================================================================================================//
@@ -228,7 +228,7 @@ vec4 RenderClouds(in vec3 rayDir, in vec2 noise) {
 						#endif
 
 						// Estimate the light optical depth of the ground from the cloud volume
-						float scatteringGround = oms(dimensionalProfile * saturate(heightFraction * 2.0)) * 0.5 * uniformPhase;
+						float scatteringGround = oms(dimensionalProfile * saturate(heightFraction * 4.0)) * 0.5 * uniformPhase;
 
 						// Compute In-Scatter Probability
 						// See slide 92 of [Schneider, 2017]
