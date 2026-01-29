@@ -25,46 +25,39 @@
 --------------------------------------------------------------------------------
 */
 
+#if !defined INCLUDE_CLOUDS_SHADOWS
+#define INCLUDE_CLOUDS_SHADOWS
+
 #include "/lib/atmosphere/clouds/Common.glsl"
+#include "/lib/atmosphere/clouds/Shape.glsl"
 
 //================================================================================================//
 
-const float cloudShadowDistortion = 0.75;
-
-const mat4 cloudShadowProj = mat4(
-	1.0 / CLOUD_SHADOW_DISTANCE, 0.0, 0.0, 0.0,
-	0.0, 1.0 / CLOUD_SHADOW_DISTANCE, 0.0, 0.0,
-	0.0, 0.0, -2.0 / 1e6, 0.0,
-	0.0, 0.0, -1.0, 1.0
-);
-
-const mat4 cloudShadowProjInv = inverse(cloudShadowProj);
-
 vec3 SetupCloudShadowPos(in vec2 coord) {
-	vec3 shadowPos = vec3(coord * 2.0 - 1.0, 1.0);
-	// shadowPos.xy *= oms(cloudShadowDistortion) / oms(length(shadowPos.xy) * cloudShadowDistortion);
-	shadowPos = projMAD(cloudShadowProjInv, shadowPos);
-	return transMAD(shadowModelViewInverse, shadowPos);
+	vec3 shadowPos = vec3(coord * 2.0 - 1.0, 0.0);
+	return transMAD(cloud.shadowViewProjInv, shadowPos);
+}
+
+vec3 PlanetToCloudShadowScreenPos(in vec3 planetPos) {
+	planetPos.y -= planetRadius;
+
+	vec3 shadowPos = transMAD(cloud.shadowViewProj, planetPos);
+	return shadowPos * 0.5 + 0.5;
 }
 
 vec3 WorldToCloudShadowScreenPos(in vec3 worldPos) {
 	worldPos.y += eyeAltitude;
 
-	vec3 shadowPos = transMAD(shadowModelView, worldPos);
-	shadowPos = projMAD(cloudShadowProj, shadowPos);
-	// shadowPos.xy *= rcp(length(shadowPos.xy) * cloudShadowDistortion + oms(cloudShadowDistortion));
+	vec3 shadowPos = transMAD(cloud.shadowViewProj, worldPos);
 	return shadowPos * 0.5 + 0.5;
 }
 
 //================================================================================================//
 
-#if defined PASS_CLOUD_SM
-#include "/lib/atmosphere/clouds/Shape.glsl"
-
 float CalculateCloudShadows(in vec3 rayPos, in float dither) {
 	float steps = float(CLOUD_SHADOW_SAMPLES) * (2.0 - worldLightVector.y);
 
-	rayPos.y += planetRadius;
+	rayPos.y += planetRadius; // To planet space
 
 	vec2 intersection = RaySphericalShellIntersection(rayPos, worldLightVector, cumulusBottomRadius, cumulusTopRadius);
 	float stepLength = (intersection.y - intersection.x) * rcp(steps);
@@ -88,4 +81,5 @@ float CalculateCloudShadows(in vec3 rayPos, in float dither) {
 	float strength = min(linearstep(0.05, 0.1, worldLightVector.y), CLOUD_SHADOW_STRENGTH);
 	return oms(strength) + transmittance * strength;
 }
-#endif
+
+#endif // INCLUDE_CLOUDS_SHADOWS

@@ -207,35 +207,6 @@ float quarticLength(in vec2 v) {
 
 //================================================================================================//
 
-mat3 ConstructTBN(in vec3 n) {
-	vec3 b = normalize(vec3(0.0, n.z, -n.y));
-	return mat3(cross(b, n), b, n);
-}
-
-mat2 rotateMat(in float angle) {
-    float cosine = cos(angle);
-    float sine = sin(angle);
-    return mat2(cosine, -sine, sine, cosine);
-}
-
-mat3 rotateMatX(in float angle) {
-    float cosine = cos(angle);
-    float sine = sin(angle);
-    return mat3(1.0, 0.0, 0.0, 0.0, cosine, -sine, 0.0, sine, cosine);
-}
-
-mat3 rotateMatY(in float angle) {
-    float cosine = cos(angle);
-    float sine = sin(angle);
-    return mat3(cosine, 0.0, sine, 0.0, 1.0, 0.0, -sine, 0.0, cosine);
-}
-
-mat3 rotateMatZ(in float angle) {
-    float cosine = cos(angle);
-    float sine = sin(angle);
-    return mat3(cosine, -sine, 0.0, sine, cosine, 0.0, 0.0, 0.0, 1.0);
-}
-
 // https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
 vec3 rotate(in vec3 v, in vec3 a, in vec3 b) {
 	float cosTheta = dot(a, b);

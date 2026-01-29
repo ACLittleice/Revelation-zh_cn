@@ -13,3 +13,8 @@ layout (std430, binding = 1) SSBO_DECLARED_TPYE buffer ExposureData {
     uint histogram[HISTOGRAM_BIN_COUNT];
     float value;
 } exposure;
+
+layout (std430, binding = 2) SSBO_DECLARED_TPYE buffer CloudData {
+    mat4 shadowViewProj;
+    mat4 shadowViewProjInv;
+} cloud;
