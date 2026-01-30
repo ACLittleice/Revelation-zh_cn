@@ -363,8 +363,12 @@ option.HISTOGRAM_LOWER_BOUND=直方图下限
 option.HISTOGRAM_UPPER_BOUND=直方图上限
 option.MANUAL_EV=手动曝光值
 
-option.PURKINJE_SHIFT=朴金耶位移
-option.PURKINJE_SHIFT_STRENGTH=朴金耶位移强度
+option.PURKINJE_SHIFT=浦肯野效应
+option.PURKINJE_SHIFT_STRENGTH=浦肯野效应强度
+option.PURKINJE_SHIFT_NOISE=浦肯野效应噪声
+option.PURKINJE_SHIFT_R=浦肯野效应-§4红
+option.PURKINJE_SHIFT_G=浦肯野效应-§2绿
+option.PURKINJE_SHIFT_B=浦肯野效应-§1蓝
 
 option.VIGNETTE_ENABLED=暗角
 option.VIGNETTE_STRENGTH=暗角强度

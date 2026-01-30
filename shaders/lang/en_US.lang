@@ -365,6 +365,10 @@ option.MANUAL_EV=Manual EV
 
 option.PURKINJE_SHIFT=Purkinje Shift
 option.PURKINJE_SHIFT_STRENGTH=Purkinje Shift Strength
+option.PURKINJE_SHIFT_NOISE=Purkinje Shift Noise
+option.PURKINJE_SHIFT_R=Purkinje Color §4Red
+option.PURKINJE_SHIFT_G=Purkinje Color §2Green
+option.PURKINJE_SHIFT_B=Purkinje Color §1Blue
 
 option.VIGNETTE_ENABLED=Vignette
 option.VIGNETTE_STRENGTH=Vignette Strength
