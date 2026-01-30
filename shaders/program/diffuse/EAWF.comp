@@ -121,12 +121,12 @@ void main() {
 
     vec3 worldNormal = OctDecodeSnorm(normalDepthData.xy);
 
-	float sumWeight = 0.25;
-	filteredColVar *= vec4(vec3(sumWeight), sumWeight * sumWeight);
+	float sumWeight = 1.0;
+	// filteredColVar *= vec4(vec3(sumWeight), sumWeight * sumWeight);
 	ivec2 randTexel = texelPos + ivec2((BlueNoise(texelPos, frameCounter + ATROUS_FILTER_SIZE) - 0.5) * float(min(ATROUS_FILTER_SIZE, 8)));
 
-	for (uint i = 0u; i < 8u; ++i) {
-		ivec2 sampleTexel = clamp(randTexel + offset3x3N[i] * ATROUS_FILTER_SIZE, ivec2(1), texelEnd);
+	for (uint i = 0u; i < 9u; ++i) {
+		ivec2 sampleTexel = clamp(randTexel + offset3x3[i] * ATROUS_FILTER_SIZE, ivec2(1), texelEnd);
 		vec3 sampleAux = texelFetch(colortex2, sampleTexel + tileOffset, 0).rgb;
 
 		vec4 sampleColVar = imageLoad(colorimg3, sampleTexel);
@@ -139,7 +139,7 @@ void main() {
 		// wL = exp(−|L0 − L1| / (σLvar + ε))
 		float logWeightL = abs(sampleLuma - centerLuma) * variancePhi;
 
-		float weight = kernel[i] * exp2((logWeightN + logWeightZ + logWeightL) * historyFactor);
+		float weight = /* kernel[i] *  */exp2((logWeightN + logWeightZ + logWeightL) * historyFactor);
 
 		filteredColVar += sampleColVar * vec4(vec3(weight), weight * weight);
 		sumWeight += weight;

@@ -344,7 +344,7 @@ void main() {
 		#ifdef SSILVB_ENABLED
 			#ifdef SVGF_ENABLED
 				float NdotV = abs(dot(worldNormal, worldDir));
-				sceneOut += YCoCgToRGB(SpatialUpscale(texelPos >> 1, worldNormal, length(viewPos), NdotV));
+				sceneOut += YCoCgToRGB(UpscaleDiffuseIndirect(texelPos, worldNormal, length(viewPos), NdotV));
 			#else
 				sceneOut += YCoCgToRGB(texelFetch(colortex3, texelPos >> 1, 0).rgb);
 			#endif

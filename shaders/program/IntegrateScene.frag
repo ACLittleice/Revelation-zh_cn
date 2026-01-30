@@ -179,7 +179,7 @@ void main() {
 	// Volumetric fog
 	#ifdef VOLUMETRIC_FOG
 		if (isEyeInWater == 0) {
-			mat2x3 volFogData = VolumetricFogSpatialUpscale(texelPos, -viewPos.z);
+			mat2x3 volFogData = UpscaleVolumetricFog(texelPos, -viewPos.z);
 			sceneOut = ApplyFog(sceneOut, volFogData);
 			bloomyFogMask = mean(volFogData[1]);
 		}
@@ -191,7 +191,7 @@ void main() {
 	// Underwater fog
 	if (isEyeInWater == 1) {
 		#ifdef UW_VOLUMETRIC_FOG
-			mat2x3 waterFog = VolumetricFogSpatialUpscale(texelPos, -viewPos.z);
+			mat2x3 waterFog = UpscaleVolumetricFog(texelPos, -viewPos.z);
 		#else
 			mat2x3 waterFog = AnalyticWaterFog(eyeSkylightSmooth, viewDistance, LdotV);
 		#endif
