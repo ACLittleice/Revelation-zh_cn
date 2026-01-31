@@ -310,6 +310,7 @@ option.WATER_WAVE_HEIGHT=Water Wave Height
 option.WATER_WAVE_SPEED=Water Wave Speed
 option.WATER_FOG_DENSITY=Water Fog Density
 option.WATER_IOR=Water IOR
+option.WATER_PARALLAX_SAMPLES=Water Parallax Samples
 
 option.WATER_ABSORPTION_R=Water Absorption §4Red
 option.WATER_ABSORPTION_G=Water Absorption §2Green

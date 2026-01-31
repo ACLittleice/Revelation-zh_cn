@@ -14,10 +14,10 @@ float FetchNoiseSmooth(in vec2 coord, in float t) {
 }
 
 float CalculateWaterHeight(in vec2 position) {
-	vec2 pos = 0.01 * position;
+	vec2 pos = 0.0075 * position;
 	float waveTime = 0.02 * WATER_WAVE_SPEED * frameTimeCounter;
 
-	float waveHeight = WATER_WAVE_HEIGHT * 0.5;
+	float waveHeight = WATER_WAVE_HEIGHT * 0.75;
 	#if !defined PASS_SHADOW
 		float lfNoise = texture(noisetex, pos * 0.2 + waveTime * 0.1).z;
 		waveHeight *= saturate(lfNoise * 2.0 - 0.75) + 0.25;
@@ -41,10 +41,10 @@ float CalculateWaterHeight(in vec2 position) {
 }
 
 float CalculateWaterHeightFull(in vec2 position) {
-	vec2 pos = 0.01 * position;
+	vec2 pos = 0.0075 * position;
 	float waveTime = 0.02 * WATER_WAVE_SPEED * frameTimeCounter;
 
-	float waveHeight = WATER_WAVE_HEIGHT * 0.5;
+	float waveHeight = WATER_WAVE_HEIGHT * 0.75;
 	#if !defined PASS_SHADOW
 		float lfNoise = texture(noisetex, pos * 0.2 + waveTime * 0.1).z;
 		waveHeight *= saturate(lfNoise * 2.0 - 0.75) + 0.25;
@@ -73,7 +73,7 @@ float CalculateWaterHeightFull(in vec2 position) {
 //================================================================================================//
 
 vec3 CalculateWaterNormal(in vec2 position) {
-	const float delta = 0.1;
+	const float delta = 0.05;
 
 	float height0 = CalculateWaterHeightFull(position);
 	float height1 = CalculateWaterHeightFull(position + vec2(delta, 0.0));
@@ -84,7 +84,7 @@ vec3 CalculateWaterNormal(in vec2 position) {
 }
 
 vec3 CalculateWaterNormal(in vec3 rayPos, in vec3 rayDir) {
-	const uint steps = 12u;
+	const uint steps = WATER_PARALLAX_SAMPLES;
 
 	vec3 rayStep = vec3(rayDir.xy / rayDir.z, 1.0) * inversesqrt(steps);
 

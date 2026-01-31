@@ -310,6 +310,7 @@ option.WATER_WAVE_HEIGHT=水波高度
 option.WATER_WAVE_SPEED=水波速度
 option.WATER_FOG_DENSITY=水雾密度
 option.WATER_IOR=水体折射率
+option.WATER_PARALLAX_SAMPLES=水体视差采样数
 
 option.WATER_ABSORPTION_R=水体吸收系数-§4红
 option.WATER_ABSORPTION_G=水体吸收系数-§2绿
