@@ -77,8 +77,8 @@ float luminance(in vec3 color) {
     return dot(color, vec3(0.2126729, 0.7151522, 0.0721750));
 }
 
-vec3 colorSaturation(in vec3 color, in float saturation) {
-    return mix(vec3(luminance(color)), color, saturation);
+vec3 desaturate(in vec3 color, in float amount) {
+    return mix(color, vec3(luminance(color)), amount);
 }
 
 // Modified from https://github.com/Jessie-LC/open-source-utility-code/blob/main/advanced/blackbody.glsl

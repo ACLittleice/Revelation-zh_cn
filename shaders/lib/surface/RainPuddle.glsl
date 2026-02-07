@@ -20,7 +20,7 @@ void CalculateRainPuddles(inout vec3 albedo, inout vec3 normal, inout vec3 specT
     puddles *= saturate(skylight * 5.0 - 4.0);
 
     // Apply wetness to albedo
-    vec3 wetAlbedo = colorSaturation(albedo, 0.75) * 0.5;
+    vec3 wetAlbedo = desaturate(albedo, 0.25) * 0.5;
     #if TEXTURE_FORMAT == 0
         // https://shaderlabs.org/wiki/LabPBR_Material_Standard
         float porosity = saturate(specTex.b * (255.0 / 64.0) - step(64.5, specTex.b * 255.0));

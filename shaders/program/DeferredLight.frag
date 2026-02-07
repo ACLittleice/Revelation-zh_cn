@@ -101,8 +101,8 @@ void main() {
 
 	if (materialID == 0u) { // Sky
 		vec3 transmittance;
-		sceneOut = GetSkyRadiance(worldDir, worldSunVector, transmittance) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
-		sceneOut = colorSaturation(sceneOut, 1.0 - wetness * 0.5); // Post-process
+		vec3 skyRadiance = GetSkyRadiance(worldDir, worldSunVector, transmittance) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
+		sceneOut = desaturate(skyRadiance, wetness * 0.5); // Post-process
 
 		#ifdef CLOUDS
 			#ifdef CLOUD_TAAU_ENABLED

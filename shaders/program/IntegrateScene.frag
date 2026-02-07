@@ -167,7 +167,7 @@ void main() {
 				float transmittance = exp2(-BORDER_FOG_FALLOFF * density);
 
 				vec3 skyRadiance = GetSkyRadiance(worldDir, worldSunVector) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
-				skyRadiance = colorSaturation(skyRadiance, 1.0 - wetness * 0.5); // Post-process
+				skyRadiance = desaturate(skyRadiance, wetness * 0.5); // Post-process
 				sceneOut = mix(skyRadiance, sceneOut, transmittance);
 			}
 		#endif
