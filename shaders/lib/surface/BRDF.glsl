@@ -12,41 +12,30 @@
 vec3 SampleCosineHemisphere(in vec3 normal, in vec2 xy) {
     float phi = TAU * xy.x;
     float cosTheta = xy.y * 2.0 - 1.0;
-    float sinTheta = sqrt(saturate(1.0 - cosTheta * cosTheta));
-    vec3 hemisphere = vec3(cossin(phi) * sinTheta, cosTheta);
+    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
 
+    vec3 hemisphere = vec3(cossin(phi) * sinTheta, cosTheta);
 	vec3 cosineVector = normalize(normal + hemisphere);
 	return signMul(cosineVector, dot(cosineVector, normal));
 }
 
-// From https://github.com/Jessie-LC/open-source-utility-code/blob/main/simple/misc.glsl
 vec3 SampleConeVector(in vec3 vector, in vec2 xy, in float angle) {
-    xy.x *= TAU;
-    float cosAngle = cos(angle);
-    xy.y = xy.y * (1.0 - cosAngle) + cosAngle;
-    vec3 sphereCap = vec3(vec2(cos(xy.x), sin(xy.x)) * sqrt(1.0 - xy.y * xy.y), xy.y);
-    return rotate(sphereCap, vec3(0.0, 0.0, 1.0), vector);
+    float phi = TAU * xy.x;
+    float cosTheta = mix(angle, 1.0, xy.y);
+    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+
+    vec3 sphereCap = vec3(cossin(phi) * sinTheta, cosTheta);
+    return BuildOrthonormalBasis(vector) * sphereCap;
 }
 
 // pdf = D * NoH / (4 * VoH)
-vec3 SampleGGX(in vec2 Xi, in float a, in vec3 N) {
-    // Spherical coordinates
-    float phi = TAU * Xi.x;
-    float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
+vec3 SampleGGX(in vec2 xy, in float alpha, in vec3 normal) {
+    float phi = TAU * xy.x;
+    float cosTheta = sqrt((1.0 - xy.y) / (1.0 + (alpha * alpha - 1.0) * xy.y));
     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
 
-    // Convert to hemisphere vector
-    vec3 H;
-    H.x = cos(phi) * sinTheta;
-    H.y = sin(phi) * sinTheta;
-    H.z = cosTheta;
-
-    // Convert tangent space normal to world space
-    vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-    vec3 tangent = normalize(cross(up, N));
-    vec3 bitangent = cross(N, tangent);
-
-    return tangent * H.x + bitangent * H.y + N * H.z;
+    vec3 hemisphere = vec3(cossin(phi) * sinTheta, cosTheta);
+    return BuildOrthonormalBasis(normal) * hemisphere;
 }
 
 // Sampling Visible GGX Normals with Spherical Caps
@@ -57,10 +46,10 @@ vec3 SampleGGXVNDF(in vec3 viewDir, in float alpha, in vec2 xy) {
 
 	viewDir = normalize(vec3(alpha * viewDir.xy, viewDir.z));
 
+    float phi = TAU * xy.x;
     float cosTheta = 1.0 - viewDir.z * xy.y - xy.y;
     float sinTheta = sqrt(saturate(1.0 - cosTheta * cosTheta));
-    float phi = TAU * xy.x;
-    viewDir += vec3(vec2(cos(phi), sin(phi)) * sinTheta, cosTheta);
+    viewDir += vec3(cossin(phi) * sinTheta, cosTheta);
 
 	return normalize(vec3(alpha * viewDir.xy, viewDir.z));
 }

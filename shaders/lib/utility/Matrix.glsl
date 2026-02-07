@@ -37,9 +37,16 @@ mat4 BuildPerspectiveMat(float fov, float aspect, float near, float far) {
     );
 }
 
-mat3 ConstructTBN(vec3 n) {
-	vec3 b = normalize(vec3(0.0, n.z, -n.y));
-	return mat3(cross(b, n), b, n);
+// https://www.jcgt.org/published/0006/01/01/
+mat3 BuildOrthonormalBasis(vec3 n) {
+    float s = signI(n.z);
+    float a = -rcp(s + n.z);
+    float b = n.x * n.y * a;
+
+    vec3 b1 = vec3(1.0 + s * n.x * n.x * a, s * b, -s * n.x);
+    vec3 b2 = vec3(b, s + n.y * n.y * a, -n.y);
+
+    return mat3(b1, b2, n);
 }
 
 mat2 rotateMat(float angle) {
