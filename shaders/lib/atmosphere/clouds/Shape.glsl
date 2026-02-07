@@ -53,7 +53,7 @@ float CloudHighDensity(in vec2 rayPos) {
 
 	// Curl noise to simulate wind, makes the positioning of the clouds more natural
 	vec2 curlNoise = texture(curlNoiseTex, rayPos * 4e-5).xy * 0.1;
-	vec2 position = rayPos * 2e-4 + curlNoise;
+	vec2 position = rayPos * 1.8e-4 + curlNoise;
 
 	float density = 0.0;
 
@@ -146,6 +146,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 
 	vec3 noisePos = (rayPos - windDir * heightFraction * cumulusTopOffset) * rcp(3e3);
 	noisePos.y += dot(noisePos.xz, vec2(0.2, 0.3)); // Reduce repetition pattern
+	noisePos += dimensionalProfile * 0.05; // Add some distortion
 
 	#if 0
 	vec2 billowyNoise = texture(baseNoiseTex, fract(noisePos)).xy;
