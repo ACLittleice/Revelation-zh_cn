@@ -22,7 +22,13 @@ vec3 SampleCosineHemisphere(in vec2 xy) {
 }
 
 vec3 SampleCosineHemisphere(in vec3 vector, in vec2 xy) {
-    return BuildOrthonormalBasis(vector) * SampleCosineHemisphere(xy);
+    float phi = TAU * xy.x;
+    float cosTheta = 1.0 - xy.y * 2.0;
+    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+
+    vec3 hemisphere = vec3(cossin(phi) * sinTheta, cosTheta);
+	hemisphere = normalize(vector + hemisphere);
+	return signMul(hemisphere, dot(hemisphere, vector));
 }
 
 vec3 SampleConeVector(in vec3 vector, in vec2 xy, in float angle) {
