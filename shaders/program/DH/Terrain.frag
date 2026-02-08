@@ -42,7 +42,7 @@ void main() {
 		const float res = 8.0;
 		const float strength = 0.5;
 
-		mat3 tbnMatrix = ConstructTBN(flatNormal);
+		mat3 tbnMatrix = BuildOrthonormalBasis(flatNormal);
 
 		vec2 noisePos = ((worldPos + cameraPosition) * tbnMatrix).xy;
 		float noise = texture(noisetex, noisePos * (res / 256.0)).x * 2.0;
