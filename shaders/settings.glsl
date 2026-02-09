@@ -13,6 +13,7 @@
 #define INCLUDE_SETTINGS
 
 #define RENDER_MODE 1 // [0 1]
+// #define RP_SUPPORT
 
 #define INFO   Alpha // Development stage of the shaderpack. [Alpha Beta Release]
 #define AUTHOR HaringPro // Copyright holder of the shaderpack. [HaringPro]
@@ -159,20 +160,12 @@ const ivec2 skyMapRes = ivec2(256, 256);
 
 	#define TEXTURE_FORMAT 0 // [0 1 2]
 
-	// #define MOD_BLOCK_SUPPORT // Enables mod block support
-
+	// #define MOD_BLOCK_SUPPORT
 	#ifdef MOD_BLOCK_SUPPORT
 	#endif
 
-	// #define NORMAL_MAPPING // Enables normal mapping
-	// #define SPECULAR_MAPPING // Enables specular mapping
-
-	#if !defined MC_NORMAL_MAP
-		#undef NORMAL_MAPPING
-	#endif
-
-	#ifdef SPECULAR_MAPPING
-	#endif
+	#define NORMAL_MAPPING
+	#define SPECULAR_MAPPING
 
 	#define DEFAULT_DIELECTRIC_F0 0.04 // Default dielectric F0. [0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
 
@@ -210,20 +203,31 @@ const ivec2 skyMapRes = ivec2(256, 256);
 	#define REFRACTION_STRENGTH 1.0 // [0.0 0.1 0.2 0.25 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 5.5 6.0 6.5 7.0 7.5 8.0 9.5 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 19.0 20.0]
 
 /* Emissive */
-	#define EMISSIVE_MODE 0 // [0 1 2]
+	#define EMISSIVE_MODE 1 // [0 1 2]
 	#define EMISSIVE_BRIGHTNESS 4.0 // [0.0 0.01 0.02 0.05 0.07 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.6 0.7 0.8 0.9 1.0 1.5 2.0 2.5 3.0 3.5 4.0 4.5 5.0 5.5 6.0 6.5 7.0 7.5 8.0 8.5 9.0 9.5 10.0 10.5 11.0 11.5 12.0 12.5 13.0 13.5 14.0 14.5 15.0 15.5 16.0 16.5 17.0 17.5 18.0 18.5 19.0 19.5 20.0 20.5 21.0 21.5 22.0 22.5 23.0 23.5 24.0 24.5 25.0]
 	#define EMISSIVE_CURVE 1.0 // [0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0 1.05 1.1 1.15 1.2 1.25 1.3 1.35 1.4 1.45 1.5 1.55 1.6 1.65 1.7 1.75 1.8 1.85 1.9 1.95 2.0 2.05 2.1 2.15 2.2 2.25 2.3 2.35 2.4 2.45 2.5 2.55 2.6 2.65 2.7 2.75 2.8 2.85 2.9 2.95 3.0 3.05 3.1 3.15 3.2 3.25 3.3 3.35 3.4 3.45 3.5 3.55 3.6 3.65 3.7 3.75 3.8 3.85 3.9 3.95 4.0]
 
 /* Subsurface Scattering */
-	#define SUBSURFACE_SCATTERING_MODE 0 // [0 1 2]
+	#define SUBSURFACE_SCATTERING_MODE 1 // [0 1 2]
 	#define SUBSURFACE_SCATTERING_STRENGTH 1.0 // [0.0 0.01 0.02 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5.0 7.0 10.0 15.0]
 	#define SUBSURFACE_SCATTERING_BRIGHTNESS 1.0 // [0.0 0.1 0.2 0.3 0.5 0.7 1.0 1.5 2.0 2.5 3.0 3.5 4.0 4.5 5.0 5.5 6.0 6.5 7.0 7.5 8.0 8.5 9.0 9.5 10.0]
 	#define SUBSURFACE_SCATTERING_RADIUS 0.25 // [0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95 1.0]
 
-	#if !defined NORMAL_MAPPING
+	#ifndef RP_SUPPORT
+		#undef NORMAL_MAPPING
+		#undef SPECULAR_MAPPING
+	#endif
+
+	#ifndef NORMAL_MAPPING
+		#undef MC_NORMAL_MAP
 		#undef PARALLAX
 		#undef AUTO_GENERATED_NORMAL
 	#endif
+
+	#ifndef SPECULAR_MAPPING
+		#undef MC_SPECULAR_MAP
+	#endif
+
 	#if defined AUTO_GENERATED_NORMAL
 		#undef PARALLAX
 	#endif

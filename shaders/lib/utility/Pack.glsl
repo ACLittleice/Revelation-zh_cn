@@ -1,4 +1,4 @@
-#if defined NORMAL_MAPPING
+#if defined MC_NORMAL_MAP
 	void DecodeNormalTex(inout vec3 normalTex) {
         if (any(greaterThan(normalTex, vec3(0.003)))) {
 			normalTex = normalTex * 2.0 - 1.0 + r255;

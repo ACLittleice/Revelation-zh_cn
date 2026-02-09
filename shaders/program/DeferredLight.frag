@@ -140,7 +140,7 @@ void main() {
 
 		vec2 lightmap = Unpack2x8U(materialPack.x);
 
-		#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+		#if defined MC_SPECULAR_MAP
 			vec4 specularTex = ExtractSpecularTex(materialPack);
 
 			// Compute rain puddles
@@ -181,7 +181,7 @@ void main() {
 					break;
 			}
 		#endif
-		#if TEXTURE_FORMAT == 0 && SUBSURFACE_SCATTERING_MODE > 0 && defined SPECULAR_MAPPING
+		#if TEXTURE_FORMAT == 0 && SUBSURFACE_SCATTERING_MODE > 0 && defined MC_SPECULAR_MAP
 			sssAmount = max(sssAmount, specularTex.b * step(64.5 * r255, specularTex.b));
 		#endif
 
@@ -222,7 +222,7 @@ void main() {
 
 			if (dot(shadow, vec3(1.0)) > EPS) {
 			#ifdef SCREEN_SPACE_SHADOWS
-				#if defined NORMAL_MAPPING
+				#if defined MC_NORMAL_MAP
 					vec3 viewFlatNormal = mat3(gbufferModelView) * flatNormal;
 				#else
 					#define viewFlatNormal viewNormal
@@ -263,7 +263,7 @@ void main() {
 
 					sceneOut += shadow * DiffuseHammon(LdotV, NdotV, NdotL, NdotH, material.roughness, albedo);
 
-					#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+					#if defined MC_SPECULAR_MAP
 						vec3 f0 = GetMaterialF0(material.metalness, albedo);
 					#else
 						const vec3 f0 = vec3(DEFAULT_DIELECTRIC_F0);
@@ -307,7 +307,7 @@ void main() {
 
 		// Emissive & Blocklight
 		vec3 blocklightColor = blackbody(float(BLOCKLIGHT_TEMPERATURE));
-		#if EMISSIVE_MODE > 0 && defined SPECULAR_MAPPING
+		#if EMISSIVE_MODE > 0 && defined MC_SPECULAR_MAP
 			sceneOut += material.emissiveness * dot(albedo, vec3(0.75));
 		#endif
 		#if EMISSIVE_MODE < 2

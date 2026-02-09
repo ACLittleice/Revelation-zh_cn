@@ -1,6 +1,5 @@
 # PROFILES
 profile.Default=默认
-profile.ResPBR=资源包PBR
 
 
 # SCREENS
@@ -56,6 +55,8 @@ screen.Color=色彩
 option.INFO=Revelation
 option.AUTHOR=作者
 option.AUTHOR.comment=版权所有 (C) 2024 HaringPro. Apache-2.0许可证
+
+option.RP_SUPPORT=PBR资源包支持
 
 # Atmospherics
 option.PLANET_GROUND=行星地面

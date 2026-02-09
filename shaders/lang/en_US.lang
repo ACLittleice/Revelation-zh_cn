@@ -1,6 +1,5 @@
 # PROFILES
 profile.Default=Default
-profile.ResPBR=Resource Pack PBR
 
 
 # SCREENS
@@ -56,6 +55,8 @@ screen.Color=Color
 option.INFO=Revelation
 option.AUTHOR=Author
 option.AUTHOR.comment=Copyright (C) 2024 HaringPro. Apache License 2.0
+
+option.RP_SUPPORT=Resource Pack Support
 
 # Atmospherics
 option.PLANET_GROUND=Planet Ground

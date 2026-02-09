@@ -42,7 +42,7 @@ out vec4 specularOut;
 
 #include "/lib/atmosphere/Common.glsl"
 
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+#if defined MC_SPECULAR_MAP
 	#include "/lib/surface/BRDF.glsl"
 	#include "/lib/surface/Reflection.glsl"
 #endif
@@ -51,7 +51,7 @@ out vec4 specularOut;
 void main() {
 	specularOut = vec4(0.0);
 
-	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+	#if defined MC_SPECULAR_MAP
 		ivec2 texelPos = ivec2(gl_FragCoord.xy);
 		vec3 screenPos = vec3(gl_FragCoord.xy * viewPixelSize, loadDepth0(texelPos));
 

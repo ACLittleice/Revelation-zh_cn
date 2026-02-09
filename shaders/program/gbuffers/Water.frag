@@ -14,11 +14,11 @@ layout (location = 2) out vec4 waterOut;
 
 uniform sampler2D tex;
 
-#if defined NORMAL_MAPPING
+#if defined MC_NORMAL_MAP
 	uniform sampler2D normals;
 #endif
 
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+#if defined MC_SPECULAR_MAP
     uniform sampler2D specular;
 #endif
 
@@ -96,7 +96,7 @@ void main() {
 
 		if (albedo.a < 0.1) { discard; return; }
 
-		#if defined NORMAL_MAPPING
+		#if defined MC_NORMAL_MAP
 			vec3 normalTex = texture(normals, texCoord).rgb;
 			DecodeNormalTex(normalTex);
 			normalOut.zw = OctEncodeUnorm(tbnMatrix * normalTex);

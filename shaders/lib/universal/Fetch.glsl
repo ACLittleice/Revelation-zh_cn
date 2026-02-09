@@ -10,7 +10,7 @@ void FetchNormalData(in ivec2 texel, out vec3 geometryNormal, out vec3 surfaceNo
 	vec4 pack = loadNormalPack(texel);
 	geometryNormal = OctDecodeUnorm(pack.xy);
 
-	#if defined NORMAL_MAPPING || defined PASS_TRANSLUCENT
+	#if defined MC_NORMAL_MAP || defined PASS_TRANSLUCENT
 		surfaceNormal = OctDecodeUnorm(pack.zw);
 	#else
 		surfaceNormal = geometryNormal;

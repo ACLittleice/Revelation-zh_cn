@@ -23,11 +23,11 @@ in vec3 worldPos;
 
 uniform sampler2D tex;
 
-#if defined NORMAL_MAPPING
+#if defined MC_NORMAL_MAP
 	uniform sampler2D normals;
 #endif
 
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+#if defined MC_SPECULAR_MAP
     uniform sampler2D specular;
 #endif
 
@@ -80,7 +80,7 @@ void main() {
 
 	vec3 geoNormal = normalize(cross(deltaPos1, deltaPos2));
 
-	#ifdef NORMAL_MAPPING
+	#ifdef MC_NORMAL_MAP
         vec3 deltaPos1Perp = cross(geoNormal, deltaPos1);
         vec3 deltaPos2Perp = cross(deltaPos2, geoNormal);
 
@@ -124,7 +124,7 @@ void main() {
 	materialOut.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
 	materialOut.y = materialID;
 
-	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+	#if defined MC_SPECULAR_MAP
 		vec4 specularTex = texture(specular, texCoord);
 		materialOut.z = Packup2x8U(specularTex.xy);
 		materialOut.w = Packup2x8U(specularTex.zw);
@@ -132,7 +132,7 @@ void main() {
 
 	normalOut.xy = OctEncodeUnorm(geoNormal);
 
-	#if defined NORMAL_MAPPING
+	#if defined MC_NORMAL_MAP
         vec3 normalTex = texture(normals, texCoord).rgb;
         DecodeNormalTex(normalTex);
 		normalOut.zw = OctEncodeUnorm(tbnMatrix * normalTex);

@@ -12,7 +12,7 @@ layout (location = 1) out vec4 normalOut;
 //======// Input //===============================================================================//
 
 flat in uint normalPack;
-#if defined NORMAL_MAPPING
+#if defined MC_NORMAL_MAP
 flat in uvec2 tangentPack;
 #endif
 
@@ -24,11 +24,11 @@ in vec2 lightmap;
 
 uniform sampler2D tex;
 
-#if defined NORMAL_MAPPING
+#if defined MC_NORMAL_MAP
 	uniform sampler2D normals;
 #endif
 
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+#if defined MC_SPECULAR_MAP
     uniform sampler2D specular;
 #endif
 
@@ -51,7 +51,7 @@ void main() {
 
 	normalOut.xy = unpackSnorm2x16(normalPack) * 0.5 + 0.5;
 
-	#if defined NORMAL_MAPPING
+	#if defined MC_NORMAL_MAP
 		// Construct TBN matrix
 		vec3 tangent = OctDecodeSnorm(unpackSnorm2x16(tangentPack.x));
 		vec3 normal = OctDecodeUnorm(normalOut.xy);

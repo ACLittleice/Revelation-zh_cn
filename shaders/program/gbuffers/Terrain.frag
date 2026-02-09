@@ -18,7 +18,7 @@ layout (location = 3) out float parallaxShadowOut;
 //======// Input //===============================================================================//
 
 flat in uint normalPack;
-#if defined NORMAL_MAPPING
+#if defined MC_NORMAL_MAP
 flat in uvec2 tangentPack;
 #endif
 
@@ -37,11 +37,11 @@ flat in uint materialID;
 
 uniform sampler2D tex;
 
-#if defined NORMAL_MAPPING
+#if defined MC_NORMAL_MAP
 	uniform sampler2D normals;
 #endif
 
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+#if defined MC_SPECULAR_MAP
     uniform sampler2D specular;
 #endif
 
@@ -94,7 +94,7 @@ void main() {
 	normalOut.xy = unpackSnorm2x16(normalPack) * 0.5 + 0.5;
 
 	// Construct TBN matrix
-	#if defined NORMAL_MAPPING
+	#if defined MC_NORMAL_MAP
 		vec3 tangent = OctDecodeSnorm(unpackSnorm2x16(tangentPack.x));
 		vec3 normal = OctDecodeUnorm(normalOut.xy);
 		vec3 bitangent = cross(tangent, normal) * uintBitsToFloat(tangentPack.y);
@@ -159,7 +159,7 @@ void main() {
 	#else
 		#define ReadTexture(tex) texture(tex, texCoord)
 
-		#if defined NORMAL_MAPPING
+		#if defined MC_NORMAL_MAP
 			#ifdef AUTO_GENERATED_NORMAL
 				vec3 normalTex = AutoGenerateNormal();
 			#else
@@ -186,7 +186,7 @@ void main() {
 	materialOut.x = PackupDithered2x8U(lightmap, dither);
 	materialOut.y = materialID;
 
-	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+	#if defined MC_SPECULAR_MAP
 		vec4 specularTex = ReadTexture(specular);
 		materialOut.z = Packup2x8U(specularTex.xy);
 		materialOut.w = Packup2x8U(specularTex.zw);

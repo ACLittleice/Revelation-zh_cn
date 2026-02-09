@@ -9,7 +9,7 @@ in ivec2 vaUV2;
 
 //======// Output //==============================================================================//
 
-#if defined NORMAL_MAPPING
+#if defined MC_NORMAL_MAP
 	out mat3 tbnMatrix;
 #else
 	out vec3 geoNormal;
@@ -66,7 +66,7 @@ void main() {
 		gl_Position.xy += taaOffset * gl_Position.w;
 	#endif
 
-	#if defined NORMAL_MAPPING
+	#if defined MC_NORMAL_MAP
 		tbnMatrix[2] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
 		tbnMatrix[0] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * at_tangent.xyz);
 		tbnMatrix[1] = signMul(cross(tbnMatrix[0], tbnMatrix[2]), at_tangent.w);

@@ -14,7 +14,7 @@ layout (location = 2) out vec4 normalOut;
 
 uniform sampler2D tex;
 
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+#if defined MC_SPECULAR_MAP
     uniform sampler2D specular;
 #endif
 
@@ -46,7 +46,7 @@ void main() {
 	materialOut.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
 	materialOut.y = lightmap.x > 0.999 ? 20u : 40u;
 
-	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+	#if defined MC_SPECULAR_MAP
 		vec4 specularTex = texture(specular, texCoord);
 		materialOut.z = Packup2x8U(specularTex.xy);
 		materialOut.w = Packup2x8U(specularTex.zw);
