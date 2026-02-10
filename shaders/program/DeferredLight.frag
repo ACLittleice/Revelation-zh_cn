@@ -272,7 +272,7 @@ void main() {
 					const vec3 f0 = vec3(DEFAULT_DIELECTRIC_F0);
 				#endif
 
-				specularDirect = shadow * SphericalAreaGGX(LdotH, NdotV, NdotL, LdotV, material.roughness, f0);
+				specularDirect = shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, material.roughness, f0);
 			}
 		}
 
