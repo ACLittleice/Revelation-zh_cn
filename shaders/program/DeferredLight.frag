@@ -213,14 +213,14 @@ void main() {
 		// Shadows and SSS
         if (doShadows || sssAmount > 1e-3) {
 			vec3 shadow = vec3(1.0);
+			float surfaceDepth = 0.0;
 
 			// PCSS
         	if (distanceFade < EPS) {
 				vec3 normalOffset = flatNormal * (approxSqrt(worldDistSquared) * 2e-3 + 2e-2) * (2.0 - saturate(NdotL));
-				shadow = CalculatePCSS(worldPos, normalOffset, dither, sssAmount);
+				shadow = CalculatePCSS(worldPos, normalOffset, dither, surfaceDepth);
 			}
 
-			if (dot(shadow, vec3(1.0)) > EPS) {
 			#ifdef SCREEN_SPACE_SHADOWS
 				#if defined MC_NORMAL_MAP
 					vec3 viewFlatNormal = mat3(gbufferModelView) * flatNormal;
@@ -233,44 +233,46 @@ void main() {
 				float contactShadow = float(doShadows);
 			#endif
 
-				float LdotV = dot(worldLightVector, -worldDir);
+			float LdotV = dot(worldLightVector, -worldDir);
 
-				// Subsurface scattering
-				if (sssAmount > 1e-3) {
-					float cutout = float(clamp(materialID, 1000u, 1003u) == materialID || clamp(materialID, 27u, 28u) == materialID);
-					vec3 sss = mix(shadow, vec3(contactShadow), saturate(distanceFade + cutout * 0.3));
+			// Subsurface scattering
+			if (sssAmount > 1e-3) {
+				vec3 beta = saturate(albedo * inversesqrt(luminance(albedo))) + EPS;
+				vec3 sigmaA = -log2(beta) * 8.0 / (sssAmount * SUBSURFACE_SCATTERING_STRENGTH);
+				vec3 sigmaS = 4.0 * beta * sssAmount;
 
-					// Wavelength-dependent approximation
-					sss *= pow((albedo + EPS), vec3(cube(saturate(1.0 - mean(sss))) * 2.0 - 0.2)) * sunlightBase;
+				float phase = HenyeyGreensteinPhase(-LdotV, 0.7) * 0.25 + uniformPhase * 0.75;
+				vec3 sss = sigmaS * phase * exp2(-rLOG2 * surfaceDepth * (sigmaS + sigmaA));
 
-					float phase = HenyeyGreensteinPhase(-LdotV, 0.7) * 0.25 + uniformPhase * 0.75;
-					sceneOut += sss * phase * (2.0 * SUBSURFACE_SCATTERING_BRIGHTNESS);
-				}
-				if (doShadows) {
-					shadow *= contactShadow * sunlightBase;
+				float cutout = float(clamp(materialID, 1000u, 1003u) == materialID || clamp(materialID, 27u, 28u) == materialID);
+				sss *= contactShadow * (distanceFade + cutout) + 1.0 - distanceFade;
 
-					// Apply parallax shadows
-					#ifdef PARALLAX_SHADOW
-						#if defined PARALLAX && !defined PARALLAX_DEPTH_WRITE
-							shadow *= oms(loadSceneMain(texelPos).x);
-						#endif
+				sceneOut += sunlightBase * sss * SUBSURFACE_SCATTERING_BRIGHTNESS;
+			}
+			if (doShadows) {
+				shadow *= contactShadow * sunlightBase;
+
+				// Apply parallax shadows
+				#ifdef PARALLAX_SHADOW
+					#if defined PARALLAX && !defined PARALLAX_DEPTH_WRITE
+						shadow *= oms(loadSceneMain(texelPos).x);
 					#endif
+				#endif
 
-					vec3 halfway = normalize(worldLightVector - worldDir);
-					float NdotV = abs(dot(worldNormal, worldDir));
-					float NdotH = dot(worldNormal, halfway);
-					float LdotH = dot(worldLightVector, halfway);
+				vec3 halfway = normalize(worldLightVector - worldDir);
+				float NdotV = abs(dot(worldNormal, worldDir));
+				float NdotH = dot(worldNormal, halfway);
+				float LdotH = dot(worldLightVector, halfway);
 
-					sceneOut += shadow * DiffuseHammon(LdotV, NdotV, NdotL, NdotH, material.roughness, albedo);
+				sceneOut += shadow * DiffuseHammon(LdotV, NdotV, NdotL, NdotH, material.roughness, albedo);
 
-					#if defined MC_SPECULAR_MAP
-						vec3 f0 = GetMaterialF0(material.metalness, albedo);
-					#else
-						const vec3 f0 = vec3(DEFAULT_DIELECTRIC_F0);
-					#endif
+				#if defined MC_SPECULAR_MAP
+					vec3 f0 = GetMaterialF0(material.metalness, albedo);
+				#else
+					const vec3 f0 = vec3(DEFAULT_DIELECTRIC_F0);
+				#endif
 
-					specularDirect = shadow * SphericalAreaGGX(LdotH, NdotV, NdotL, LdotV, material.roughness, f0);
-				}
+				specularDirect = shadow * SphericalAreaGGX(LdotH, NdotV, NdotL, LdotV, material.roughness, f0);
 			}
 		}
 
