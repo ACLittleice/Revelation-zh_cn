@@ -123,7 +123,7 @@ vec3 CalculatePCSS(in vec3 worldPos, in vec3 normalOffset, in float dither, out 
 
 	vec3 pcss = vec3(1.0);
 	if (saturate(shadowScreenPos) == shadowScreenPos) {
-		blockerDepth = BlockerSearch(shadowScreenPos, dither * TAU, 0.25 * distortionFactor);
+		blockerDepth = BlockerSearch(shadowScreenPos, dither * TAU, 0.15 * distortionFactor);
 
 		const float minRadius = 0.008 / atmosphereModel.sun_angular_radius;
 		float sharpenFactor = saturate(blockerDepth * rcp(minRadius));
