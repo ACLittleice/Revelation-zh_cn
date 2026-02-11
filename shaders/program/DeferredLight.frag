@@ -168,7 +168,7 @@ void main() {
 					sssAmount = 0.6;
 					break;
 				case 13u: // Leaves
-					sssAmount = 0.85;
+					sssAmount = 0.8;
 					break;
 				case 37u: case 39u: // Weak SSS
 					sssAmount = 0.5;
@@ -177,7 +177,7 @@ void main() {
 					sssAmount = 0.8;
 					break;
 				case 40u: // Particles
-					sssAmount = 0.35;
+					sssAmount = 0.3;
 					break;
 			}
 		#endif
@@ -237,15 +237,15 @@ void main() {
 
 			// Subsurface scattering
 			if (sssAmount > 1e-3) {
-				vec3 beta = saturate(albedo * inversesqrt(luminance(albedo))) + EPS;
-				vec3 sigmaA = -log2(beta) * 8.0 / (sssAmount * SUBSURFACE_SCATTERING_STRENGTH);
+				vec3 beta = approxSqrt(saturate(normalize(albedo)));
+				vec3 sigmaA = oms(beta) * 8.0 / (sssAmount * SUBSURFACE_SCATTERING_STRENGTH);
 				vec3 sigmaS = 4.0 * beta * sssAmount;
 
 				float phase = HenyeyGreensteinPhase(-LdotV, 0.7) * 0.25 + uniformPhase * 0.75;
 				vec3 sss = sigmaS * phase * exp2(-rLOG2 * surfaceDepth * (sigmaS + sigmaA));
 
 				float cutout = float(clamp(materialID, 1000u, 1003u) == materialID || clamp(materialID, 27u, 28u) == materialID);
-				sss *= contactShadow * (distanceFade + cutout) + 1.0 - distanceFade;
+				sss *= mix(1.0, contactShadow, saturate(distanceFade + cutout * 0.5));
 
 				sceneOut += sunlightBase * sss * SUBSURFACE_SCATTERING_BRIGHTNESS;
 			}
