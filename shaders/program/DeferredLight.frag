@@ -238,7 +238,7 @@ void main() {
 			// Subsurface scattering
 			if (sssAmount > 1e-3) {
 				vec3 beta = approxSqrt(saturate(normalize(albedo)));
-				vec3 sigmaA = oms(beta) * 8.0 / (sssAmount * SUBSURFACE_SCATTERING_STRENGTH);
+				vec3 sigmaA = oms(beta) * 16.0 / (sssAmount * SUBSURFACE_SCATTERING_STRENGTH);
 				vec3 sigmaS = 4.0 * beta * sssAmount;
 
 				float phase = HenyeyGreensteinPhase(-LdotV, 0.7) * 0.25 + uniformPhase * 0.75;
