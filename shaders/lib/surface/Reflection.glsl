@@ -20,12 +20,12 @@ vec4 CalculateSpecularReflections(Material material, in vec3 worldNormal, in vec
 		vec4 reflection = vec4(0.0);
 		if (hit) {
 			ivec2 texel = uvToTexel(screenPos.xy);
-			reflection.rgb = texture(colortex4, screenPos.xy * 0.5, 0).rgb;
+			reflection.rgb = texture(colortex4, screenPos.xy * 0.5).rgb;
 
 			vec3 reflectViewPos = ScreenToViewSpace(vec3(screenPos.xy, loadDepth0(texel)));
 			reflection.a = distance(reflectViewPos, viewPos);
 		} else if (skylight > 1e-3) {
-			vec3 skyRadiance = textureBicubic(skyMapTex, ProjectSky(lightDir)).rgb;
+			vec3 skyRadiance = textureBicubic(skyMapTex, saturate(ProjectSky(lightDir))).rgb;
 
 			reflection = vec4(skyRadiance * skylight, far);
 		}
