@@ -17,20 +17,20 @@ float CalculateWaterHeight(in vec2 position) {
 	vec2 pos = 0.0075 * position;
 	float waveTime = 0.02 * WATER_WAVE_SPEED * frameTimeCounter;
 
-	float waveHeight = WATER_WAVE_HEIGHT * 0.75;
+	float waveHeight = WATER_WAVE_HEIGHT * 0.4;
 	#if !defined PASS_SHADOW
 		float lfNoise = texture(noisetex, pos * 0.2 + waveTime * 0.1).z;
 		waveHeight *= saturate(lfNoise * 2.0 - 0.75) + 0.25;
-		pos += lfNoise * 0.1;
+		pos += lfNoise * 0.05;
 	#endif
 
 	float waves = FetchNoise(pos, waveTime);
 
-	pos = goldenRotate * (1.75 * pos) + waves * 0.05;
+	pos = goldenRotate * (1.75 * pos) + waves * 0.03;
 	waveTime *= 1.25;
 	waves += FetchNoise(pos, waveTime) * 0.75;
 
-	pos = goldenRotate * (1.75 * pos) + waves * 0.05;
+	pos = goldenRotate * (1.75 * pos) + waves * 0.03;
 	waveTime *= 1.25;
 	waves += FetchNoise(pos, waveTime) * 0.15;
 
@@ -44,20 +44,20 @@ float CalculateWaterHeightFull(in vec2 position) {
 	vec2 pos = 0.0075 * position;
 	float waveTime = 0.02 * WATER_WAVE_SPEED * frameTimeCounter;
 
-	float waveHeight = WATER_WAVE_HEIGHT * 0.75;
+	float waveHeight = WATER_WAVE_HEIGHT * 0.4;
 	#if !defined PASS_SHADOW
 		float lfNoise = texture(noisetex, pos * 0.2 + waveTime * 0.1).z;
 		waveHeight *= saturate(lfNoise * 2.0 - 0.75) + 0.25;
-		pos += lfNoise * 0.1;
+		pos += lfNoise * 0.05;
 	#endif
 
 	float waves = FetchNoiseSmooth(pos, waveTime);
 
-	pos = goldenRotate * (1.75 * pos) + waves * 0.05;
+	pos = goldenRotate * (1.75 * pos) + waves * 0.03;
 	waveTime *= 1.25;
 	waves += FetchNoiseSmooth(pos, waveTime) * 0.75;
 
-	pos = goldenRotate * (1.75 * pos) + waves * 0.05;
+	pos = goldenRotate * (1.75 * pos) + waves * 0.03;
 	waveTime *= 1.25;
 	waves += FetchNoiseSmooth(pos, waveTime) * 0.15;
 

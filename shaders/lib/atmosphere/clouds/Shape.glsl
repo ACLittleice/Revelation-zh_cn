@@ -63,12 +63,12 @@ float CloudHighDensity(in vec2 rayPos) {
 		float coverage = CLOUD_CI_COVERAGE - 0.3 + texture(noisetex, position * 0.01).z;
 		coverage = saturate(coverage - texture(cloudMapTex, (position * 0.01)).y);
 
-		if (coverage > 0.25) {
+		if (coverage > 0.3) {
 			vec2 p = position + coverage * 0.5 - windOffset * 1e-4;
 			float cirrus = textureBicubic(cirroLutTex, p * 0.25).y;
 
 			cirrus *= saturate(cirrus + coverage);
-			cirrus *= sqr(linearstep(0.25, 1.0, coverage));
+			cirrus *= sqr(linearstep(0.3, 1.0, coverage));
 
 			density += cirrus;
 		}
@@ -131,7 +131,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	// Coveage profile
 	vec2 stepEdge = mix(vec2(0.6, 1.0) - CLOUD_CU_COVERAGE * 0.4, vec2(0.2, 0.5), sqr(wetness));
 	float coverage = linearstep(stepEdge.x, stepEdge.y, cloudMap.x);
-	coverage *= linearstep(stepEdge.x, stepEdge.y * 0.7, texture(noisetex, rayPos.xz * rcp(512e3)).z);
+	coverage *= linearstep(stepEdge.x * 1.25, stepEdge.y * 0.85, texture(noisetex, rayPos.xz * rcp(512e3)).z);
 
 	// Vertical profile
 	float type = min(curve(cloudMap.y), coverage);
