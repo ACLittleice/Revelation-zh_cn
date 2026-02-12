@@ -78,7 +78,7 @@ float CalculateCloudShadows(in vec3 rayPos, in float dither) {
 	float transmittance = exp2(-rLOG2 * cumulusExtinction * extinction);
 	// transmittance = linearstep(cloudMinTransmittance, 1.0, transmittance);
 
-	float strength = min(linearstep(0.05, 0.1, worldLightVector.y), CLOUD_SHADOW_STRENGTH);
+	float strength = linearstep(0.02, 0.05, worldLightVector.y) * sqrt(CLOUD_SHADOW_STRENGTH);
 	return oms(strength) + transmittance * strength;
 }
 

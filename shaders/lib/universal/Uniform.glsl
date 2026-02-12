@@ -32,12 +32,14 @@ uniform sampler3D stbnVec1Tex;
 uniform sampler3D stbnVec2Tex;
 uniform sampler3D stbnUnitvec2Tex;
 
+uniform sampler2D curlNoise2D;
+uniform sampler3D curlNoise3D;
+
 uniform sampler3D baseNoiseTex;
 uniform sampler3D detailNoiseTex;
 
 uniform sampler2D cloudMapTex;
 uniform sampler2D verticalLut;
-uniform sampler2D curlNoiseTex;
 uniform sampler2D cirroLutTex;
 
 uniform sampler2D cloudShadowTex;

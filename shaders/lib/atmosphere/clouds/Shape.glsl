@@ -52,7 +52,7 @@ float CloudHighDensity(in vec2 rayPos) {
 	rayPos += cameraPosition.xz;
 
 	// Curl noise to simulate wind, makes the positioning of the clouds more natural
-	vec2 curlNoise = texture(curlNoiseTex, rayPos * 5e-5).xy * 0.25;
+	vec2 curlNoise = texture(curlNoise2D, rayPos * 5e-5).xy * 0.25;
 	vec2 position = rayPos * 2e-4 + curlNoise;
 
 	float density = 0.0;
@@ -129,7 +129,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	vec2 cloudMap = texture(cloudMapTex, (rayPos.xz * rcp(cloudMapExtend))).xy;
 
 	// Coveage profile
-	vec2 stepEdge = mix(vec2(0.6, 1.0) - CLOUD_CU_COVERAGE * 0.4, vec2(0.2, 0.5), sqr(wetness));
+	vec2 stepEdge = mix(vec2(0.6, 1.0) - CLOUD_CU_COVERAGE * 0.35, vec2(0.2, 0.5), sqr(wetness));
 	float coverage = linearstep(stepEdge.x, stepEdge.y, cloudMap.x);
 	coverage *= linearstep(stepEdge.x * 1.25, stepEdge.y * 0.85, texture(noisetex, rayPos.xz * rcp(512e3)).z);
 
@@ -144,9 +144,17 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	#endif
 	if (dimensionalProfile < 0.1) return 0.0;
 
+	float heightFade = smoothstep(0.1, 0.5, heightFraction);
+
 	vec3 noisePos = (rayPos - windDir * heightFraction * cumulusTopOffset) * rcp(3e3);
 	noisePos.y += dot(noisePos.xz, vec2(0.2, 0.3)); // Reduce repetition pattern
-	noisePos += dimensionalProfile * 0.05; // Add some distortion
+
+	#if !defined PASS_SKY_MAP
+	if (detail) {
+		vec3 curlNoise = texture(curlNoise3D, noisePos * vec3(2.0, 3.0, 2.0)).xyz;
+		noisePos += curlNoise * mix(0.5, 0.125, heightFade) * oms(dimensionalProfile);
+	}
+	#endif
 
 	#if 0
 	vec2 billowyNoise = texture(baseNoiseTex, fract(noisePos)).xy;
@@ -161,28 +169,25 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	float cloudDensity = dimensionalProfile + (baseNoise - 1.0);
 	if (cloudDensity < cloudEpsilon) return 0.0;
 
-	float heightFade = smoothstep(0.1, 0.5, heightFraction);
-
 	// Detail erosion
-	float detailNoise = 0.1;
+	// float detailNoise = 0.1;
 
-	#if !defined PASS_SKY_MAP
-	if (detail) {
-		// vec3 curlNoise = texture(curlNoiseTex, noisePos.xz * 2.0).xyz;
-		noisePos -= baseNoise * 0.1 * windDir + windOffset * 1e-4;
+	// #if !defined PASS_SKY_MAP
+	// if (detail) {
+	// 	noisePos -= baseNoise * 0.1 * windDir + windOffset * 1e-4;
 
-		detailNoise = texture(detailNoiseTex, noisePos * 8.0).x;
+	// 	detailNoise = texture(detailNoiseTex, noisePos * 8.0).x;
 
-		// Transition from wispy shapes to billowy shapes over height
-		detailNoise = sqr(mix(detailNoise, 0.75 - detailNoise * 0.5, heightFade)) * 0.4;
-	}
-	#endif
+	// 	// Transition from wispy shapes to billowy shapes over height
+	// 	detailNoise = sqr(mix(detailNoise, 0.75 - detailNoise * 0.5, heightFade)) * 0.4;
+	// }
+	// #endif
 
-	cloudDensity = ValueErosion(cloudDensity, detailNoise);
+	// cloudDensity = ValueErosion(cloudDensity, detailNoise);
 	// cloudDensity = saturate(cloudDensity - detailNoise * oms(cloudDensity));
 
 	// Density profile
-	cloudDensity = mix(cloudDensity, approxSqrt(cloudDensity), heightFade);
+	cloudDensity = mix(cloudDensity, approxSqrt(cloudDensity), heightFraction);
 	return cloudDensity * mix(CLOUD_CU_DENSITY_B, CLOUD_CU_DENSITY_T, heightFade);
 }
 
