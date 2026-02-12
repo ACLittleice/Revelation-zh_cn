@@ -114,7 +114,7 @@ float CloudHighDensity(in vec2 rayPos) {
 
 float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dimensionalProfile, in bool detail) {
 	// Remap the height of the clouds to the range of [0, 1]
-	heightFraction = saturate((length(rayPos) - cumulusBottomRadius) * rcp(cumulusThickness));
+	heightFraction = (length(rayPos) - cumulusBottomRadius) * rcp(cumulusThickness);
 
 	// Wind field
 	const float windAngle = radians(CLOUD_LOW_WIND_ANGLE);
@@ -135,6 +135,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 
 	// Vertical profile
 	float type = min(curve(cloudMap.y), coverage);
+	heightFraction = ValueErosion(heightFraction, oms(cloudMap.y) * 0.5);
 	float gradient = GetVerticalProfile(heightFraction, type);
 
 	#if 0
@@ -144,15 +145,14 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	#endif
 	if (dimensionalProfile < 0.1) return 0.0;
 
-	float heightFade = smoothstep(0.1, 0.5, heightFraction);
-
 	vec3 noisePos = (rayPos - windDir * heightFraction * cumulusTopOffset) * rcp(3e3);
 	noisePos.y += dot(noisePos.xz, vec2(0.2, 0.3)); // Reduce repetition pattern
 
+	// Add curl noise
 	#if !defined PASS_SKY_MAP
 	if (detail) {
 		vec3 curlNoise = texture(curlNoise3D, noisePos * vec3(2.0, 3.0, 2.0)).xyz;
-		noisePos += curlNoise * mix(0.5, 0.125, heightFade) * oms(dimensionalProfile);
+		noisePos += curlNoise * gradient * oms(coverage) * 0.5;
 	}
 	#endif
 
@@ -168,6 +168,8 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	// See [Schneider, 2022]
 	float cloudDensity = dimensionalProfile + (baseNoise - 1.0);
 	if (cloudDensity < cloudEpsilon) return 0.0;
+
+	float heightFade = smoothstep(0.1, 0.5, heightFraction);
 
 	// Detail erosion
 	// float detailNoise = 0.1;
@@ -187,7 +189,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	// cloudDensity = saturate(cloudDensity - detailNoise * oms(cloudDensity));
 
 	// Density profile
-	cloudDensity = mix(cloudDensity, approxSqrt(cloudDensity), heightFraction);
+	cloudDensity = mix(cloudDensity, approxSqrt(cloudDensity), heightFade);
 	return cloudDensity * mix(CLOUD_CU_DENSITY_B, CLOUD_CU_DENSITY_T, heightFade);
 }
 
