@@ -52,8 +52,8 @@ float CloudHighDensity(in vec2 rayPos) {
 	rayPos += cameraPosition.xz;
 
 	// Curl noise to simulate wind, makes the positioning of the clouds more natural
-	vec2 curlNoise = texture(curlNoiseTex, rayPos * 4e-5).xy * 0.1;
-	vec2 position = rayPos * 1.8e-4 + curlNoise;
+	vec2 curlNoise = texture(curlNoiseTex, rayPos * 5e-5).xy * 0.25;
+	vec2 position = rayPos * 2e-4 + curlNoise;
 
 	float density = 0.0;
 
@@ -65,7 +65,7 @@ float CloudHighDensity(in vec2 rayPos) {
 
 		if (coverage > 0.3) {
 			vec2 p = position + coverage * 0.5 - windOffset * 1e-4;
-			float cirrus = textureBicubic(cirroLutTex, p * 0.25).y;
+			float cirrus = texture(cirroLutTex, p * 0.25).y;
 
 			cirrus *= saturate(cirrus + coverage);
 			cirrus *= sqr(linearstep(0.3, 1.0, coverage));
@@ -82,7 +82,7 @@ float CloudHighDensity(in vec2 rayPos) {
 
 		if (coverage > 0.3) {
 			vec2 p = position + coverage * 0.5 - windOffset * 1e-4;
-			float cirrocumulus = sqr(textureBicubic(cirroLutTex, p * 0.25).x);
+			float cirrocumulus = sqr(texture(cirroLutTex, p * 0.25).x);
 
 			cirrocumulus *= saturate(cirrocumulus + coverage);
 			cirrocumulus *= smoothstep(0.3, 1.0, coverage);
