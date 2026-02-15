@@ -105,7 +105,7 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, out 
 
                 float weight = -distance(viewDistance, sampleAux.z) * NdotV;
                 weight += log2(saturate(dot(OctDecodeSnorm(sampleAux.xy), worldNormal)));
-                weight = exp2(weight * sampleDiffuse.a * (8.0 / SSILVB_MAX_ACCUM_FRAMES));
+                weight = exp2(weight * sampleDiffuse.a * (16.0 / SSILVB_MAX_ACCUM_FRAMES));
 
                 confidence = max(confidence, weight);
                 weight *= bilinearWeight[i];
@@ -121,8 +121,8 @@ vec4 TemporalFilter(in ivec2 texel, in vec3 screenPos, in vec3 worldNormal, out 
             prevDiffuse *= sumWeight;
             prevMoments *= sumWeight;
 
-            float sampleIndex = min(prevDiffuse.a + 1.0, SSILVB_MAX_ACCUM_FRAMES);
-            float alpha = rcp(sampleIndex * confidence + 1.0);
+            float sampleIndex = min(prevDiffuse.a * confidence + 1.0, SSILVB_MAX_ACCUM_FRAMES);
+            float alpha = rcp(sampleIndex);
 
             // See section 4.2 of the paper
             // if (sampleIndex > 4.5) {
