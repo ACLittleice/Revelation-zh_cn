@@ -305,7 +305,7 @@ float GetNoHSquared(float radius, float NoL, float NoV, float VoL) {
 }
 
 vec3 SphericalAreaGGX(in float LdotH, in float NdotV, in float NdotL, in float LdotV, in float alpha, in vec3 f0) {
-    float radius = atmosphereModel.sun_angular_radius * SUN_RADIUS_MULT;
+    const float radius = atmosphereModel.sun_angular_radius * SUN_RADIUS_MULT;
 
     // alpha = max(alpha, 1e-2);
     float alpha2 = alpha * alpha;
@@ -325,7 +325,7 @@ vec3 SphericalAreaGGX(in float LdotH, in float NdotV, in float NdotL, in float L
     float alphaSquaredLdotH = alpha2 * (LdotH + 0.001);
     float normalization = alphaSquaredLdotH / (alphaSquaredLdotH + 0.25 * radius * (3.0 * alpha + radius));
 
-	return min(F * D * G / (4.0 * NdotV) * normalization, 64.0);
+	return F * D * G / (4.0 * NdotV) * normalization;
 }
 
 float SpecularThroughputGGX(in float NdotV, in float NdotL, in float alpha) {
