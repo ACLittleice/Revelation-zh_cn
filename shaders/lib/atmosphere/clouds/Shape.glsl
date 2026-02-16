@@ -67,10 +67,8 @@ float CloudHighDensity(in vec2 rayPos) {
 			vec2 p = position + coverage * 0.5 - windOffset * 1e-4;
 			float cirrus = texture(cirroLutTex, p * 0.25).y;
 
-			cirrus *= saturate(cirrus + coverage);
-			cirrus *= sqr(linearstep(0.3, 1.0, coverage));
-
-			density += cirrus;
+			cirrus *= smoothstep(0.3, 1.0, coverage);
+			density += cirrus * cirrus;
 		}
 	}
 	#endif
@@ -84,9 +82,7 @@ float CloudHighDensity(in vec2 rayPos) {
 			vec2 p = position + coverage * 0.5 - windOffset * 1e-4;
 			float cirrocumulus = sqr(texture(cirroLutTex, p * 0.25).x);
 
-			cirrocumulus *= saturate(cirrocumulus + coverage);
 			cirrocumulus *= smoothstep(0.3, 1.0, coverage);
-
 			density += cirrocumulus;
 		}
 	}
@@ -189,7 +185,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 	// cloudDensity = saturate(cloudDensity - detailNoise * oms(cloudDensity));
 
 	// Density profile
-	cloudDensity = mix(cloudDensity, approxSqrt(cloudDensity), heightFade);
+	cloudDensity *= mix(1.0, inversesqrt(cloudDensity), heightFraction);
 	return cloudDensity * mix(CLOUD_CU_DENSITY_B, CLOUD_CU_DENSITY_T, heightFade);
 }
 
