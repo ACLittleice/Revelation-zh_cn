@@ -135,7 +135,7 @@ float CloudVolumeDensity(in vec3 rayPos, out float heightFraction, out float dim
 
 	// Vertical profile
 	float type = min(curve(cloudMap.y), coverage);
-	heightFraction = ValueErosion(heightFraction, oms(cloudMap.y) * 0.5);
+	heightFraction = ValueErosion(heightFraction, oms(cloudMap.y) * 0.3);
 	float gradient = GetVerticalProfile(heightFraction, type);
 
 	#if 0
