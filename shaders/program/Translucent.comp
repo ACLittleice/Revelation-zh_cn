@@ -57,7 +57,7 @@ vec4 CalculateSpecularReflections(in vec3 screenPos, in vec3 viewPos, in vec3 wo
 	float NdotV = abs(dot(worldNormal, worldDir));
 	vec3 rayDir = worldDir + worldNormal * NdotV * 2.0;
 
-	if (dot(worldNormal, rayDir) < EPS) return vec4(0.0);
+	if (dot(worldNormal, rayDir) < EPS) return vec4(0.0, 0.0, 0.0, 1.0);
 
 	vec3 reflection = vec3(0.0);
 	if (skylight > 1e-3 && (isEyeInWater == 0 || !waterMask)) {
@@ -157,7 +157,7 @@ void main() {
 	//============================================================================================//
 
 	// Translucent lighting
-	vec4 lightingOut = vec4(0.0);
+	vec4 lightingOut = vec4(0.0, 0.0, 0.0, 1.0);
 
 	vec3 flatNormal, worldNormal;
 	FetchNormalData(texelPos, flatNormal, worldNormal);

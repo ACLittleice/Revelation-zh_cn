@@ -186,6 +186,10 @@ mat2x3 RaymarchAtmosphericFog(in vec3 startPos, in vec3 endPos, in float dither,
 	#ifndef VF_CLOUD_SHADOWS
 		scatteringSun *= 1.0 - wetness * CLOUD_SHADOW_STRENGTH;
 	#endif
+	#if !defined PASS_VOLUMETRIC_FOG
+		scatteringSun *= eyeSkylightSmooth;
+	#endif
+
 	scatteringSky *= eyeSkylightSmooth;
 
 	// Apply rainbows
