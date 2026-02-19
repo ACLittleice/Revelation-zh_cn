@@ -40,6 +40,12 @@ const vec2 workGroupsRender = vec2(1.0, 1.0);
 #include "/lib/universal/Fetch.glsl"
 #include "/lib/universal/Random.glsl"
 
+vec3 GetSpecularDominantDir(vec3 N, vec3 V, float roughness) {
+    float f = (1.0 - roughness) * (approxSqrt(1.0 - roughness) + roughness);
+    vec3 R = reflect(-V, N);
+    return normalize(mix(N, R, f));
+}
+
 // https://alakhag.github.io/posts/sg/
 float sphericalGaussian(in vec3 v, in vec3 p, in float lambda) {
     return exp(lambda * (saturate(dot(v, p)) - 1.0));
@@ -59,12 +65,12 @@ void SpecularFilter(inout vec4 specularData, in ivec2 texel, in float roughness,
     float offsetScale = filterSize * saturate(20.0 * roughness);
     offsetScale *= saturate(0.25 + specularData.a * 0.25);
 
+    float NdotV = abs(dot(worldNormal, worldDir));
+
     // Calculate kernel basis
-    vec3 reflectedDir = reflect(-worldDir, worldNormal);
+    vec3 reflectedDir = GetSpecularDominantDir(worldNormal, worldDir, roughness);
     vec2 tangent = normalize(cross(worldNormal, reflectedDir).xy) * offsetScale;
     vec2 bitangent = vec2(tangent.y, -tangent.x);
-
-    float NdotV = abs(dot(worldNormal, worldDir));
 
     float skewFactor = mix(0.5 + 0.5 * roughness, 1.0, NdotV);
     bitangent *= 1.0 / skewFactor;
