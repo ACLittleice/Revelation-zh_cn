@@ -10,13 +10,11 @@ screen.PostProcessing=后处理
 screen.Debug=调试
 screen.Compatibility=兼容
 
-screen.Atmospherics=大气
 screen.Weather=天气
 screen.Foliage=植物
 
 screen.Clouds=云设置
 screen.CloudUpsampling=升采样
-screen.CloudLighting=光照
 
 screen.LowLevelClouds=低云族
 screen.MidLevelClouds=中云族
@@ -58,7 +56,7 @@ option.AUTHOR.comment=版权所有 (C) 2024 HaringPro. Apache-2.0许可证
 
 option.RP_SUPPORT=PBR资源包支持
 
-# Atmospherics
+# Environment
 option.PLANET_GROUND=行星地面
 option.VIEWER_BASE_ALTITUDE=玩家基础高度
 suffix.VIEWER_BASE_ALTITUDE=m
