@@ -1,5 +1,5 @@
 #ifndef FORCE_DISABLE_SUBGROUP_OPS
-    #if defined(MC_GL_KHR_shader_subgroup)
+    #if defined GL_KHR_shader_subgroup || defined MC_GL_KHR_shader_subgroup
         #define SUBGROUP_OPS
     #endif
 #endif
