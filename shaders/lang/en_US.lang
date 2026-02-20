@@ -343,6 +343,10 @@ option.MOTION_BLUR_SAMPLES=Motion Blur Samples
 option.MOTION_BLUR_STRENGTH=Motion Blur Strength
 
 option.BLOOM=Bloom
+option.BLOOM_BLENDING_MODE=Bloom Blending Mode
+value.BLOOM_BLENDING_MODE.0=Add
+value.BLOOM_BLENDING_MODE.1=Lerp
+value.BLOOM_BLENDING_MODE.2=Remap
 option.BLOOM_KARIS_AVERAGE=Karis Average
 option.BLOOM_INTENSITY=Bloom Intensity
 option.BLOOMY_FOG=Bloomy Fog

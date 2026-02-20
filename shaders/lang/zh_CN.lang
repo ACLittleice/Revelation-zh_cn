@@ -343,6 +343,10 @@ option.MOTION_BLUR_SAMPLES=动态模糊采样数
 option.MOTION_BLUR_STRENGTH=动态模糊强度
 
 option.BLOOM=泛光
+option.BLOOM_BLENDING_MODE=泛光混合模式
+value.BLOOM_BLENDING_MODE.0=叠加
+value.BLOOM_BLENDING_MODE.1=插值
+value.BLOOM_BLENDING_MODE.2=重映射
 option.BLOOM_KARIS_AVERAGE=Karis平均
 option.BLOOM_INTENSITY=泛光强度
 option.BLOOMY_FOG=泛光雾
