@@ -14,7 +14,7 @@ vec2 CalculateFogDensity(in vec3 rayPos, in float uniformFog) {
 	rayPos += cameraPosition;
 
 	// float rayLength = length(rayPos + vec3(0.0, planetRadius, 0.0));
-	vec2 density = exp2(abs(rayPos.y - VF_HEIGHT) * oms(step(rayPos.y, VF_HEIGHT) * 0.8) * falloffScale);
+	vec2 density = exp2(abs(rayPos.y - VF_HEIGHT) * oms(step(rayPos.y, VF_HEIGHT) * 0.5) * falloffScale);
 
 #if VF_NOISE_QUALITY == LOW
 	rayPos.xz -= vec2(1.0, 0.75) * worldTimeCounter;
