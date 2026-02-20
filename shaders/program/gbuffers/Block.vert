@@ -45,7 +45,7 @@ void main() {
 	vertColor = vaColor;
 	texCoord = vaUV0;
 
-	lightmap = saturate(vec2(vaUV2) * r240);
+	lightmap = saturate(vec2(vaUV2) * rcp240);
 
 	materialID = uint(blockEntityId - 10000);
 

@@ -38,7 +38,7 @@ uniform int renderStage;
 //======// Main //================================================================================//
 void main() {
 	vertColor = vaColor;
-	lightmap = saturate(vec2(vaUV2) * r240);
+	lightmap = saturate(vec2(vaUV2) * rcp240);
 
     if (renderStage == MC_RENDER_STAGE_OUTLINE) {
         const mat4 viewScale = mat4(255.0 / 256.0);

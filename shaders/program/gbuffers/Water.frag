@@ -90,7 +90,7 @@ void main() {
 		vec2 encodedNormal = OctEncodeUnorm(worldNormal);
 		normalOut.zw = encodedNormal;
 
-		waterOut = vec4(distance(worldPos, worldPos1) * r255, Packup2x8(encodedNormal), 0.0, 1.0);
+		waterOut = vec4(distance(worldPos, worldPos1) * rcp255, Packup2x8(encodedNormal), 0.0, 1.0);
 	} else {
 		vec4 albedo = texture(tex, texCoord) * vertColor;
 

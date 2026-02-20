@@ -37,7 +37,7 @@ void main() {
 	vertColor = vaColor;
 	texCoord = vaUV0;
 
-	lightmap = saturate(vec2(vaUV2) * r240);
+	lightmap = saturate(vec2(vaUV2) * rcp240);
 
 	vec3 viewPos = transMAD(modelViewMatrix, vaPosition + chunkOffset);
 	gl_Position = diagonal4(projectionMatrix) * viewPos.xyzz + projectionMatrix[3];

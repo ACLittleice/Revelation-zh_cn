@@ -182,11 +182,11 @@ void main() {
 			}
 		#endif
 		#if TEXTURE_FORMAT == 0 && SUBSURFACE_SCATTERING_MODE > 0 && defined MC_SPECULAR_MAP
-			sssAmount = max(sssAmount, specularTex.b * step(64.5 * r255, specularTex.b));
+			sssAmount = max(sssAmount, specularTex.b * step(64.5 * rcp255, specularTex.b));
 		#endif
 
 		// Remap sss amount to [0, 1] range
-		sssAmount = linearstep(64.0 * r255, 1.0, sssAmount) * eyeSkylightSmooth * SUBSURFACE_SCATTERING_STRENGTH;
+		sssAmount = linearstep(64.0 * rcp255, 1.0, sssAmount) * eyeSkylightSmooth * SUBSURFACE_SCATTERING_STRENGTH;
 
 		// Cloud shadows
 		#ifdef CLOUD_SHADOWS
@@ -364,8 +364,5 @@ void main() {
 
 		// Direct specular lighting
 		sceneOut += specularDirect;
-
-		// Output clamp
-		sceneOut = satU16f(sceneOut);
 	}
 }

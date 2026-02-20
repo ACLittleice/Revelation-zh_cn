@@ -32,7 +32,7 @@ vec4 CalculateSpecularReflections(Material material, in vec3 worldNormal, in vec
 		// float LdotH = dot(lightDir, halfway);
 		// float NdotV = abs(dot(worldNormal, worldDir));
 
-		return satU16f(reflection);
+		return reflection;
 	} else
 #endif
 	{
@@ -55,6 +55,6 @@ vec4 CalculateSpecularReflections(Material material, in vec3 worldNormal, in vec
 			reflection += (texture(colortex4, screenPos.xy * 0.5).rgb - reflection) * saturate(edgeFade);
 		}
 
-		return vec4(satU16f(reflection), 0.0);
+		return vec4(reflection, 0.0);
 	}
 }

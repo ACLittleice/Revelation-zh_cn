@@ -114,7 +114,7 @@ void main() {
 			gl_FragDepth = gl_FragCoord.z;
 		#endif
 
-		if (normalTex.w < (1.0 - r255)) {
+		if (normalTex.w < (1.0 - rcp255)) {
 			vec3 viewPos = ScreenToViewSpace(vec3(gl_FragCoord.xy * viewPixelSize, gl_FragCoord.z));
 			vec3 tangentPos = mat3(gbufferModelViewInverse) * viewPos * tbnMatrix;
 
@@ -128,7 +128,7 @@ void main() {
 
 			DecodeNormalTex(normalTex.xyz);
 
-			if (offsetCoord.z < (1.0 - r255) && parallaxFade > EPS) {
+			if (offsetCoord.z < (1.0 - rcp255) && parallaxFade > EPS) {
 				#ifdef PARALLAX_DEPTH_WRITE
 					gl_FragDepth = ViewToScreenDepth(ScreenToViewDepth(gl_FragDepth) - oms(offsetCoord.z) * PARALLAX_DEPTH);
 				#elif defined PARALLAX_SHADOW

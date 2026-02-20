@@ -1,49 +1,49 @@
 #if defined MC_NORMAL_MAP
 	void DecodeNormalTex(inout vec3 normalTex) {
         if (any(greaterThan(normalTex, vec3(0.003)))) {
-			normalTex = normalTex * 2.0 - 1.0 + r255;
+			normalTex = normalTex * 2.0 - 1.0 + rcp255;
 			#if TEXTURE_FORMAT == 0
 				normalTex.z = sqrt(saturate(oms(sdot(normalTex.xy))));
 			#else
 				normalTex = normalize(normalTex);
 			#endif
-    		normalTex.xy = uintBitsToFloat(floatBitsToUint(max0(abs(normalTex.xy) - r255)) ^ (floatBitsToUint(normalTex.xy) & 0x80000000u));
+    		normalTex.xy = uintBitsToFloat(floatBitsToUint(max0(abs(normalTex.xy) - rcp255)) ^ (floatBitsToUint(normalTex.xy) & 0x80000000u));
 		}
 	}
 #endif
 
 float Packup2x8(in vec2 data) {
-	return dot(floor(data * max8f + 0.5), vec2(256.0 / max16f, 1.0 / max16f));
+	return dot(floor(data * 255.0 + 0.5), vec2(256.0 / 65535.0, 1.0 / 65535.0));
 }
 
 float PackupDithered2x8(in vec2 data, in float dither) {
-	return dot(floor(data * max8f + dither), vec2(256.0 / max16f, 1.0 / max16f));
+	return dot(floor(data * 255.0 + dither), vec2(256.0 / 65535.0, 1.0 / 65535.0));
 }
 
 vec2 Unpack2x8(in float data) {
-	float x, y = modf(data * (max16f / 256.0), x) * 256.0;
-	return vec2(x, y) * r255;
+	float x, y = modf(data * (65535.0 / 256.0), x) * 256.0;
+	return vec2(x, y) * rcp255;
 }
 
-float Packup2x8X(in float data) { return floor(data * (max16f / 256.0)) * r255; }
-float Packup2x8Y(in float data) { return fract(data * (max16f / 256.0)) * (256.0 * r255); }
+float Packup2x8X(in float data) { return floor(data * (65535.0 / 256.0)) * rcp255; }
+float Packup2x8Y(in float data) { return fract(data * (65535.0 / 256.0)) * (256.0 * rcp255); }
 
 uint Packup2x8U(in vec2 data) {
-	uvec2 u = uvec2(data * max8f + 0.5);
+	uvec2 u = uvec2(data * 255.0 + 0.5);
 	return bitfieldInsert(u.x, u.y, 8, 8);
 }
 
 uint PackupDithered2x8U(in vec2 data, in float dither) {
-	uvec2 u = uvec2(data * max8f + dither);
+	uvec2 u = uvec2(data * 255.0 + dither);
 	return bitfieldInsert(u.x, u.y, 8, 8);
 }
 
 vec2 Unpack2x8U(in uint data) {
-	return uvec2(bitfieldExtract(data, 0, 8), bitfieldExtract(data, 8, 8)) * r255;
+	return uvec2(bitfieldExtract(data, 0, 8), bitfieldExtract(data, 8, 8)) * rcp255;
 }
 
-float Unpack2x8UX(in uint data) { return bitfieldExtract(data, 0, 8) * r255; }
-float Unpack2x8UY(in uint data) { return bitfieldExtract(data, 8, 8) * r255; }
+float Unpack2x8UX(in uint data) { return bitfieldExtract(data, 0, 8) * rcp255; }
+float Unpack2x8UY(in uint data) { return bitfieldExtract(data, 8, 8) * rcp255; }
 
 // Octahedral encoding
 // https://jcgt.org/published/0003/02/01/paper.pdf
@@ -114,7 +114,7 @@ uint EncodeRGBE32U(in vec3 data) {
 
 vec3 DecodeRGBE32U(in uint data) {
     float e = floor(bitfieldExtract(data, 0, 8)) - 128.0;
-    float scale = exp2(e) * r255;
+    float scale = exp2(e) * rcp255;
 
     uvec3 rgb;
     rgb.x = bitfieldExtract(data, 8, 8);
@@ -149,7 +149,7 @@ vec4 LogLuvEncode(in vec3 rgb) {
     float Le = 2.0 * log2(Xp_Y_XYZp.y) + 127.0;
 
     result.w = fract(Le);
-    result.z = (Le - (floor(result.w * 255.0)) * r255) * r255;
+    result.z = (Le - (floor(result.w * 255.0)) * rcp255) * rcp255;
     return result;
 }
 

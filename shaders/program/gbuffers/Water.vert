@@ -59,7 +59,7 @@ void main() {
 	#ifdef IS_IRIS
 	    lightmap = saturate((vec2(vaUV2) - 8.0) * rcp(232.0));
 	#else
-		lightmap = saturate(vec2(vaUV2) * r240);
+		lightmap = saturate(vec2(vaUV2) * rcp240);
 	#endif
 
 	// Nether portal

@@ -35,7 +35,7 @@ uniform vec2 taaOffset;
 //======// Main //================================================================================//
 void main() {
 	texCoord = vaUV0;
-	lightmap = saturate(vec2(vaUV2) * r240);
+	lightmap = saturate(vec2(vaUV2) * rcp240);
 
 	#if GBUFFER_BEACONBEAM
 		lightmap.x = 1.0;

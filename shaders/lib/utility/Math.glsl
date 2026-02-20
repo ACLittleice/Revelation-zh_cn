@@ -1,19 +1,23 @@
-const float PI 			 = 3.14159265359;
-const float hPI 		 = 1.57079632679;
-const float rPI 		 = 0.31830988618;
-const float TAU 		 = 6.28318530718;
-const float rTAU 		 = 0.15915494310;
-const float rLOG2 		 = 1.44269504089;
-const float PHI 		 = 0.61803398875;
-const float EPS 	     = 0.000001;
-const float goldenAngle  = 2.39996322973;
+const float PI 			    = 3.14159265359;
+const float hPI 		    = 1.57079632679;
+const float rPI 		    = 0.31830988618;
+const float TAU 		    = 6.28318530718;
+const float rTAU 		    = 0.15915494310;
+const float rLOG2 		    = 1.44269504089;
+const float PHI 		    = 0.61803398875;
+const float EPS 	        = 0.000001;
+const float goldenAngle     = 2.39996322973;
 
-const float r255 		 = 0.00392156863;
-const float r240		 = 0.00416666667;
+const float rcp255 		    = 0.00392156863;
+const float rcp240		    = 0.00416666667;
 
-const float max8f		 = 255.0;
-const float max16f		 = 65535.0;
-const float max32f		 = 4294967295.0;
+const float FP16_MIN        = 6.10e-05;
+const float FP16_MAX        = 65504.0;
+
+#define FLT_MAX             uintBitsToFloat(0x7F7FFFFFu)
+#define FLT_MIN             uintBitsToFloat(0x00800000u)
+#define FLT_POS_INF         uintBitsToFloat(0x7F800000u)
+#define FLT_NEG_INF         uintBitsToFloat(0xFF800000u)
 
 //================================================================================================//
 
@@ -25,12 +29,6 @@ const float max32f		 = 4294967295.0;
 
 #define saturate(x) 	 clamp(x, 0.0, 1.0)
 #define satSnorm(x) 	 clamp(x, -1.0, 1.0)
-#define satU8f(x) 		 clamp(x, 0.0, max8f)
-#define satS8f(x) 		 clamp(x, -max8f, max8f)
-#define satU16f(x) 		 clamp(x, 0.0, max16f)
-#define satS16f(x) 		 clamp(x, -max16f, max16f)
-#define satU32f(x) 		 clamp(x, 0.0, max32f)
-#define satS32f(x) 		 clamp(x, -max32f, max32f)
 
 #define transMAD(m, v)	 (mat3(m) * (v) + (m)[3].xyz)
 #define diagonal2(m)	 vec2((m)[0].x, (m)[1].y)
@@ -74,12 +72,9 @@ float pow16(float x)	 { x *= x; x *= x; x *= x; return x * x; }
 
 float pow32(float x)	 { x *= x; x *= x; x *= x; x *= x; return x * x; }
 
-float sqrt2(float c)  	 { return sqrt(c * inversesqrt(c)); }
-vec3  sqrt2(vec3 c)	  	 { return sqrt(c * inversesqrt(c)); }
-
-float curve(float x)  	 { return sqr(x) * (3.0 - 2.0 * x); }
-vec2  curve(vec2 x)	  	 { return sqr(x) * (3.0 - 2.0 * x); }
-vec3  curve(vec3 x)	  	 { return sqr(x) * (3.0 - 2.0 * x); }
+float curve(float x)  	 { return x * x * (3.0 - 2.0 * x); }
+vec2  curve(vec2 x)	  	 { return x * x * (3.0 - 2.0 * x); }
+vec3  curve(vec3 x)	  	 { return x * x * (3.0 - 2.0 * x); }
 
 float sdot(vec2 x) 	 	 { return dot(x, x); }
 float sdot(vec3 x) 	 	 { return dot(x, x); }
@@ -202,7 +197,7 @@ float cubicLength(in vec2 v) {
 }
 
 float quarticLength(in vec2 v) {
-	return sqrt2(pow4(v.x) + pow4(v.y));
+	return sqrt(sqrt(pow4(v.x) + pow4(v.y)));
 }
 
 //================================================================================================//
