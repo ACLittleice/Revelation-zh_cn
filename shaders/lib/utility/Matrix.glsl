@@ -39,7 +39,7 @@ mat4 BuildPerspectiveMat(float fov, float aspect, float near, float far) {
 
 // https://www.jcgt.org/published/0006/01/01/
 mat3 BuildOrthonormalBasis(vec3 n) {
-    float s = signI(n.z);
+    float s = n.z < 0.0 ? -1.0 : 1.0;
     float a = -rcp(s + n.z);
     float b = n.x * n.y * a;
 
