@@ -42,8 +42,8 @@ void main() {
 	ivec2 tid = ivec2(gl_GlobalInvocationID.xy);
 
     // Checkerboard render cloud shadow map
-	ivec2 offset = checkerboardOffset4x4[frameCounter % 16];
-	if (tid % 4 == offset || worldTimeChanged) {
+	ivec2 offset = checkerboardOffset4x4[frameCounter & 15];
+	if ((tid & 3) == offset || worldTimeChanged) {
 		float dither = BlueNoise(tid, frameCounter);
 
 		vec2 uv = (vec2(tid) + dither) * rcp(textureSize(cloudShadowTex, 0));
