@@ -25,79 +25,61 @@
 --------------------------------------------------------------------------------
 */
 
+#if !defined INCLUDE_CLOUDS_SHADOWS
+#define INCLUDE_CLOUDS_SHADOWS
+
 #include "/lib/atmosphere/clouds/Common.glsl"
+#include "/lib/atmosphere/clouds/Shape.glsl"
 
 //================================================================================================//
 
-const float cloudShadowDistortion = 0.75;
-
-const mat4 cloudShadowProj = mat4(
-	1.0 / CLOUD_SHADOW_DISTANCE, 0.0, 0.0, 0.0,
-	0.0, 1.0 / CLOUD_SHADOW_DISTANCE, 0.0, 0.0,
-	0.0, 0.0, -1.0 / CLOUD_SHADOW_DISTANCE, 0.0,
-	0.0, 0.0, 0.0, 1.0
-);
-
-const mat4 cloudShadowProjInv = inverse(cloudShadowProj);
-
 vec3 SetupCloudShadowPos(in vec2 coord) {
-	// To NDC space
-	vec3 shadowPos = vec3(coord * 2.0 - 1.0, 1.0);
-	// Distortion
-	shadowPos.xy *= oms(cloudShadowDistortion) / oms(length(shadowPos.xy) * cloudShadowDistortion);
-	// To view space
-	shadowPos = projMAD(cloudShadowProjInv, shadowPos);
-	// To world space
-	return transMAD(shadowModelViewInverse, shadowPos);
+	vec3 shadowPos = vec3(coord * 2.0 - 1.0, 0.0);
+	return transMAD(cloud.shadowViewProjInv, shadowPos);
+}
+
+vec3 PlanetToCloudShadowScreenPos(in vec3 planetPos) {
+	planetPos.y -= planetRadius;
+
+	vec3 shadowPos = transMAD(cloud.shadowViewProj, planetPos);
+	return shadowPos * 0.5 + 0.5;
 }
 
 vec3 WorldToCloudShadowScreenPos(in vec3 worldPos) {
-	// To view space
-	vec3 shadowPos = transMAD(shadowModelView, worldPos);
-	// To NDC space
-	shadowPos = projMAD(cloudShadowProj, shadowPos);
-	// Distortion
-	shadowPos.xy *= rcp(length(shadowPos.xy) * cloudShadowDistortion + oms(cloudShadowDistortion));
-	// To screen space
-	return shadowPos * 0.5 + 0.5;
-}
+	worldPos.y += eyeAltitude;
 
-vec2 DistortCloudShadowPos(in vec2 shadowPos) {
-	// Distortion
-	shadowPos *= rcp(length(shadowPos) * cloudShadowDistortion + oms(cloudShadowDistortion));
-	// To screen space
+	vec3 shadowPos = transMAD(cloud.shadowViewProj, worldPos);
 	return shadowPos * 0.5 + 0.5;
 }
 
 //================================================================================================//
 
-#if defined PASS_CLOUD_SM
-#include "/lib/atmosphere/clouds/Shape.glsl"
+float CalculateCloudShadows(in vec3 rayPos, in float dither) {
+	float steps = float(CLOUD_SHADOW_SAMPLES) * (2.0 - worldLightVector.y);
 
-float CalculateCloudShadows(in vec3 rayPos) {
-	const uint steps = CLOUD_SHADOW_SAMPLES;
-
-	vec3 cloudViewerPos = vec3(cameraPosition.xz, viewerHeight).xzy;
-	rayPos += cloudViewerPos;
+	rayPos.y += planetRadius; // To planet space
 
 	vec2 intersection = RaySphericalShellIntersection(rayPos, worldLightVector, cumulusBottomRadius, cumulusTopRadius);
-	float stepLength = (intersection.y - intersection.x) * rcp(float(steps));
+	float stepLength = (intersection.y - intersection.x) * rcp(steps);
 	vec3 rayStep = worldLightVector * stepLength;
 
 	rayPos += worldLightVector * intersection.x;
-	// rayPos += rayStep * InterleavedGradientNoiseTemporal(gl_GlobalInvocationID.xy);
+	rayPos += rayStep * dither;
 
-	float opticalDepth = 0.0;
+	float extinction = 0.0;
+	const float maxExtinction = -log2(cloudMinTransmittance) / cumulusExtinction;
 
 	// Raymarch along the light vector
-	for (uint i = 0u; i < steps; ++i, rayPos += rayStep) {
-		opticalDepth += CloudVolumeDensity(rayPos, false);
-		if (opticalDepth > float(steps) * 0.25) break;
+	for (uint i = 0u; i < uint(steps) && extinction < maxExtinction; ++i, rayPos += rayStep) {
+		float temp;
+		extinction += CloudVolumeDensity(rayPos, temp, temp, false) * stepLength;
 	}
 
-	float cloudShadow = exp2(-rLOG2 * cumulusExtinction * opticalDepth * stepLength);
+	float transmittance = exp2(-rLOG2 * cumulusExtinction * extinction);
+	// transmittance = linearstep(cloudMinTransmittance, 1.0, transmittance);
 
-	float timeFade = remap(0.05, 0.1, worldLightVector.y);
-	return oms(timeFade) + cloudShadow * timeFade;
+	float strength = linearstep(0.02, 0.05, worldLightVector.y) * sqrt(CLOUD_SHADOW_STRENGTH);
+	return oms(strength) + transmittance * strength;
 }
-#endif
+
+#endif // INCLUDE_CLOUDS_SHADOWS

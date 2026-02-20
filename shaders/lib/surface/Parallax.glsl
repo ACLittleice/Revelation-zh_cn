@@ -1,22 +1,18 @@
-uniform ivec2 atlasSize;
-
 #define atlasCoord(coord) (tileOffset + tileScale * fract(coord))
 #define atlasTexel(coord) ivec2((tileOffset + tileScale * fract(coord)) * vec2(atlasSize))
 
 const float rSteps = 1.0 / float(PARALLAX_SAMPLES);
 
-vec3 CalculateParallax(in vec3 tangentDir, in float dither) {
+vec3 CalculateParallax(in vec3 tangentDir, in float dither, in float parallaxFade) {
     vec3 rayStep = vec3(tangentDir.xy, 1.0) * -rSteps;
-    rayStep.xy *= PARALLAX_DEPTH / tangentDir.z;
+    rayStep.xy *= PARALLAX_DEPTH * parallaxFade / tangentDir.z;
 
     vec3 rayPos = vec3(tileBase, 1.0) + rayStep * dither;
 
     float sampleHeight;
-    for (uint i = 0u; i < PARALLAX_SAMPLES; ++i) {
+    for (uint i = 0u; i < PARALLAX_SAMPLES && sampleHeight < rayPos.z; ++i) {
         rayPos += rayStep;
         sampleHeight = texelFetch(normals, atlasTexel(rayPos.xy), 0).a;
-        if (sampleHeight > rayPos.z) break;
-
     }
 
     // Refine the parallax mapping (binary search)
@@ -37,9 +33,9 @@ vec3 CalculateParallax(in vec3 tangentDir, in float dither) {
     return rayPos;
 }
 
-float CalculateParallaxShadow(in vec3 tangentDir, in vec3 rayPos, in float dither) {
+float CalculateParallaxShadow(in vec3 tangentDir, in vec3 rayPos, in float dither, in float parallaxFade) {
     vec3 rayStep = vec3(tangentDir.xy, 1.0) * rayPos.z * rSteps;
-    rayStep.xy *= PARALLAX_DEPTH / tangentDir.z;
+    rayStep.xy *= PARALLAX_DEPTH * parallaxFade / tangentDir.z;
     rayPos += rayStep * dither;
 
     for (uint i = 0u; i < PARALLAX_SAMPLES; ++i) {

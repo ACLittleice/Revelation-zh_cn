@@ -29,11 +29,11 @@ void SampleHorizonCos(in vec2 coord, in vec2 offset, in vec3 viewPos, in vec3 vi
 	float sNormV = inversesqrt(sLenV);
 
 	float sHorizonCos = dot(sHorizonV, viewDir) * sNormV;
-	sHorizonCos = mix(sHorizonCos, cHorizonCos, remap(falloff.x, falloff.y, sLenV));
+	sHorizonCos = mix(sHorizonCos, cHorizonCos, linearstep(falloff.x, falloff.y, sLenV));
 	cHorizonCos = max(sHorizonCos, cHorizonCos);
 }
 
-float CalculateGTAO(in vec2 coord, in vec3 viewPos, in vec3 normal, in float dither) {
+float CalculateGTAO(in vec2 coord, in vec3 viewPos, in vec3 normal, in vec2 dither) {
 	float viewDistance = sdot(viewPos);
 	float norm = inversesqrt(viewDistance);
 	viewDistance *= norm;
@@ -53,7 +53,7 @@ float CalculateGTAO(in vec2 coord, in vec3 viewPos, in vec3 normal, in float dit
 	float visibility = 0.0;
 
 	for (uint slice = 0u; slice < sliceCount; ++slice) {
-		float slicePhi = (float(slice) + dither) * (PI * rSliceCount);
+		float slicePhi = (float(slice) + dither.x) * (PI * rSliceCount);
 
 		vec3 directionV = vec3(cos(slicePhi), sin(slicePhi), 0.0);
 		vec3 orthoDirectionV = directionV - dot(directionV, viewDir) * viewDir;
@@ -64,7 +64,7 @@ float CalculateGTAO(in vec2 coord, in vec3 viewPos, in vec3 normal, in float dit
 		float normV = inversesqrt(lenV);
 		lenV *= normV;
 
-		float sgnN = fastSign(dot(orthoDirectionV, projNormalV));
+		float sgnN = signI(dot(orthoDirectionV, projNormalV));
 		float cosN = saturate(dot(projNormalV, viewDir) * normV);
 		float n = sgnN * fastAcos(cosN);
 
@@ -72,8 +72,7 @@ float CalculateGTAO(in vec2 coord, in vec3 viewPos, in vec3 normal, in float dit
 
 		for (uint samp = 0u; samp < sampleCount; ++samp) {
 			vec2 stepDir = directionV.xy * sRadius;
-			float stepDither = R1(int(slice + samp * sliceCount), dither);
-			vec2 offset = (float(samp) + stepDither) * stepDir;
+			vec2 offset = (float(samp) + dither.y) * stepDir;
 
 			SampleHorizonCos(coord, offset, viewPos, viewDir, falloff, cHorizonCos.x);
 			SampleHorizonCos(coord,-offset, viewPos, viewDir, falloff, cHorizonCos.y);

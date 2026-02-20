@@ -5,24 +5,20 @@
 
 //======// Output //==============================================================================//
 
-/* RENDERTARGETS: 6,7 */
-layout (location = 0) out vec4 albedoOut;
-layout (location = 1) out uvec4 gbufferOut0;
-
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
 /* RENDERTARGETS: 6,7,8 */
-layout (location = 2) out vec4 gbufferOut1;
-#endif
+layout (location = 0) out vec4 albedoOut;
+layout (location = 1) out uvec4 materialOut;
+layout (location = 2) out vec4 normalOut;
 
 //======// Uniform //=============================================================================//
 
 uniform sampler2D tex;
 
-#if defined NORMAL_MAPPING
+#if defined MC_NORMAL_MAP
 	uniform sampler2D normals;
 #endif
 
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+#if defined MC_SPECULAR_MAP
     uniform sampler2D specular;
 #endif
 
@@ -32,11 +28,11 @@ uniform vec4 entityColor;
 
 //======// Input //===============================================================================//
 
-#if defined NORMAL_MAPPING
-	in mat3 tbnMatrix; // Not use flat because of the Physics mod snow
-	#define flatNormal tbnMatrix[2]
+#if defined MC_NORMAL_MAP
+	in mat3 tbnMatrix;
+	#define geoNormal tbnMatrix[2]
 #else
-	in vec3 flatNormal;
+	in vec3 geoNormal;
 #endif
 
 in vec4 vertColor;
@@ -53,8 +49,8 @@ float bayer2 (vec2 a) { a = 0.5 * floor(a); return fract(1.5 * fract(a.y) + a.x)
 void main() {
 	vec4 albedo = texture(tex, texCoord) * vertColor;
 
-	// if (materialID == 60u) albedo = vec4(skyColor, 1.0);
-	if (materialID == 60u) albedo = vec4(0.7, 0.675, 1.0, 1.0);
+	// if (materialID == 2000u) albedo = vec4(skyColor, 1.0);
+	if (materialID == 2000u) albedo.rgb = vec3(0.7, 0.675, 1.0);
 
 	if (albedo.a < 0.1) { discard; return; }
 
@@ -66,17 +62,22 @@ void main() {
 
 	albedoOut = albedo;
 
-	gbufferOut0.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
-	gbufferOut0.y = materialID;
+	materialOut.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
+	materialOut.y = materialID;
 
-	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(flatNormal));
-	#if defined NORMAL_MAPPING
-        vec3 normalTex = texture(normals, texCoord).rgb;
-        DecodeNormalTex(normalTex);
-		gbufferOut0.w = Packup2x8U(OctEncodeUnorm(tbnMatrix * normalTex));
+	#if defined MC_SPECULAR_MAP
+		vec4 specularTex = texture(specular, texCoord);
+		materialOut.z = Packup2x8U(specularTex.xy);
+		materialOut.w = Packup2x8U(specularTex.zw);
 	#endif
 
-	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-		gbufferOut1 = texture(specular, texCoord);
+	normalOut.xy = OctEncodeUnorm(geoNormal);
+
+	#if defined MC_NORMAL_MAP
+        vec3 normalTex = texture(normals, texCoord).rgb;
+        DecodeNormalTex(normalTex);
+		normalOut.zw = OctEncodeUnorm(tbnMatrix * normalTex);
+	#else
+		normalOut.zw = normalOut.xy;
 	#endif
 }

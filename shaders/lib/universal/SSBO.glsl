@@ -1,17 +1,20 @@
+#ifndef SSBO_DECLARED_TPYE
+#define SSBO_DECLARED_TPYE readonly
+#endif
 
-struct LightData {
+layout (std430, binding = 0) SSBO_DECLARED_TPYE buffer GlobalData {
+    float prevWorldTime;
     vec3 directIlluminance;
     vec3 skyIlluminance;
-    vec3[4] skySH;
-};
+    vec3[9] skySH;
+} global;
 
-struct ExposureData {
+layout (std430, binding = 1) SSBO_DECLARED_TPYE buffer ExposureData {
     uint histogram[HISTOGRAM_BIN_COUNT];
     float value;
-};
+} exposure;
 
-layout (std430, binding = 0) buffer GlobalData {
-    LightData light;
-    ExposureData exposure;
-    float prevWorldTime;
-} global;
+layout (std430, binding = 2) SSBO_DECLARED_TPYE buffer CloudData {
+    mat4 shadowViewProj;
+    mat4 shadowViewProjInv;
+} cloud;

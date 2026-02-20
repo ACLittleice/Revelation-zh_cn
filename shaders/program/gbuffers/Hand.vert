@@ -9,10 +9,9 @@ in ivec2 vaUV2;
 
 //======// Output //==============================================================================//
 
-#if defined NORMAL_MAPPING
-	flat out mat3 tbnMatrix;
-#else
-	flat out vec3 flatNormal;
+flat out uint normalPack;
+#if defined MC_NORMAL_MAP
+flat out uvec2 tangentPack;
 #endif
 
 out vec4 vertColor;
@@ -45,7 +44,7 @@ void main() {
 	vertColor = vaColor;
 	texCoord = vaUV0;
 
-	lightmap = saturate(vec2(vaUV2) * r240);
+	lightmap = saturate(vec2(vaUV2) * rcp240);
 
 	vec3 viewPos = transMAD(modelViewMatrix, vaPosition + chunkOffset);
 	// worldPos = transMAD(gbufferModelViewInverse, viewPos);
@@ -55,11 +54,12 @@ void main() {
 		gl_Position.xy += taaOffset * gl_Position.w;
 	#endif
 
-	#if defined NORMAL_MAPPING
-		tbnMatrix[2] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
-		tbnMatrix[0] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * at_tangent.xyz);
-		tbnMatrix[1] = cross(tbnMatrix[0], tbnMatrix[2]) * fastSign(at_tangent.w);
-	#else
-		flatNormal = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
+	// Encode normal and tangent
+	vec3 normal = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
+	normalPack = packSnorm2x16(OctEncodeSnorm(normal));
+	#if defined MC_NORMAL_MAP
+		vec3 tangent = mat3(gbufferModelViewInverse) * normalize(normalMatrix * at_tangent.xyz);
+		tangentPack.x = packSnorm2x16(OctEncodeSnorm(tangent));
+		tangentPack.y = (floatBitsToUint(at_tangent.w) & 0x80000000u) | 0x3F800000u;
 	#endif
 }

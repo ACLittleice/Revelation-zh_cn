@@ -1,3 +1,5 @@
-#version 450 core
+#version 460 core
 
-#include "/program/gbuffers/Beaconbeam.frag"
+#define GBUFFER_BEACONBEAM 1
+
+#include "/program/gbuffers/Textured.frag"

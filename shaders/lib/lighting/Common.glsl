@@ -3,27 +3,15 @@
 
 //================================================================================================//
 
-vec3 CalculateSubsurfaceScattering(in vec3 albedo, in float sssAmount, in float sssDepth, in float LdotV) {
-	vec3 coeff = oms(0.75 * albedo) * (64.0 / sssAmount);
-
-	float phase = HenyeyGreensteinPhase(-LdotV, 0.65) * 0.25 + uniformPhase * 0.75;
-	vec3 subsurfaceScattering = exp2(coeff * sssDepth) * phase * sssAmount;
-
-	return subsurfaceScattering * (PI * SUBSURFACE_SCATTERING_BRIGHTNESS);
-}
-
-float CalculateApproxBouncedLight(in vec3 normal) {
-	float bounce = saturate(dot(worldLightVector, vec3(0.01, 0.03, 0.01)));
+float CalculateFakeBouncedLight(in vec3 normal) {
+	float bounce = saturate(dot(worldLightVector, vec3(0.01, 0.025, 0.01)));
 
 	return approxSqrt(bounce * oms(0.75 * normal.y)) * uniformPhase;
 }
 
-//================================================================================================//
-
 float CalculateBlocklightFalloff(in float blocklight) {
-	float fade = rcp(sqr(16.0 - 15.0 * blocklight));
-	blocklight += approxSqrt(blocklight) * 0.4 + sqr(blocklight) * 0.6;
-	return blocklight * 0.5 * fade;
+	blocklight = mix(blocklight, sqr(blocklight), 0.75);
+	return blocklight * blocklight * blocklight;
 }
 
 vec4 HardCodeEmissive(in uint materialID, in vec3 albedo, in vec3 worldPos, in vec3 blocklightColor) {
@@ -87,8 +75,8 @@ vec4 HardCodeEmissive(in uint materialID, in vec3 albedo, in vec3 worldPos, in v
         case 46u:
             return vec4(vec3(1e2 * albedoLuminance), 0.0);
         // Lightning bolt
-        case 60u:
-            return vec4(vec3(32.0), 0.0);
+        case 2000u:
+            return vec4(vec3(16.0), 0.0);
         // Default
         default:
             return vec4(vec3(0.0), 1.0);

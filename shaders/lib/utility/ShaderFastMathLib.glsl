@@ -6,7 +6,7 @@
 
     Release notes:
     v0.41   minor bug fixes, missing references
-    
+
     v0.4    new constants calculated for new ranges, minor optimization and precision improvements
             Developed during production of : Far Cry 4, Ubisoft Montreal
 
@@ -24,7 +24,7 @@
     Michal Drobot - @MichalDrobot
     hello@drobot.org
 
-    Presented publicly part of a course: 
+    Presented publicly part of a course:
     Low Level Optimizations for AMD GCN
     (available @ http://michaldrobot.com/publications/)
 ********************************************************************************/
@@ -60,7 +60,7 @@
 // #ifdef _PC
 //     #define asint(_x)   *reinterpret_cast<int*>(&_x);
 //     #define asfloat(_x) *reinterpret_cast<float*>(&_x);
-//     #include <math.h> 
+//     #include <math.h>
 // #endif
 
 #define asint(_x)   floatBitsToInt(_x)
@@ -68,20 +68,20 @@
 
 // Derived from batch testing
 // TODO : Should be improved
-#define IEEE_INT_RCP_CONST_NR0              0x7EF311C2  
-#define IEEE_INT_RCP_CONST_NR1              0x7EF311C3 
-#define IEEE_INT_RCP_CONST_NR2              0x7EF312AC  
+#define IEEE_INT_RCP_CONST_NR0              0x7EF311C2
+#define IEEE_INT_RCP_CONST_NR1              0x7EF311C3
+#define IEEE_INT_RCP_CONST_NR2              0x7EF312AC
 
 // Derived from batch testing
-#define IEEE_INT_SQRT_CONST_NR0             0x1FBD1DF5   
+#define IEEE_INT_SQRT_CONST_NR0             0x1FBD1DF5
 
 // Biases for global ranges
 // 0-1 or 1-2 specific ranges might improve from different bias
 // Derived from batch testing
 // TODO : Should be improved
 #define IEEE_INT_RCP_SQRT_CONST_NR0         0x5f3759df
-#define IEEE_INT_RCP_SQRT_CONST_NR1         0x5F375A86 
-#define IEEE_INT_RCP_SQRT_CONST_NR2         0x5F375A86  
+#define IEEE_INT_RCP_SQRT_CONST_NR1         0x5F375A86
+#define IEEE_INT_RCP_SQRT_CONST_NR2         0x5F375A86
 
 //
 // Normalized range [0,1] Constants
@@ -93,9 +93,9 @@
 //
 // Distance [0,1000] based constants
 //
-#define IEEE_INT_RCP_CONST_NR0_SNORM        0x7EF3210C  
-#define IEEE_INT_SQRT_CONST_NR0_SNORM       0x1FBD22DF
-#define IEEE_INT_RCP_SQRT_CONST_NR0_SNORM   0x5F33E79F
+// #define IEEE_INT_RCP_CONST_NR0_SNORM        0x7EF3210C
+// #define IEEE_INT_SQRT_CONST_NR0_SNORM       0x1FBD22DF
+// #define IEEE_INT_RCP_SQRT_CONST_NR0_SNORM   0x5F33E79F
 
 //
 // RCP SQRT
@@ -263,8 +263,8 @@ float fastRcpNR2(float inX)
 //
 // Trigonometric functions
 //
-static  const  float fsl_PI = 3.1415926535897932384626433f;
-static  const  float fsl_HALF_PI = 0.5f * fsl_PI;
+const float fsl_PI = 3.1415926535897932384626433f;
+const float fsl_HALF_PI = 0.5f * fsl_PI;
 
 // 4th order polynomial approximation
 // 4 VGRP, 16 ALU Full Rate
@@ -287,9 +287,13 @@ float acosFast4(float inX)
 	return inX >= 0.0f ? s : fsl_PI - s;
 }
 
+vec2 acosFast4(vec2 inX) {
+    return vec2(acosFast4(inX.x), acosFast4(inX.y));
+}
+
 // 4th order polynomial approximation
 // 4 VGRP, 16 ALU Full Rate
-// 7 * 10^-5 radians precision 
+// 7 * 10^-5 radians precision
 float asinFast4(float inX)
 {
 	float x = inX;
@@ -300,7 +304,7 @@ float asinFast4(float inX)
 
 // 4th order hyperbolical approximation
 // 4 VGRP, 12 ALU Full Rate
-// 7 * 10^-5 radians precision 
+// 7 * 10^-5 radians precision
 // Reference : Efficient approximations for the arctangent function, Rajan, S. Sichun Wang Inkol, R. Joyal, A., May 2006
 float atanFast4(float inX)
 {

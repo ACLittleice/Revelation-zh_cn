@@ -86,3 +86,40 @@ float FournierForandPhase(in float cosTheta, in float n, in float mu) {
 	float p3 = oms(delta180V) / (16.0 * PI * (delta180 - 1.0) * delta180V) * (3.0 * sqr(cosTheta) - 1.0);
 	return p1 * p2 + p3;
 }
+
+// Dual-Lobe HG phase function
+// g0: forward lobe anisotropy parameter, g1: backward lobe anisotropy parameter
+// m: mixing parameter
+float DualLobePhase(in float mu, in float g0, in float g1, in float m) {
+    return mix(HenyeyGreensteinPhase(mu, g0), HenyeyGreensteinPhase(mu, g1), m);
+}
+
+// Triple-Lobe HG phase function
+// g0: forward lobe anisotropy parameter, g1: backward lobe anisotropy parameter
+// m: mixing parameter, g2: peak anisotropy parameter, i: peak intensity
+float TripleLobePhase(in float mu, in float g0, in float g1, in float m, in float g2, in float i) {
+    return max(DualLobePhase(mu, g0, g1, m), CornetteShanksPhase(mu, g2) * i);
+}
+
+// From https://www.shadertoy.com/view/4sjBDG
+float NumericalMieFit(float cosTheta) {
+    // This function was optimized to minimize (delta*delta)/reference in order to capture
+    // the low intensity behavior.
+    const float bestParams[] = float[](
+    	 9.805233e-06,
+    	-6.500000e+01,
+    	-5.500000e+01,
+    	 8.194068e-01,
+    	 1.388198e-01,
+    	-8.370334e+01,
+    	 7.810083e+00,
+    	 2.054747e-03,
+    	 2.600563e-02,
+    	-4.552125e-12
+	);
+
+    float p1 = cosTheta + bestParams[3];
+    vec4 expValues = exp(vec4(bestParams[1] * cosTheta + bestParams[2], bestParams[5] * p1 * p1, bestParams[6] * cosTheta, bestParams[9] * cosTheta));
+    vec4 expValWeight= vec4(bestParams[0], bestParams[4], bestParams[7], bestParams[8]);
+    return dot(expValues, expValWeight) * 0.25;
+}

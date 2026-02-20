@@ -4,10 +4,10 @@
 ![Screenshot](https://github.com/user-attachments/assets/261a14fb-6740-409f-ba89-882e3b93833f)
 
 ## Compatibility
-* GPUs that support OpenGL 4.0 (NVIDIA, AMD and Intel GPUs have been tested and confirmed to work)
+* GPUs that support OpenGL 4.0+
 * [Iris](https://irisshaders.dev/download): 1.7.0 or newer
-* [Physics Mod](https://www.patreon.com/Haubna?utm_source=campaign-search-results): Support Physics Mod Pro
-* [Distant Horizons](https://www.curseforge.com/minecraft/mc-mods/distant-horizons): Compatible with Distant Horizons 2.1.0+
+* [Physics Mod](https://www.patreon.com/Haubna?utm_source=campaign-search-results): Supported
+* [Distant Horizons](https://www.curseforge.com/minecraft/mc-mods/distant-horizons): 2.1.0+
 * [OptiFine](https://optifine.net/home): **Incompatible**
 
 ## Credits

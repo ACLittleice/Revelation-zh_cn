@@ -5,22 +5,16 @@
 
 //======// Output //==============================================================================//
 
-/* RENDERTARGETS: 6,7 */
-layout (location = 0) out vec4 albedoOut;
-layout (location = 1) out uvec4 gbufferOut0;
-
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
 /* RENDERTARGETS: 6,7,8 */
-layout (location = 2) out vec4 gbufferOut1;
-#endif
+layout (location = 0) out vec4 albedoOut;
+layout (location = 1) out uvec4 materialOut;
+layout (location = 2) out vec4 normalOut;
 
 //======// Input //===============================================================================//
 
-#if defined NORMAL_MAPPING
-	flat in mat3 tbnMatrix;
-	#define flatNormal tbnMatrix[2]
-#else
-	flat in vec3 flatNormal;
+flat in uint normalPack;
+#if defined MC_NORMAL_MAP
+flat in uvec2 tangentPack;
 #endif
 
 in vec4 vertColor;
@@ -31,11 +25,11 @@ in vec2 lightmap;
 
 uniform sampler2D tex;
 
-#if defined NORMAL_MAPPING
+#if defined MC_NORMAL_MAP
 	uniform sampler2D normals;
 #endif
 
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+#if defined MC_SPECULAR_MAP
     uniform sampler2D specular;
 #endif
 
@@ -56,17 +50,28 @@ void main() {
 
 	albedoOut = albedo;
 
-	gbufferOut0.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
-	gbufferOut0.y = 1u;
+	materialOut.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
+	materialOut.y = 1u;
 
-	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(flatNormal));
-	#if defined NORMAL_MAPPING
-        vec3 normalTex = texture(normals, texCoord).rgb;
-        DecodeNormalTex(normalTex);
-		gbufferOut0.w = Packup2x8U(OctEncodeUnorm(tbnMatrix * normalTex));
+	#if defined MC_SPECULAR_MAP
+		vec4 specularTex = texture(specular, texCoord);
+		materialOut.z = Packup2x8U(specularTex.xy);
+		materialOut.w = Packup2x8U(specularTex.zw);
 	#endif
 
-	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-		gbufferOut1 = texture(specular, texCoord);
+	normalOut.xy = unpackSnorm2x16(normalPack) * 0.5 + 0.5;
+
+	#if defined MC_NORMAL_MAP
+		// Construct TBN matrix
+		vec3 tangent = OctDecodeSnorm(unpackSnorm2x16(tangentPack.x));
+		vec3 normal = OctDecodeUnorm(normalOut.xy);
+		vec3 bitangent = cross(tangent, normal) * uintBitsToFloat(tangentPack.y);
+		mat3 tbnMatrix = mat3(tangent, bitangent, normal);
+
+        vec3 normalTex = texture(normals, texCoord).rgb;
+        DecodeNormalTex(normalTex);
+		normalOut.zw = OctEncodeUnorm(tbnMatrix * normalTex);
+	#else
+		normalOut.zw = normalOut.xy;
 	#endif
 }

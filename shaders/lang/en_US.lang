@@ -1,6 +1,5 @@
 # PROFILES
 profile.Default=Default
-profile.ResPBR=Resource Pack PBR
 
 
 # SCREENS
@@ -11,35 +10,34 @@ screen.PostProcessing=Post-Processing
 screen.Debug=Debug
 screen.Compatibility=Compatibility
 
-screen.Atmospherics=Atmospherics
-screen.Transparent=Transparent
-screen.Foliage=Foliage
 screen.Weather=Weather
+screen.Foliage=Foliage
 
 screen.Clouds=Clouds
-screen.CrepuscularRays=Crepuscular Rays
-screen.Rainbows=Rainbows
+screen.CloudUpsampling=Cloud Upsampling
 
-screen.CloudLighting=Cloud Lighting
 screen.LowLevelClouds=Low-level Clouds
 screen.MidLevelClouds=Mid-level Clouds
 screen.HighLevelClouds=High-level Clouds
 
 screen.Fog=Fog
 screen.Volumetric=Volumetric Fog
-screen.WaterParams=Water Parameters
+screen.Rainbows=Rainbows
 
 screen.GlobalIllumination=Global Illumination
 screen.AmbientOcclusion=Ambient Occlusion
 screen.Reflections=Reflections
 screen.Refractions=Refractions
 screen.Shadows=Shadows
-screen.Misc=Misc
+screen.MiscLighting=Miscellaneous
 
 screen.Normal=Normal
 screen.Parallax=Parallax
 screen.Emissive=Emissive
 screen.SubsurfaceScattering=Subsurface Scattering
+screen.Transparent=Transparent
+screen.WaterParams=Water Parameters
+screen.MiscMaterials=Miscellaneous
 
 screen.FidelityFX=FidelityFX
 screen.DoF=DoF
@@ -56,15 +54,15 @@ option.INFO=Revelation
 option.AUTHOR=Author
 option.AUTHOR.comment=Copyright (C) 2024 HaringPro. Apache License 2.0
 
-# Atmospherics
+option.RP_SUPPORT=Resource Pack Support
+
+# Environment
 option.PLANET_GROUND=Planet Ground
 option.VIEWER_BASE_ALTITUDE=Viewer Base Altitude
 suffix.VIEWER_BASE_ALTITUDE=m
 
-option.ATMOSPHERE_BOTTOM_ALTITUDE=Atmosphere Bottom Altitude
-suffix.ATMOSPHERE_BOTTOM_ALTITUDE=m
-option.ATMOSPHERE_TOP_ALTITUDE=Atmosphere Top Altitude
-suffix.ATMOSPHERE_TOP_ALTITUDE=m
+option.ATMOSPHERE_THICKNESS=Atmosphere Thickness
+suffix.ATMOSPHERE_THICKNESS=m
 
 option.SUN_RADIUS_MULT=Sun Radius Multiplier
 
@@ -75,55 +73,55 @@ option.GALAXY=Galaxy
 option.GALAXY_INTENSITY=Galaxy Intensity
 option.GALAXY_SOLAR_POS=Galaxy Solar Position
 
-option.CREPUSCULAR_RAYS=Crepuscular Rays
-option.CREPUSCULAR_RAYS_INTENSITY=Crepuscular Rays Intensity
-option.CREPUSCULAR_RAYS_SAMPLES=Crepuscular Rays Samples
-
 option.RAINBOWS=Rainbows
 option.RAINBOWS_PRIMARY_INTENSITY=Primary Rainbow Intensity
 option.RAINBOWS_SECONDARY_INTENSITY=Secondary Rainbow Intensity
 
 # Clouds
 option.CLOUDS=Clouds
-option.CLOUD_CBR_ENABLED=Checkerboard Rendering
-option.CLOUD_CBR_SCALE=CBR Scale
-suffix.CLOUD_CBR_SCALE=x
+option.CLOUD_TAAU_ENABLED=Temporal Upsampling
+option.CLOUD_TAAU_SCALE=Upsampling Scale
+suffix.CLOUD_TAAU_SCALE=x
 
-option.CLOUD_EI_CLIP=Ellipsoid Intersection Clip
+option.CLOUD_TAAU_CLIPPING=Upsampling Clipping
 option.CLOUD_MAX_ACCUM_FRAMES=Max Accumulated Frames
-option.CLOUD_AERIAL_PERSPECTIVE=Aerial Perspective
+option.CLOUD_TAAU_ANTIFLICKER=Anti-flicker
 
-option.CLOUD_MS_COUNT=Multi-scattering Count
-option.CLOUD_MS_FALLOFF_E=Extinction Falloff
-option.CLOUD_MS_FALLOFF_S=Scattering Falloff
-option.CLOUD_MS_FALLOFF_P=Phase Falloff
-
-option.CLOUD_LOW_SAMPLES=Samples
-option.CLOUD_LOW_SKYLIGHT_SAMPLES=Skylight Samples
+option.CLOUD_LOW_SAMPLES_MIN=Min Main Samples
+option.CLOUD_LOW_SAMPLES_MAX=Max Main Samples
 option.CLOUD_LOW_SUNLIGHT_SAMPLES=Sunlight Samples
+option.CLOUD_LOW_SKYLIGHT_SAMPLES=Skylight Samples
 option.CLOUD_LOW_WIND_SPEED=Wind Speed
 suffix.CLOUD_LOW_WIND_SPEED=m/s
+option.CLOUD_LOW_WIND_ANGLE=Wind Angle
+suffix.CLOUD_LOW_WIND_ANGLE=°
 
 option.CLOUD_MID_ALTITUDE=Altitude
 option.CLOUD_MID_THICKNESS=Thickness
 option.CLOUD_MID_SUNLIGHT_SAMPLES=Sunlight Samples
-option.CLOUD_MID_WIND_SPEED=Wind Speed
 suffix.CLOUD_MID_ALTITUDE=m
 suffix.CLOUD_MID_THICKNESS=m
+option.CLOUD_MID_WIND_SPEED=Wind Speed
 suffix.CLOUD_MID_WIND_SPEED=m/s
+option.CLOUD_MID_WIND_ANGLE=Wind Angle
+suffix.CLOUD_MID_WIND_ANGLE=°
 
 option.CLOUD_HIGH_ALTITUDE=Altitude
 option.CLOUD_HIGH_THICKNESS=Thickness
 option.CLOUD_HIGH_SUNLIGHT_SAMPLES=Sunlight Samples
-option.CLOUD_HIGH_WIND_SPEED=Wind Speed
 suffix.CLOUD_HIGH_ALTITUDE=m
 suffix.CLOUD_HIGH_THICKNESS=m
+option.CLOUD_HIGH_WIND_SPEED=Wind Speed
 suffix.CLOUD_HIGH_WIND_SPEED=m/s
+option.CLOUD_HIGH_WIND_ANGLE=Wind Angle
+suffix.CLOUD_HIGH_WIND_ANGLE=°
 
 option.CLOUD_CUMULUS=Cumulus
 option.CLOUD_CU_COVERAGE=Cumulus Coverage
 option.CLOUD_CU_ALTITUDE=Cumulus Altitude
 option.CLOUD_CU_THICKNESS=Cumulus Thickness
+option.CLOUD_CU_DENSITY_B=Cumulus Bottom Density
+option.CLOUD_CU_DENSITY_T=Cumulus Top Density
 suffix.CLOUD_CU_ALTITUDE=m
 suffix.CLOUD_CU_THICKNESS=m
 
@@ -137,13 +135,8 @@ option.CLOUD_CC_COVERAGE=Cirrocumulus Coverage
 option.CLOUD_SHADOWS=Cloud Shadows
 option.CLOUD_SHADOW_SAMPLES=Cloud Shadow Samples
 option.CLOUD_SHADOW_DISTANCE=Cloud Shadow Distance
-value.CLOUD_SHADOW_DISTANCE.1024.0=64 Chunks
-value.CLOUD_SHADOW_DISTANCE.2048.0=128 Chunks
-value.CLOUD_SHADOW_DISTANCE.4096.0=256 Chunks
-value.CLOUD_SHADOW_DISTANCE.8192.0=512 Chunks
-value.CLOUD_SHADOW_DISTANCE.16384.0=1024 Chunks
-value.CLOUD_SHADOW_DISTANCE.32768.0=2048 Chunks
-value.CLOUD_SHADOW_DISTANCE.65536.0=4096 Chunks
+option.CLOUD_SHADOW_STRENGTH=Cloud Shadow Strength
+suffix.CLOUD_SHADOW_DISTANCE=Chunks
 
 # Fog
 option.VOLUMETRIC_FOG=Volumetric Fog
@@ -173,20 +166,7 @@ option.LAVA_FOG=Lava Fog
 option.POWDERED_SNOW_FOG=Powdered Snow Fog
 option.BLINDNESS_DARKNESS_FOG=Blindness & Darkness Fog
 
-# Transparent
-option.WATER_PARALLAX=Water Parallax
-option.WATER_CAUSTICS=Water Caustics
-option.WATER_WAVE_HEIGHT=Water Wave Height
-option.WATER_WAVE_SPEED=Water Wave Speed
-option.WATER_ABSORPTION_R=Water Absorption §4Red
-option.WATER_ABSORPTION_G=Water Absorption §2Green
-option.WATER_ABSORPTION_B=Water Absorption §1Blue
-option.WATER_FOG_DENSITY=Water Fog Density
-option.WATER_REFRACT_IOR=Water Refract IOR
-
-option.TRANSLUCENT_ROUGHNESS=Translucent Roughness
-option.GLASS_REFRACT_IOR=Glass Refract IOR
-
+# Weather
 option.RAIN_PUDDLES=Rain Puddles
 option.RAIN_PUDDLE_SCALE=Rain Puddle Scale
 option.RAIN_PUDDLE_SMOOTHNESS=Rain Puddle Smoothness
@@ -195,12 +175,10 @@ option.RAIN_VISIBILITY=Rain/Snow Visibility
 option.RAIN_SCALE_X=Rain/Snow Scale X
 option.RAIN_SCALE_Y=Rain/Snow Scale Y
 
-option.SELECTION_BOX_COLOR_R=Selection Box Color §4Red
-option.SELECTION_BOX_COLOR_G=Selection Box Color §2Green
-option.SELECTION_BOX_COLOR_B=Selection Box Color §1Blue
-option.SELECTION_BOX_WIDTH=Selection Box Width
-
+# Foliage
 option.WAVING_FOLIAGE=Waving Foliage
+option.WAVING_FOLIAGE_SPEED=Waving Speed
+option.WAVING_FOLIAGE_STRENGTH=Waving Strength
 option.UNLABELLED_FOILAGE_DETECTION=Unlabelled Foliage Detection
 
 
@@ -256,22 +234,17 @@ option.AO_MULTI_BOUNCE=AO Multi-bounce
 option.SSAO_SAMPLES=SSAO Samples
 option.SSAO_STRENGTH=SSAO Strength
 
-option.GTAO_SLICES=GTAO Slices
-option.GTAO_DIRECTION_SAMPLES=GTAO Direction Samples
+option.GTAO_SLICES=GTAO Direction Samples
+option.GTAO_DIRECTION_SAMPLES=GTAO Marching Samples
 option.GTAO_RADIUS=GTAO Radius
 
-option.RSM_ENABLED=Reflective Shadow Maps
-option.RSM_SAMPLES=RSM Samples
-option.RSM_RADIUS=RSM Radius
-option.RSM_BRIGHTNESS=RSM Brightness
-option.RSM_MAX_ACCUM_FRAMES=Max Accumulated Frames
-
-option.SSPT_ENABLED=Screen-Space Path Tracing
-option.SSPT_SPP=Samples Per Pixel
-option.SSPT_BOUNCES=SSPT Bounces
-option.SSPT_RT_STEPS=SSPT Raytracing Steps
-option.SSPT_BLENDED_LIGHTMAP=SSPT Blended Lightmap
-option.SSPT_MAX_ACCUM_FRAMES=Max Accumulated Frames
+option.SSILVB_ENABLED=SSILVB GI
+option.SSILVB_SLICE_COUNT=Direction Samples
+option.SSILVB_SAMPLE_COUNT=Marching Samples
+option.SSILVB_SECTOR_COUNT=Sector Count
+option.SSILVB_HIT_THICKNESS=Hit Thickness
+option.SSILVB_BLENDED_LIGHTMAP=Blended Lightmap
+option.SSILVB_MAX_ACCUM_FRAMES=Max Accumulated Frames
 
 option.SVGF_ENABLED=Spatio-Temporal Variance-Guided Filtering
 
@@ -284,7 +257,6 @@ value.TEXTURE_FORMAT.2=§c§k???
 
 option.NORMAL_MAPPING=Normal Mapping
 option.SPECULAR_MAPPING=Specular Mapping
-option.DEFAULT_DIELECTRIC_F0=Default Dielectric F0
 
 option.AUTO_GENERATED_NORMAL=Auto Generated Normal
 option.AGN_RESOLUTION=AGN Resolution
@@ -314,11 +286,12 @@ value.SUBSURFACE_SCATTERING_MODE.1=Hardcoded + PBR
 value.SUBSURFACE_SCATTERING_MODE.2=PBR Only
 option.SUBSURFACE_SCATTERING_STRENGTH=Subsurface Scattering Strength
 option.SUBSURFACE_SCATTERING_BRIGHTNESS=Subsurface Scattering Brightness
+option.SUBSURFACE_SCATTERING_RADIUS=Subsurface Scattering Radius
 
-option.RAYTRACE_SAMPLES=Raytrace Samples
-option.RAYTRACE_REFINEMENT=Raytrace Refinement
-option.RAYTRACE_REFINEMENT_STEPS=Raytrace Refinement Steps
-option.REAL_SKY_REFLECTIONS=Real Sky Reflections
+option.SSRT_MAX_SAMPLES=Raytrace Samples
+option.SSRT_REFINEMENT=Raytrace Refinement
+option.SSRT_REFINEMENT_STEPS=Raytrace Refinement Steps
+option.SSRT_SKY_TRACING=Raytrace Sky
 
 option.SPECULAR_IMPORTANCE_SAMPLING_BIAS=Importance Sampling Bias
 
@@ -329,23 +302,53 @@ option.REFLECTION_FILTER=Reflection Filter
 option.RAYTRACED_REFRACTION=Raytraced Refraction
 option.REFRACTION_STRENGTH=Refraction Strength
 
+# Transparent
+option.WATER_PARALLAX=Water Parallax
+option.WATER_CAUSTICS=Water Caustics
+option.WATER_WAVE_HEIGHT=Water Wave Height
+option.WATER_WAVE_SPEED=Water Wave Speed
+option.WATER_FOG_DENSITY=Water Fog Density
+option.WATER_IOR=Water IOR
+option.WATER_PARALLAX_SAMPLES=Water Parallax Samples
+
+option.WATER_ABSORPTION_R=Water Absorption §4Red
+option.WATER_ABSORPTION_G=Water Absorption §2Green
+option.WATER_ABSORPTION_B=Water Absorption §1Blue
+option.WATER_SCATTERING_R=Water Scattering §4Red
+option.WATER_SCATTERING_G=Water Scattering §2Green
+option.WATER_SCATTERING_B=Water Scattering §1Blue
+
+option.TRANSLUCENT_ROUGHNESS=Translucent Roughness
+option.GLASS_IOR=Glass IOR
+
+# Misc
+option.DEFAULT_DIELECTRIC_F0=Default Dielectric F0
+option.SELECTION_BOX_WIDTH=Selection Box Width
+option.SELECTION_BOX_COLOR_R=Selection Box Color §4Red
+option.SELECTION_BOX_COLOR_G=Selection Box Color §2Green
+option.SELECTION_BOX_COLOR_B=Selection Box Color §1Blue
+
 
 # Post-Processing
 option.TAA_ENABLED=Temporal Anti-Aliasing
-option.TAA_CLOSEST_FRAGMENT=TAA Closest Fragment
-option.TAA_EI_CLIP=Ellipsoid Intersection Clip
-option.TAA_AGGRESSION=TAA Aggression
+option.TAA_CLOSEST_FRAGMENT=Closest Fragment
+option.TAA_SHARPEN=Sharpen
+option.TAA_CLIPPING=Clipping
+option.TAA_AGGRESSION=Clipping Aggression
 option.TAA_MAX_ACCUM_FRAMES=Max Accumulated Frames
-option.TAA_SHARPEN=TAA Sharpen
-option.TAA_SHARPNESS=TAA Sharpness
+option.TAA_ANTIFLICKER=Anti-flicker
 
 option.MOTION_BLUR=Motion Blur
 option.MOTION_BLUR_SAMPLES=Motion Blur Samples
 option.MOTION_BLUR_STRENGTH=Motion Blur Strength
 
-option.BLOOM_ENABLED=Bloom
+option.BLOOM=Bloom
+option.BLOOM_BLENDING_MODE=Bloom Blending Mode
+value.BLOOM_BLENDING_MODE.0=Add
+value.BLOOM_BLENDING_MODE.1=Lerp
+value.BLOOM_BLENDING_MODE.2=Remap
+option.BLOOM_KARIS_AVERAGE=Karis Average
 option.BLOOM_INTENSITY=Bloom Intensity
-option.BLOOM_BLUR_SAMPLES=Bloom Blur Samples
 option.BLOOMY_FOG=Bloomy Fog
 option.BLOOMY_FOG_INTENSITY=Bloomy Fog Intensity
 
@@ -366,6 +369,10 @@ option.MANUAL_EV=Manual EV
 
 option.PURKINJE_SHIFT=Purkinje Shift
 option.PURKINJE_SHIFT_STRENGTH=Purkinje Shift Strength
+option.PURKINJE_SHIFT_NOISE=Purkinje Shift Noise
+option.PURKINJE_SHIFT_R=Purkinje Color §4Red
+option.PURKINJE_SHIFT_G=Purkinje Color §2Green
+option.PURKINJE_SHIFT_B=Purkinje Color §1Blue
 
 option.VIGNETTE_ENABLED=Vignette
 option.VIGNETTE_STRENGTH=Vignette Strength
@@ -395,8 +402,8 @@ option.FORCE_DISABLE_SUBGROUP_OPS=§4Force Disable Subgroup Ops
 option.WHITE_WORLD=White World
 option.DEBUG_BLOOM_TILES=DEBUG_BLOOM_TILES
 option.DEBUG_CLOUD_SHADOWS=DEBUG_CLOUD_SHADOWS
-option.DEBUG_GI=DEBUG_GI
+option.DEBUG_CLOUD_MAP=DEBUG_CLOUD_MAP
 option.DEBUG_NORMALS=DEBUG_NORMALS
 option.DEBUG_RESHADING=DEBUG_RESHADING
-option.DEBUG_SKYVIEW=DEBUG_SKYVIEW
+option.DEBUG_SKY_MAP=DEBUG_SKY_MAP
 option.DEBUG_SKY_COLOR=DEBUG_SKY_COLOR

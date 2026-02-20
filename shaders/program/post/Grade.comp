@@ -20,34 +20,28 @@ const vec2 workGroupsRender = vec2(1.0, 1.0);
 
 #include "/lib/Utility.glsl"
 
-#define TONE_MAPPER AgX_Minimal // [None AcademyFit AcademyFull AgX_Minimal AgX_Full Uchimura Lottes]
+#define TONE_MAPPER AgX_Minimal // [None AcademyFit AcademyFull AgX_Minimal AgX_Full Lottes GT GT7]
 
-#define BLOOM_INTENSITY 1.0 // Intensity of bloom. [0.0 0.01 0.02 0.05 0.07 0.1 0.15 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5.0 7.0 10.0 15.0 20.0]
-#define BLOOMY_FOG_INTENSITY 0.75 // Intensity of bloomy fog. [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.75 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.5 3.0 3.5 4.0 5.0]
+#define BLOOM_BLENDING_MODE 1 // [0 1 2]
+#define BLOOM_INTENSITY 1.0 // [0.0 0.01 0.02 0.05 0.07 0.1 0.15 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 3.0 4.0 5.0 7.0 10.0 15.0 20.0]
+#define BLOOMY_FOG_INTENSITY 1.0 // [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.75 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.5 3.0 3.5 4.0 5.0]
 
-#define PURKINJE_SHIFT // Enables purkinje shift effect
-#define PURKINJE_SHIFT_STRENGTH 0.5 // Strength of purkinje shift effect. [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.5 3.0 3.5 4.0 5.0]
+#define PURKINJE_SHIFT
+// #define PURKINJE_SHIFT_NOISE
+#define PURKINJE_SHIFT_STRENGTH 0.3 // [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0]
+#define PURKINJE_SHIFT_R 0.56 // [0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0]
+#define PURKINJE_SHIFT_G 0.78 // [0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0]
+#define PURKINJE_SHIFT_B 1.0  // [0.0 0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1 0.11 0.12 0.13 0.14 0.15 0.16 0.17 0.18 0.19 0.2 0.21 0.22 0.23 0.24 0.25 0.26 0.27 0.28 0.29 0.3 0.31 0.32 0.33 0.34 0.35 0.36 0.37 0.38 0.39 0.4 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.5 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.6 0.61 0.62 0.63 0.64 0.65 0.66 0.67 0.68 0.69 0.7 0.71 0.72 0.73 0.74 0.75 0.76 0.77 0.78 0.79 0.8 0.81 0.82 0.83 0.84 0.85 0.86 0.87 0.88 0.89 0.9 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.0]
 
-// #define VIGNETTE_ENABLED // Enables vignetting effect
-#define VIGNETTE_STRENGTH 1.0 // Strength of vignetting effect. [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.5 3.0 3.5 4.0 5.0]
-#define VIGNETTE_ROUNDNESS 0.5 // Roundness of vignetting effect. [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.5 3.0 3.5 4.0 5.0]
+// #define VIGNETTE_ENABLED
+#define VIGNETTE_STRENGTH 1.0 // [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.5 3.0 3.5 4.0 5.0]
+#define VIGNETTE_ROUNDNESS 0.5 // [0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.5 3.0 3.5 4.0 5.0]
 
 //======// Uniform //=============================================================================//
 
-writeonly uniform image2D colorimg0; // LDR output
+writeonly uniform image2D colorimg8; // LDR output
 
-uniform sampler2D colortex0; // Motion blur output
-uniform sampler2D colortex1; // TAA output
-uniform sampler2D colortex4; // Bloom tiles
-uniform sampler2D colortex6; // Rain alpha
-uniform sampler2D colortex12; // Bloomy fog mask
-
-uniform sampler2D skyViewTex;
-
-uniform float aspectRatio;
-uniform float rainStrength;
-
-uniform vec2 viewPixelSize;
+#include "/lib/universal/Uniform.glsl"
 
 //======// SSBO //================================================================================//
 
@@ -55,14 +49,15 @@ uniform vec2 viewPixelSize;
 
 //======// Function //============================================================================//
 
-const vec2 bloomTileOffset[7] = vec2[7](
+#include "/lib/universal/Random.glsl"
+
+const vec2 bloomTileOffset[6] = vec2[6](
 	vec2(0.0000, 0.0000),
 	vec2(0.0000, 0.5000),
 	vec2(0.2500, 0.5000),
 	vec2(0.2500, 0.6250),
 	vec2(0.3125, 0.6250),
-	vec2(0.3150, 0.6563),
-	vec2(0.3281, 0.6563)
+	vec2(0.3150, 0.6563)
 );
 
 void CombineBloomAndFog(inout vec3 scene, in ivec2 texel, in float exposure) {
@@ -73,95 +68,62 @@ void CombineBloomAndFog(inout vec3 scene, in ivec2 texel, in float exposure) {
 	float sumWeight = 0.0;
 
 	vec2 upscalingCoord = screenCoord;
-	for (uint i = 0u; i < 7u; ++i) {
+	for (uint i = 0u; i < 6u; ++i) {
 		upscalingCoord *= 0.5;
     	vec2 sampleCoord = upscalingCoord + bloomTileOffset[i];
-		sampleCoord += viewPixelSize * float(i * 12);
+		sampleCoord += viewPixelSize * float(i * 8);
 		vec3 sampleTile = textureBicubic(colortex4, sampleCoord).rgb;
 
 		bloomData += sampleTile * weight;
 		sumWeight += weight;
-		weight *= 0.85;
+		weight *= 0.9;
 	}
 
 	bloomData *= rcp(sumWeight);
 
-	float bloomIntensity = BLOOM_INTENSITY * 0.075;
-	bloomIntensity *= fma(1.0 / max(exposure, 1.0), 0.75, 0.25);
-
-	scene = mix(scene, bloomData, bloomIntensity);
+	float bloomIntensity = BLOOM_INTENSITY * 0.25;
+	bloomIntensity /= max(exposure, 1.0) + 2.0;
 
 	#ifdef BLOOMY_FOG
-		float mask = texelFetch(colortex12, texel, 0).x;
-		scene = mix(bloomData, scene, mix(1.0, saturate(mask), BLOOMY_FOG_INTENSITY));
+		float fogMask = 1.0 - texelFetch(colortex12, texel, 0).x;
+		bloomIntensity = max(bloomIntensity, fogMask * BLOOMY_FOG_INTENSITY);
+	#endif
+
+	#if BLOOM_BLENDING_MODE == 0
+		scene += bloomData * bloomIntensity;
+	#elif BLOOM_BLENDING_MODE == 1
+		scene = mix(scene, bloomData, bloomIntensity);
+	#else
+		scene = (scene + bloomData * bloomIntensity) / (1.0 + bloomIntensity * 0.5);
 	#endif
 
 	if (rainStrength > 1e-2) {
-		float rainAlpha = textureBicubic(colortex6, screenCoord).a;
+		float rainAlpha = texture(colortex6, screenCoord).a;
 		rainAlpha = oms(rainAlpha) * RAIN_VISIBILITY;
 		scene = scene * oms(rainAlpha) + bloomData * rainAlpha * 1.25;
 	}
 }
 
-//================================================================================================//
-
-const mat3 sRGBtoXYZ = mat3(
-	vec3(0.4124564, 0.3575761, 0.1804375),
-	vec3(0.2126729, 0.7151522, 0.0721750),
-	vec3(0.0193339, 0.1191920, 0.9503041)
-);
-
-const mat3 XYZtoSRGB = mat3(
-	vec3(3.2409699419, 	-1.5373831776, -0.4986107603),
-	vec3(-0.9692436363,  1.8759675015,  0.0415550574),
-	vec3(0.0556300797, 	-0.2039769589,  1.0569715142)
-);
-
 // See section 3.4 of http://www.diva-portal.org/smash/get/diva2:24136/FULLTEXT01.pdf
-vec3 PurkinjeShift(in vec3 image) {
+vec3 ScotopicVision(in vec3 color, in float exposure) {
 	const vec3 rodResponse = vec3(0.05, 0.55, 0.60);
+	const vec3 tint = vec3(PURKINJE_SHIFT_R, PURKINJE_SHIFT_G, PURKINJE_SHIFT_B);
 
-	vec3 xyz = image * sRGBtoXYZ;
+	vec3 xyz = color * sRGB_2_XYZ;
 	vec3 scotopic = xyz * max0(1.33 * (1.0 + (xyz.y + xyz.z) / xyz.x) - 1.68);
 
-	float rodLuminance = dot(scotopic * XYZtoSRGB, rodResponse);
-	return mix(image, rodLuminance * vec3(0.56, 0.72, 1.0), exp2(-(16.0 / PURKINJE_SHIFT_STRENGTH) * rodLuminance));
+	float rodLuminance = dot(scotopic * XYZ_2_sRGB, rodResponse);
+	float mesopicFactor = saturate(log2(1.0 + exposure) / (2.0 + 4.0 * rodLuminance));
+
+	#ifdef PURKINJE_SHIFT_NOISE
+		rodLuminance *= 0.5 + SampleStbnVec1(ivec2(gl_GlobalInvocationID.xy), frameCounter);
+	#endif
+
+	return mix(color, rodLuminance * tint, PURKINJE_SHIFT_STRENGTH * mesopicFactor);
 }
 
 vec3 None(in vec3 x) {
-	return linearToSRGB(x);
-}
-
-// Uchimura 2017, "HDR theory and practice"
-// Math: https://www.desmos.com/calculator/gslcdxvipg
-// Source: https://www.slideshare.net/nikuque/hdr-theory-and-practicce-jp
-vec3 Uchimura(in vec3 x) {
-    const float maxDisplayBrightness = 1.0;
-    const float contrast			 = 1.0;
-    const float linearStart			 = 0.2;
-    const float linearLength		 = 0.1;
-    const float black				 = 1.33;
-    const float pedestal			 = 0.0;
-
-    const float l0 = ((maxDisplayBrightness - linearStart) * linearLength) / contrast;
-    const float L0 = linearStart - linearStart / contrast;
-    const float L1 = linearStart + oms(linearStart) / contrast;
-    const float S0 = linearStart + l0;
-    const float S1 = linearStart + contrast * l0;
-    const float C2 = contrast * maxDisplayBrightness / (maxDisplayBrightness - S1);
-    const float CP = -1.44269502 * C2 / maxDisplayBrightness;
-
-    vec3 w0 = 1.0 - smoothstep(0.0, linearStart, x);
-    vec3 w2 = step(S0, x);
-    vec3 w1 = 1.0 - w0 - w2;
-
-    vec3 T = pow(x, vec3(black)) / pow(linearStart, black - 1.0) + pedestal;
-    vec3 S = maxDisplayBrightness - (maxDisplayBrightness - S1) * exp2(CP * (x - S0));
-    vec3 L = linearStart + contrast * (x - linearStart);
-
-    x = T * w0 + L * w1 + S * w2;
-
-	return linearToSRGB(x);
+	return x;
 }
 
 // Lottes 2016, "Advanced Techniques and Optimization of HDR Color Pipelines"
@@ -181,60 +143,83 @@ vec3 Lottes(in vec3 x) {
 	const vec3 b = -curvedMidIn + curvedHdrMax * midOut;
 	const vec3 c = pow(hdrMax, ad) * curvedMidIn - curvedHdrMax * pow(midIn, ad) * midOut;
 
-	return pow(x, a) * (pow(hdrMax, ad) - pow(midIn, ad)) * midOut / (pow(x, ad) * b + c);
+	return sRGBToLinear(pow(x, a) * (pow(hdrMax, ad) - pow(midIn, ad)) * midOut / (pow(x, ad) * b + c));
 }
 
 #include "/lib/post/ACES.glsl"
 #include "/lib/post/AgX.glsl"
+#include "/lib/post/GT.glsl"
 
 //======// Main //================================================================================//
 void main() {
-    ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
+    uvec2 localPos = QuadLayout16x16(gl_LocalInvocationIndex);
+    ivec2 texelPos = ivec2(localPos + gl_WorkGroupID.xy * gl_WorkGroupSize.xy);
 
  	#if EXPOSURE_MODE == MANUAL
 		float exposure = exp2(-MANUAL_EV);
 	#else
-		float exposure = global.exposure.value;
+		float exposure = exposure.value;
 	#endif
 
 	#ifdef MOTION_BLUR
-		vec3 HDRImage = texelFetch(colortex0, screenTexel, 0).rgb;
+		vec3 color = texelFetch(colortex0, texelPos, 0).rgb;
 	#else
-		vec3 HDRImage = texelFetch(colortex1, screenTexel, 0).rgb;
+		vec3 color = texelFetch(colortex1, texelPos, 0).rgb;
 	#endif
 
 	// Bloom and fog
-	#ifdef BLOOM_ENABLED
-		CombineBloomAndFog(HDRImage, screenTexel, exposure);
+	#ifdef BLOOM
+		CombineBloomAndFog(color, texelPos, exposure);
+	#endif
+
+	// Debug sky environment map
+	#ifdef DEBUG_SKY_MAP
+		if (all(lessThan(texelPos, skyMapRes))) {
+			color = texelFetch(skyMapTex, texelPos, 0).rgb;
+		}
 	#endif
 
 	// Apply exposure
-	HDRImage *= exposure;
+	color *= exposure;
 
 	// Purkinje shift
 	#ifdef PURKINJE_SHIFT
-		HDRImage = PurkinjeShift(HDRImage);
+		color = ScotopicVision(color, exposure);
 	#endif
 
 	// Vignetting
 	#ifdef VIGNETTE_ENABLED
-		vec2 clipCoord = texelToUv(screenTexel) * 2.0 - 1.0;
-		clipCoord.x *= mix(1.0, aspectRatio, VIGNETTE_ROUNDNESS);
-		HDRImage *= exp2(-0.5 * sdot(clipCoord) * VIGNETTE_STRENGTH);
+		vec2 ndcCoord = texelToUv(texelPos) * 2.0 - 1.0;
+		ndcCoord.x *= mix(1.0, aspectRatio, VIGNETTE_ROUNDNESS);
+		color *= exp2(-0.5 * VIGNETTE_STRENGTH * sdot(ndcCoord));
 	#endif
 
-	// Debug sky-view
-	#ifdef DEBUG_SKYVIEW
-		if (all(lessThan(screenTexel, ivec2(skyViewRes.x, skyViewRes.y << 1)))) {
-			HDRImage = texelFetch(skyViewTex, screenTexel, 0).rgb;
-		}
+	// Apply DRT
+	{
+		// Working to DRT space
+		// color *= sRGB_2_Rec2020;
+
+		// Tone mapping
+		color = TONE_MAPPER(color);
+
+		// DRT to working space
+		// color *= Rec2020_2_sRGB;
+
+		// Working to display space
+		color = saturate(linearToSRGB(color));
+	}
+
+	// Debug tone mapping plot
+	#ifdef DEBUG_TONE_MAPPING_PLOT
+		const float scale = 1.5;
+
+		vec2 uv = texelToUv(texelPos) * vec2(aspectRatio, 1.0) * scale;
+		float plot = smoothstep(0.0, scale * viewPixelSize.y, abs(uv.y - TONE_MAPPER(vec3(uv.x)).x));
+
+		// Show LDR range
+		color = vec3(0.25) * step(uv.x, 1.0);
+		color = mix(vec3(1.0), color, plot);
 	#endif
 
-	// Tone mapping
-	vec3 LDRImage = TONE_MAPPER(HDRImage);
-
-	// LDR range clamp
-	LDRImage = saturate(LDRImage);
-
-	imageStore(colorimg0, screenTexel, vec4(sRGBtoLinearApprox(LDRImage), 1.0));
+	imageStore(colorimg8, texelPos, vec4(color, 1.0));
 }

@@ -7,8 +7,8 @@
 
 /* RENDERTARGETS: 6,7,8 */
 layout (location = 0) out vec4 albedoOut;
-layout (location = 1) out uvec4 gbufferOut0;
-layout (location = 2) out vec4 gbufferOut1;
+layout (location = 1) out uvec4 materialOut;
+layout (location = 2) out vec4 normalOut;
 
 #if defined PARALLAX && defined PARALLAX_SHADOW && !defined PARALLAX_DEPTH_WRITE
 /* RENDERTARGETS: 6,7,8,0 */
@@ -17,11 +17,9 @@ layout (location = 3) out float parallaxShadowOut;
 
 //======// Input //===============================================================================//
 
-#if defined NORMAL_MAPPING
-	flat in mat3 tbnMatrix;
-	#define flatNormal tbnMatrix[2]
-#else
-	flat in vec3 flatNormal;
+flat in uint normalPack;
+#if defined MC_NORMAL_MAP
+flat in uvec2 tangentPack;
 #endif
 
 in vec3 vertColor;
@@ -33,19 +31,17 @@ flat in uint materialID;
 	in vec2 tileBase;
 	flat in vec2 tileScale;
 	flat in vec2 tileOffset;
-
-	in vec3 tangentViewPos;
 #endif
 
 //======// Uniform //=============================================================================//
 
 uniform sampler2D tex;
 
-#if defined NORMAL_MAPPING
+#if defined MC_NORMAL_MAP
 	uniform sampler2D normals;
 #endif
 
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+#if defined MC_SPECULAR_MAP
     uniform sampler2D specular;
 #endif
 
@@ -53,15 +49,7 @@ uniform sampler2D tex;
 
 //======// Function //============================================================================//
 
-// Interleaved Gradient Noise
-// https://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare/
-// https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/
-float InterleavedGradientNoiseTemporal(in vec2 coord) {
-	#ifdef TAA_ENABLED
-        coord += 5.588238 * float(frameCounter % 64);
-	#endif
-    return fract(52.9829189 * fract(0.06711056 * coord.x + 0.00583715 * coord.y));
-}
+#include "/lib/universal/Random.glsl"
 
 #ifdef PARALLAX
 	#include "/lib/universal/Transform.glsl"
@@ -101,7 +89,17 @@ float InterleavedGradientNoiseTemporal(in vec2 coord) {
 
 //======// Main //================================================================================//
 void main() {
-	float dither = InterleavedGradientNoiseTemporal(gl_FragCoord.xy);
+	float dither = BlueNoise(ivec2(gl_FragCoord.xy), frameCounter);
+
+	normalOut.xy = unpackSnorm2x16(normalPack) * 0.5 + 0.5;
+
+	// Construct TBN matrix
+	#if defined MC_NORMAL_MAP
+		vec3 tangent = OctDecodeSnorm(unpackSnorm2x16(tangentPack.x));
+		vec3 normal = OctDecodeUnorm(normalOut.xy);
+		vec3 bitangent = cross(tangent, normal) * uintBitsToFloat(tangentPack.y);
+		mat3 tbnMatrix = mat3(tangent, bitangent, normal);
+	#endif
 
 	#ifdef PARALLAX
 		#define ReadTexture(tex) textureGrad(tex, parallaxCoord, texGrad[0], texGrad[1])
@@ -116,56 +114,62 @@ void main() {
 			gl_FragDepth = gl_FragCoord.z;
 		#endif
 
-		if (normalTex.w < 0.999) {
-			float parallaxFade = exp2(-0.1 * max0(length(tangentViewPos) - 2.0));
+		if (normalTex.w < (1.0 - rcp255)) {
+			vec3 viewPos = ScreenToViewSpace(vec3(gl_FragCoord.xy * viewPixelSize, gl_FragCoord.z));
+			vec3 tangentPos = mat3(gbufferModelViewInverse) * viewPos * tbnMatrix;
 
-			vec3 offsetCoord = CalculateParallax(normalize(tangentViewPos), dither);
+			float tangentLength = length(tangentPos);
+			float parallaxFade = smoothstep(64.0, 32.0, tangentLength);
+
+			vec3 offsetCoord = CalculateParallax(tangentPos / tangentLength, dither, parallaxFade);
 			parallaxCoord = atlasCoord(offsetCoord.xy);
 
 			normalTex = ReadTexture(normals);
 
 			DecodeNormalTex(normalTex.xyz);
 
-			if (offsetCoord.z < 0.999 && parallaxFade > EPS) {
+			if (offsetCoord.z < (1.0 - rcp255) && parallaxFade > EPS) {
 				#ifdef PARALLAX_DEPTH_WRITE
 					gl_FragDepth = ViewToScreenDepth(ScreenToViewDepth(gl_FragDepth) - oms(offsetCoord.z) * PARALLAX_DEPTH);
 				#elif defined PARALLAX_SHADOW
 					if (dot(tbnMatrix[2], worldLightVector) > 1e-3) {
-						parallaxShadowOut = CalculateParallaxShadow(worldLightVector * tbnMatrix, offsetCoord, dither) * parallaxFade;
+						parallaxShadowOut = CalculateParallaxShadow(worldLightVector * tbnMatrix, offsetCoord, dither, parallaxFade);
 					}
 				#endif
 				#ifdef PARALLAX_BASED_NORMAL
 					#define sampleHeight(uv) textureGrad(normals, atlasCoord(uv), texGrad[0], texGrad[1]).w
 
-					vec2 bias = 1e-2 * tileScale;
+					vec2 bias = 1e-2 / (tileScale * vec2(atlasSize));
 					float heightR = sampleHeight(offsetCoord.xy + vec2(bias.x, 0.0));
 					float heightL = sampleHeight(offsetCoord.xy - vec2(bias.x, 0.0));
 					float heightU = sampleHeight(offsetCoord.xy + vec2(0.0, bias.y));
 					float heightD = sampleHeight(offsetCoord.xy - vec2(0.0, bias.y));
 
-					float deltaX = (heightL - heightR) * 2.0;
-					float deltaY = (heightD - heightU) * 2.0;
+					float deltaX = heightL - heightR;
+					float deltaY = heightD - heightU;
 
-					vec3 pbN = vec3(deltaX, deltaY, step(abs(deltaX) + abs(deltaY), 1e-3));
-					normalTex.xyz = mix(normalTex.xyz, pbN, parallaxFade * oms(pbN.z));
+					normalTex.xyz = normalize(vec3(deltaX, deltaY, step(abs(deltaX) + abs(deltaY), 1e-3)));
 				#endif
 			}
 		} else {
 			DecodeNormalTex(normalTex.xyz);
 		}
 
-		gbufferOut0.w = Packup2x8U(OctEncodeUnorm(tbnMatrix * normalTex.xyz));
+		normalOut.zw = OctEncodeUnorm(tbnMatrix * normalTex.xyz);
 	#else
 		#define ReadTexture(tex) texture(tex, texCoord)
 
-		#if defined NORMAL_MAPPING
+		#if defined MC_NORMAL_MAP
 			#ifdef AUTO_GENERATED_NORMAL
 				vec3 normalTex = AutoGenerateNormal();
 			#else
 				vec3 normalTex = ReadTexture(normals).xyz;
 				DecodeNormalTex(normalTex);
 			#endif
-			gbufferOut0.w = Packup2x8U(OctEncodeUnorm(tbnMatrix * normalTex));
+
+			normalOut.zw = OctEncodeUnorm(tbnMatrix * normalTex);
+		#else
+			normalOut.zw = normalOut.xy;
 		#endif
 	#endif
 
@@ -179,11 +183,12 @@ void main() {
 		albedoOut = vec4(1.0);
 	#endif
 
-	gbufferOut0.x = PackupDithered2x8U(lightmap, dither);
-	gbufferOut0.y = materialID;
-	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(flatNormal));
+	materialOut.x = PackupDithered2x8U(lightmap, dither);
+	materialOut.y = materialID;
 
-	#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
-		gbufferOut1 = ReadTexture(specular);
+	#if defined MC_SPECULAR_MAP
+		vec4 specularTex = ReadTexture(specular);
+		materialOut.z = Packup2x8U(specularTex.xy);
+		materialOut.w = Packup2x8U(specularTex.zw);
 	#endif
 }

@@ -6,14 +6,8 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-	Pass: Checkerboard render clouds
-	Reference: https://www.intel.com/content/dam/develop/external/us/en/documents/checkerboard-rendering-for-real-time-upscaling-on-intel-integrated-graphics.pdf
-			   https://developer.nvidia.com/sites/default/files/akamai/gameworks/samples/DeinterleavedTexturing.pdf
-
 --------------------------------------------------------------------------------
 */
-
-#extension GL_KHR_shader_subgroup_clustered : enable
 
 //======// Utility //=============================================================================//
 
@@ -23,22 +17,19 @@
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
-#ifndef CLOUD_CBR_ENABLED
+#ifndef CLOUD_TAAU_ENABLED
 	const vec2 workGroupsRender = vec2(1.0, 1.0);
-#elif CLOUD_CBR_SCALE == 2
+#elif CLOUD_TAAU_SCALE == 2
 	const vec2 workGroupsRender = vec2(0.5, 0.5);
-#elif CLOUD_CBR_SCALE == 3
+#elif CLOUD_TAAU_SCALE == 3
 	const vec2 workGroupsRender = vec2(0.333333, 0.333333);
-#elif CLOUD_CBR_SCALE == 4
+#elif CLOUD_TAAU_SCALE == 4
 	const vec2 workGroupsRender = vec2(0.25, 0.25);
 #endif
 
 //======// Uniform //=============================================================================//
 
 writeonly uniform image2D cloudOriginImg;
-writeonly uniform image2D cloudDepthOriginImg;
-
-uniform sampler3D atmosCombinedLut;
 
 #include "/lib/universal/Uniform.glsl"
 
@@ -49,84 +40,58 @@ uniform sampler3D atmosCombinedLut;
 //======// Function //============================================================================//
 
 #include "/lib/universal/Random.glsl"
-#include "/lib/universal/Offset.glsl"
+#include "/lib/universal/Transform.glsl"
 
 #include "/lib/atmosphere/Common.glsl"
-#include "/lib/atmosphere/PrecomputedAtmosphericScattering.glsl"
+#include "/lib/atmosphere/Bruneton08.glsl"
 
 #include "/lib/atmosphere/clouds/Render.glsl"
 
-vec3 ScreenToViewVectorRaw(in vec2 screenCoord) {
-	vec2 NDCCoord = screenCoord * 2.0 - 1.0;
-	return normalize(vec3(diagonal2(gbufferProjectionInverse) * NDCCoord, gbufferProjectionInverse[3].z));
+float SampleDepthMax4x4(in sampler2D depthTex, in vec2 coord) {
+	// 4x4 pixel neighborhood using textureGatherOffset
+	float LL = maxOf(textureGatherOffset(depthTex, coord, ivec2(-2, -2)));
+	float LR = maxOf(textureGatherOffset(depthTex, coord, ivec2(-2,  2)));
+	float UL = maxOf(textureGatherOffset(depthTex, coord, ivec2( 2, -2)));
+	float UR = maxOf(textureGatherOffset(depthTex, coord, ivec2( 2,  2)));
+
+	return max(max(LL, LR), max(UL, UR));
 }
 
-#if (defined SUBGROUP_OPS && !(defined MC_GL_RENDERER_INTEL))
-	#define clusteredMax subgroupClusteredMax
-#else
-	shared float sharedClusteredMax[256];
+bool SkyCheck4x4(in vec2 coord) {
+	// 4x4 pixel neighborhood using textureGatherOffset
+	uvec4 LL = textureGatherOffset(colortex7, coord, ivec2(-2, -2), 1);
+	uvec4 LR = textureGatherOffset(colortex7, coord, ivec2(-2,  2), 1);
+	uvec4 UL = textureGatherOffset(colortex7, coord, ivec2( 2, -2), 1);
+	uvec4 UR = textureGatherOffset(colortex7, coord, ivec2( 2,  2), 1);
 
-	float clusteredMax(in float value, in uint clusterSize) {
-		sharedClusteredMax[gl_LocalInvocationIndex] = value;
-		barrier();
-		for (uint stride = 1; stride < clusterSize; stride <<= 1) {
-			if (gl_LocalInvocationIndex < 256 / stride) {
-				sharedClusteredMax[gl_LocalInvocationIndex] = max(sharedClusteredMax[gl_LocalInvocationIndex], sharedClusteredMax[gl_LocalInvocationIndex + stride]);
-			}
-			barrier();
-		}
-		return sharedClusteredMax[gl_LocalInvocationIndex & ~(clusterSize - 1)];
-	}
-#endif
+	// Material ID 0 is sky
+	return any(equal(LL & LR & UL & UR, uvec4(0u)));
+}
 
 //======// Main //================================================================================//
 void main() {
-    ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
+    uvec2 localPos = QuadLayout16x16(gl_LocalInvocationIndex);
+    ivec2 texelPos = ivec2(localPos + gl_WorkGroupID.xy * gl_WorkGroupSize.xy);
 
-	#ifdef CLOUD_CBR_ENABLED
-		ivec2 cloudTexel = screenTexel * CLOUD_CBR_SCALE + cloudCbrOffset[frameCounter % cloudRenderArea];
+	vec2 coord = texelToUv(texelPos);
+
+	#ifdef CLOUD_TAAU_ENABLED
+		vec2 renderCoord = (coord + taaOffset * 0.5) * CLOUD_TAAU_SCALE;
 	#else
-		#define cloudTexel screenTexel
+		#define renderCoord coord
 	#endif
-	vec2 cloudUv = texelToUv(cloudTexel);
 
+	// x: sunlight, y: skylight, z: depth, w: transmittance
 	vec4 cloudOut = vec4(0.0, 0.0, 0.0, 1.0);
-	float cloudDepth = 128e3;
 
-	float depthMax = loadDepth2(cloudTexel);
-	#if defined DISTANT_HORIZONS
-		if (depthMax > 1.0 - EPS) depthMax = loadDepth0DH(cloudTexel);
-	#endif
+	if (SkyCheck4x4(renderCoord)) {
+		vec2 noise = SampleStbnVec2(texelPos, frameCounter + 11);
 
-	#ifdef CLOUD_CBR_ENABLED
-		depthMax = clusteredMax(depthMax, cloudRenderArea);
-	#endif
-
-	if (depthMax > 1.0 - EPS) {
-		vec2 stbnVec2 = SampleStbnVec2(cloudTexel, frameCounter);
-
-		vec3 viewDir  = ScreenToViewVectorRaw(cloudUv);
+		vec3 viewDir  = ScreenToViewVectorRaw(renderCoord);
 		vec3 worldDir = mat3(gbufferModelViewInverse) * viewDir;
 
-		cloudOut = RenderClouds(worldDir, stbnVec2, cloudDepth);
-
-		// Crepuscular rays
-		#ifdef CREPUSCULAR_RAYS
-			#ifdef CLOUD_SHADOWS
-			if (viewerHeight < cumulusBottomRadius) {
-				vec4 crepuscularRays = RaymarchCrepuscular(worldDir, BlueNoiseTemporal(cloudTexel));
-
-				cloudOut *= crepuscularRays.a;
-				cloudOut.rgb += crepuscularRays.rgb;
-			}
-			#endif
-		#endif
+		cloudOut = RenderClouds(worldDir, noise);
 	}
 
-	#ifdef CLOUD_CBR_ENABLED
-		cloudOut.rgb = sRGBToYCoCg(cloudOut.rgb);
-	#endif
-
-	imageStore(cloudOriginImg, screenTexel, cloudOut);
-	imageStore(cloudDepthOriginImg, screenTexel, vec4(cloudDepth));
+	imageStore(cloudOriginImg, texelPos, cloudOut);
 }

@@ -9,10 +9,10 @@ in ivec2 vaUV2;
 
 //======// Output //==============================================================================//
 
-#if defined NORMAL_MAPPING
-	out mat3 tbnMatrix; // Not use flat because of the Physics mod snow
+#if defined MC_NORMAL_MAP
+	out mat3 tbnMatrix;
 #else
-	out vec3 flatNormal;
+	out vec3 geoNormal;
 #endif
 
 out vec4 vertColor;
@@ -56,7 +56,7 @@ void main() {
 	vertColor = vaColor;
 	texCoord = vaUV0;
 
-	lightmap = saturate(vec2(vaUV2) * r240);
+	lightmap = saturate(vec2(vaUV2) * rcp240);
 
 	vec3 viewPos = transMAD(modelViewMatrix, vaPosition + chunkOffset);
 	// worldPos = transMAD(gbufferModelViewInverse, viewPos);
@@ -66,12 +66,12 @@ void main() {
 		gl_Position.xy += taaOffset * gl_Position.w;
 	#endif
 
-	#if defined NORMAL_MAPPING
+	#if defined MC_NORMAL_MAP
 		tbnMatrix[2] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
 		tbnMatrix[0] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * at_tangent.xyz);
-		tbnMatrix[1] = cross(tbnMatrix[0], tbnMatrix[2]) * fastSign(at_tangent.w);
+		tbnMatrix[1] = signMul(cross(tbnMatrix[0], tbnMatrix[2]), at_tangent.w);
 	#else
-		flatNormal = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
+		geoNormal = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
 	#endif
 
 	// 829925: Physics mod snow

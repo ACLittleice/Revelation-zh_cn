@@ -1,23 +1,27 @@
 #if defined PASS_DEFERRED_LIGHTING
-#if (defined SSPT_ENABLED && defined SVGF_ENABLED) || defined RSM_ENABLED
-	vec3 SpatialUpscale5x5(in ivec2 texel, in vec3 worldNormal, in float viewDistance, in float NdotV) {
-		vec3 sum = texelFetch(colortex3, texel, 0).rgb;
+#if defined SSILVB_ENABLED && defined SVGF_ENABLED
+	vec3 UpscaleDiffuseIndirect(in ivec2 texelPos, in vec3 worldNormal, in float viewDistance, in float NdotV) {
+		// ivec2 randTexel = ivec2(vec2(texelPos >> 1) + BlueNoise(texelPos, frameCounter + 3));
+		texelPos >>= 1;
+
+		vec3 sum = texelFetch(colortex3, texelPos, 0).rgb;
 		float sumWeight = 1.0;
 
-		float sigmaZ = -2.0 * NdotV;
+		float sigmaZ = -4.0 * NdotV;
 
-		ivec2 offsetToBR = ivec2(halfViewSize.x, 0);
-        ivec2 texelEnd = ivec2(halfViewEnd);
+		ivec2 tileOffset = ivec2(halfViewSize.x, 0);
+        ivec2 texelEnd = ivec2(halfViewEnd) - 1;
 
-		for (uint i = 0u; i < 24u; ++i) {
-			ivec2 sampleTexel = clamp(texel + offset5x5N[i], ivec2(0), texelEnd);
+		// float depthTolerance = saturate(0.05 + viewDistance * 0.02);
 
-			vec3 prevData = texelFetch(colortex2, sampleTexel + offsetToBR, 0).rgb;
+		for (uint i = 0u; i < 8u; ++i) {
+			ivec2 sampleTexel = clamp(texelPos + offset3x3N[i], ivec2(1), texelEnd);
 
-			float weight = pow32(saturate(dot(OctDecodeSnorm(prevData.xy), worldNormal)));
+			vec3 prevData = texelFetch(colortex2, sampleTexel + tileOffset, 0).rgb;
+
+			float weight = pow16(saturate(dot(OctDecodeSnorm(prevData.xy), worldNormal)));
 			weight *= exp2(distance(prevData.z, viewDistance) * sigmaZ);
 
-			if (weight < EPS) continue;
 			vec3 sampleLight = texelFetch(colortex3, sampleTexel, 0).rgb;
 
 			sum += sampleLight * weight;
@@ -40,15 +44,15 @@
 		return mat2x3(scattering, transmittance);
 	}
 
-	mat2x3 VolumetricFogSpatialUpscale(in ivec2 texel, in float linearDepth) {
-		const ivec2 offset[4] = ivec2[4](ivec2(1, 0), ivec2(-1, 0), ivec2(0, 1), ivec2(0, -1));
-
+	mat2x3 UpscaleVolumetricFog(in ivec2 texelPos, in float linearDepth) {
+		ivec2 randTexel = ivec2(vec2(texelPos >> 1) + BlueNoise(texelPos, frameCounter + 7));
 		float sigmaZ = -64.0 / linearDepth;
-		mat2x3 sum = UnpackFogData(texelFetch(colortex11, texel, 0).rgb);
+
+		mat2x3 sum = UnpackFogData(texelFetch(colortex11, randTexel, 0).rgb);
 		float sumWeight = 1.0;
 
-		for (uint i = 0u; i < 4u; ++i) {
-			ivec2 sampleTexel = texel + offset[i];
+		for (uint i = 0u; i < 8u; ++i) {
+			ivec2 sampleTexel = randTexel + offset3x3N[i];
 			uvec4 sampleFogData = texelFetch(colortex11, sampleTexel, 0);
 
 			float sampleDepth = uintBitsToFloat(sampleFogData.w);

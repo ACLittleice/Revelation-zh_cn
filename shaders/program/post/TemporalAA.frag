@@ -39,70 +39,27 @@ layout (location = 2) out vec2 motionVectorOut;
 
 #include "/lib/universal/Transform.glsl"
 #include "/lib/universal/Fetch.glsl"
-#include "/lib/universal/Offset.glsl"
 
-vec3 GetClosestFragment(in ivec2 texel, in float depth) {
-    vec3 closestFragment = vec3(texel, depth);
+vec3 CrossClosestFragment(in ivec2 texelPos, in float depth) {
+    vec3 closest = vec3(vec2(texelPos), depth);
 
-    for (uint i = 0u; i < 8u; ++i) {
-        ivec2 sampleTexel = offset3x3N[i] + texel;
-        float sampleDepth = loadDepth0(sampleTexel);
-        closestFragment = sampleDepth < closestFragment.z ? vec3(sampleTexel, sampleDepth) : closestFragment;
-    }
+    ivec2 t1 = texelPos + ivec2( 1,  1);
+    ivec2 t2 = texelPos + ivec2(-1,  1);
+    ivec2 t3 = texelPos + ivec2( 1, -1);
+    ivec2 t4 = texelPos + ivec2(-1, -1);
 
-    closestFragment.xy *= viewPixelSize;
-    return closestFragment;
-}
+    float d1 = loadDepth0(t1);
+    float d2 = loadDepth0(t2);
+    float d3 = loadDepth0(t3);
+    float d4 = loadDepth0(t4);
 
-vec3 historyClipAABB(in vec3 history, in vec3 clipMin, in vec3 clipMax) {
-    vec3 center = 0.5 * (clipMax + clipMin);
-    vec3 extent = 0.5 * (clipMax - clipMin);
+    closest = closest.z > d1 ? vec3(vec2(t1), d1) : closest;
+    closest = closest.z > d2 ? vec3(vec2(t2), d2) : closest;
+    closest = closest.z > d3 ? vec3(vec2(t3), d3) : closest;
+    closest = closest.z > d4 ? vec3(vec2(t4), d4) : closest;
 
-    vec3 delta = history - center;
-    float maxUnit = maxOf(abs(delta / extent));
-
-    if (maxUnit > 1.0) {
-        return center + delta / maxUnit;
-    }
-
-    return history;
-}
-
-// Approximation from SMAA presentation from siggraph 2016
-vec4 textureCatmullRomFast(in sampler2D tex, in vec2 coord, in const float sharpness) {
-    //vec2 viewSize = textureSize(sampler, 0);
-    //vec2 pixelSize = 1.0 / viewSize;
-
-    vec2 position = viewSize * coord;
-    vec2 centerPosition = floor(position - 0.5) + 0.5;
-    vec2 f = position - centerPosition;
-    vec2 f2 = f * f;
-    vec2 f3 = f * f2;
-
-    vec2 w0 = -sharpness        * f3 + 2.0 * sharpness         * f2 - sharpness * f;
-    vec2 w1 = (2.0 - sharpness) * f3 - (3.0 - sharpness)       * f2 + 1.0;
-    vec2 w2 = (sharpness - 2.0) * f3 + (3.0 - 2.0 * sharpness) * f2 + sharpness * f;
-    vec2 w3 = sharpness         * f3 - sharpness               * f2;
-
-    vec2 w12 = w1 + w2;
-
-    vec2 tc0 = viewPixelSize * (centerPosition - 1.0);
-    vec2 tc3 = viewPixelSize * (centerPosition + 2.0);
-    vec2 tc12 = viewPixelSize * (centerPosition + w2 / w12);
-
-    float l0 = w12.x * w0.y;
-    float l1 = w0.x  * w12.y;
-    float l2 = w12.x * w12.y;
-    float l3 = w3.x  * w12.y;
-    float l4 = w12.x * w3.y;
-
-    vec4 color =  texture(tex, vec2(tc12.x, tc0.y )) * l0
-                + texture(tex, vec2(tc0.x,  tc12.y)) * l1
-                + texture(tex, vec2(tc12.x, tc12.y)) * l2
-                + texture(tex, vec2(tc3.x,  tc12.y)) * l3
-                + texture(tex, vec2(tc12.x, tc3.y )) * l4;
-
-    return color / (l0 + l1 + l2 + l3 + l4);
+    closest.xy *= viewPixelSize;
+    return closest;
 }
 
 // Lumiance aware perceptual weight
@@ -114,63 +71,72 @@ vec3 perceptualWeightInv(vec3 colorYCoCg) {
     return colorYCoCg * rcp(1.0 - colorYCoCg.x);
 }
 
-#define currentLoad(offset) sRGBToYCoCg(texelFetchOffset(colortex0, texel, 0, offset).rgb)
+vec3 historyClipAABB(in vec3 history, in vec3 center, in vec3 extent) {
+    vec3 delta = history - center;
+    float maxUnit = maxOf(abs(delta / extent));
 
-#define mean(a, b, c, d, e, f, g, h, i) (a + b + c + d + e + f + g + h + i) * rcp(9.0)
-#define sqrMean(a, b, c, d, e, f, g, h, i) (a * a + b * b + c * c + d * d + e * e + f * f + g * g + h * h + i * i) * rcp(9.0)
+    if (maxUnit > 1.0) {
+        return center + delta / maxUnit;
+    }
+
+    return history;
+}
 
 vec4 TemporalReprojection(in vec2 screenCoord, in vec2 motionVector) {
     ivec2 texel = uvToTexel(screenCoord + taaOffset * 0.5);
 
-    vec3 currData = loadSceneColor(texel);
+    vec3 currData = loadSceneMain(texel);
     vec2 prevCoord = screenCoord - motionVector;
 
     if (saturate(prevCoord) != prevCoord) return vec4(currData, 1.0);
 
     #ifdef TAA_SHARPEN
-        vec3 prevData = textureCatmullRomFast(colortex1, prevCoord, TAA_SHARPNESS).rgb;
-        prevData = satU16f(prevData);
+        vec4 temporalData = textureCatmullRomFastAntiRing(colortex1, prevCoord);
     #else
-        vec3 prevData = texture(colortex1, prevCoord).rgb;
+        vec4 temporalData = texture(colortex1, prevCoord);
     #endif
 
-    vec3 sample0 = sRGBToYCoCg(currData);
-    vec3 sample1 = currentLoad(ivec2(-1,  1));
-    vec3 sample2 = currentLoad(ivec2( 0,  1));
-    vec3 sample3 = currentLoad(ivec2( 1,  1));
-    vec3 sample4 = currentLoad(ivec2(-1,  0));
-    vec3 sample5 = currentLoad(ivec2( 1,  0));
-    vec3 sample6 = currentLoad(ivec2(-1, -1));
-    vec3 sample7 = currentLoad(ivec2( 0, -1));
-    vec3 sample8 = currentLoad(ivec2( 1, -1));
+    vec3 prevData = RGBToYCoCg(temporalData.rgb);
+    currData = RGBToYCoCg(currData);
 
-    vec3 clipAvg = mean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
-    vec3 clipAvg2 = sqrMean(sample0, sample1, sample2, sample3, sample4, sample5, sample6, sample7, sample8);
-    vec3 clipStdDev = sqrt(max0(clipAvg2 - clipAvg * clipAvg)) * TAA_AGGRESSION;
+    float currLum = currData.x, prevLum = prevData.x;
+    float temporalContrast = saturate(abs(currLum - prevLum) / max(currLum, prevLum));
 
-    #ifdef TAA_EI_CLIP
-        // Ellipsoid intersection clipping
-        prevData = sRGBToYCoCg(prevData) - clipAvg;
-        prevData *= saturate(inversesqrt(sdot(prevData / clipStdDev)));
-        prevData = prevData + clipAvg;
-    #else
-        // Use variance clipping instead
-        vec3 clipMin = clipAvg - clipStdDev;
-        vec3 clipMax = clipAvg + clipStdDev;
-        prevData = historyClipAABB(sRGBToYCoCg(prevData), clipMin, clipMax);
+    #ifdef TAA_CLIPPING
+        vec3 moment1 = currData;
+        vec3 moment2 = currData * currData;
+
+	    for (uint i = 0u; i < 8u; ++i) {
+            vec3 sampleData = texelFetch(colortex0, texel + offset3x3N[i], 0).rgb;
+            sampleData = RGBToYCoCg(sampleData);
+
+            moment1 += sampleData;
+            moment2 += sampleData * sampleData;
+        }
+        moment1 *= rcp(9.0);
+        moment2 *= rcp(9.0);
+
+        vec3 clipStdDev = sqrt(abs(moment2 - moment1 * moment1)) * TAA_AGGRESSION;
+
+        #if 1
+            // Ellipsoid intersection clipping
+            prevData -= moment1;
+            prevData *= saturate(inversesqrt(sdot(prevData / clipStdDev)));
+            prevData += moment1;
+        #else
+            // AABB clipping
+            prevData = historyClipAABB(prevData, moment1, clipStdDev);
+        #endif
     #endif
 
-    float frameIndex = texture(colortex1, prevCoord).a;
+    // Subpixel sharpening
+	prevData = mix(prevData, currData, sdot(fract(prevCoord * viewSize) - 0.5) * 0.5);
 
-    float currLum = sample0.x, prevLum = prevData.x;
-    float unbiasedDiff = abs(currLum - prevLum) / max(currLum, prevLum);
-	float lumWeight = 1.0 - saturate(unbiasedDiff) * 0.25;
+    float blendWeight = min(++temporalData.a, TAA_MAX_ACCUM_FRAMES);
+    blendWeight *= 1.0 + sqr(temporalContrast) * TAA_ANTIFLICKER;
 
-    float alpha = min(++frameIndex, TAA_MAX_ACCUM_FRAMES) * lumWeight;
-    alpha *= 1.0 - saturate(length(motionVector * viewSize) * 0.02);
-
-    currData = mix(perceptualWeight(prevData), perceptualWeight(sample0), rcp(alpha + 1.0));
-    return vec4(YCoCgToSRGB(perceptualWeightInv(currData)), frameIndex);
+    currData = mix(perceptualWeight(prevData), perceptualWeight(currData), rcp(blendWeight));
+    return vec4(YCoCgToRGB(perceptualWeightInv(currData)), temporalData.a);
 }
 
 //======// Main //================================================================================//
@@ -182,20 +148,33 @@ void main() {
     float depth = loadDepth0(screenTexel);
 	vec2 screenCoord = gl_FragCoord.xy * viewPixelSize;
 
-    #ifdef TAA_CLOSEST_FRAGMENT
-        vec3 closestFragment = GetClosestFragment(screenTexel, depth);
-        vec2 motionVector = closestFragment.xy - Reproject(closestFragment).xy;
-    #else
-        vec2 motionVector = screenCoord - Reproject(vec3(screenCoord, depth)).xy;
-    #endif
+    #if RENDER_MODE == 1
+        #ifdef TAA_CLOSEST_FRAGMENT
+            vec3 closestFragment = CrossClosestFragment(screenTexel, depth);
+            vec2 motionVector = closestFragment.xy - Reproject(closestFragment).xy;
+        #else
+            vec2 motionVector = screenCoord - Reproject(vec3(screenCoord, depth)).xy;
+        #endif
 
-    #ifdef MOTION_BLUR
-        motionVectorOut = depth < 0.56 ? motionVector * 0.25 : motionVector;
-    #endif
+        #ifdef MOTION_BLUR
+            motionVectorOut = depth < 0.56 ? motionVector * 0.25 : motionVector;
+        #endif
 
-    #ifdef TAA_ENABLED
-        temporalOut = TemporalReprojection(screenCoord, motionVector);
+        #ifdef TAA_ENABLED
+            temporalOut = TemporalReprojection(screenCoord, motionVector);
+        #else
+            temporalOut = vec4(loadSceneMain(screenTexel), 1.0);
+        #endif
     #else
-        temporalOut = vec4(loadSceneColor(screenTexel), 1.0);
+        ivec2 srcTexel = uvToTexel(screenCoord + taaOffset * 0.5);
+        temporalOut = vec4(loadSceneMain(srcTexel), 1.0);
+
+        vec2 prevCoord = Reproject(vec3(screenCoord, depth)).xy;
+        if (distance(prevCoord, screenCoord) < EPS) {
+            vec4 prevData = texture(colortex1, prevCoord);
+
+            temporalOut.rgb = mix(prevData.rgb, temporalOut.rgb, rcp(++prevData.a));
+            temporalOut.a = prevData.a;
+        }
     #endif
 }

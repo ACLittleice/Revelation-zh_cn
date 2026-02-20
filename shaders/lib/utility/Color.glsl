@@ -1,34 +1,84 @@
+
+const mat3 Rec2020_2_sRGB = mat3(
+     1.6603034854, -0.5875701425, -0.0728900602,
+    -0.1243755953,  1.1328344814, -0.0083597372,
+    -0.0181122800, -0.1005836085,  1.1187703262
+);
+
+const mat3 sRGB_2_Rec2020 = mat3(
+    0.6274413721, 0.3292974595, 0.0433514584,
+    0.0690276171, 0.9195806669, 0.0113614226,
+    0.0163642351, 0.0880171625, 0.8955649727
+);
+
+const mat3 sRGB_2_XYZ = mat3(
+	0.4124564, 0.3575761, 0.1804375,
+	0.2126729, 0.7151522, 0.0721750,
+	0.0193339, 0.1191920, 0.9503041
+);
+
+const mat3 XYZ_2_sRGB = mat3(
+	 3.2409699419, -1.5373831776, -0.4986107603,
+	-0.9692436363,  1.8759675015,  0.0415550574,
+	 0.0556300797, -0.2039769589,  1.0569715142
+);
+
+const mat3 XYZ_2_Rec2020 = mat3(
+     1.716651188,  -0.3556707838, -0.2533662814,
+    -0.6666843518,  1.6164812366,  0.0157685458,
+     0.0176398574, -0.0427706133,  0.9421031212
+);
+
+const mat3 Rec2020_2_XYZ = mat3(
+    0.6369580483, 0.1446169036, 0.1688809752,
+    0.2627002120, 0.6779980715, 0.0593017165,
+    0.0000000000, 0.0280726930, 1.0609850577
+);
+
+// https://en.wikipedia.org/wiki/SRGB
 // https://github.com/tobspr/GLSL-Color-Spaces/blob/master/ColorSpaces.inc.glsl
 vec3 linearToSRGB(in vec3 color) {
-	return mix(color * 12.92, 1.055 * pow(color, vec3(0.41666666)) - 0.055, lessThan(vec3(0.0031308), color));
+	return mix(color * 12.92, 1.055 * pow(color, vec3(0.41666666)) - 0.055, step(vec3(0.0031308), color));
 }
 
-vec3 sRGBtoLinear(in vec3 color) {
-	return mix(color * 0.07739938, pow((color + 0.055) * 0.94786729, vec3(2.4)), lessThan(vec3(0.04045), color));
+vec3 sRGBToLinear(in vec3 color) {
+	return mix(color * 0.07739938, pow((color + 0.055) * 0.94786729, vec3(2.4)), step(vec3(0.04045), color));
 }
 
 // https://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html
 vec3 linearToSRGBApprox(in vec3 color) {
-    // vec3 S1 = color * inversesqrt(color);
-    // vec3 S2 = S1 * inversesqrt(S1);
-    // vec3 S3 = S2 * inversesqrt(S2);
-    // return 0.585122381 * S1 + 0.783140355 * S2 - 0.368262736 * S3;
-    return pow(color, vec3(1.0 / 2.223));
+    vec3 S1 = color * inversesqrt(color);
+    vec3 S2 = S1 * inversesqrt(S1);
+    vec3 S3 = S2 * inversesqrt(S2);
+    return 0.585122381 * S1 + 0.783140355 * S2 - 0.368262736 * S3;
 }
 
-vec3 sRGBtoLinearApprox(in vec3 color) {
+vec3 sRGBToLinearApprox(in vec3 color) {
     return color * (color * (color * 0.305306011 + 0.682171111) + 0.012522878);
 }
 
-float luminance(in vec3 color) {
-    // https://en.wikipedia.org/wiki/Luma_(video)
-    // const vec3 coeff = vec3(0.2722287168, 0.6740817658, 0.0536895174);
-    const vec3 coeff = vec3(0.2126, 0.7152, 0.0722);
-    return dot(color, coeff);
+// https://en.wikipedia.org/wiki/YCoCg
+vec3 RGBToYCoCg(in vec3 rgb) {
+    return mat3(
+        0.25,  0.50, -0.25,
+        0.50,  0.00,  0.50,
+        0.25, -0.50, -0.25
+    ) * rgb;
+}
+vec3 YCoCgToRGB(in vec3 YCoCg) {
+    return mat3(
+         1.0,  1.0,  1.0,
+         1.0,  0.0, -1.0,
+        -1.0,  1.0, -1.0
+    ) * YCoCg;
 }
 
-vec3 colorSaturation(in vec3 color, in float saturation) {
-    return mix(vec3(luminance(color)), color, saturation);
+float luminance(in vec3 color) {
+    return dot(color, vec3(0.2126729, 0.7151522, 0.0721750));
+}
+
+vec3 desaturate(in vec3 color, in float amount) {
+    return mix(color, vec3(luminance(color)), amount);
 }
 
 // Modified from https://github.com/Jessie-LC/open-source-utility-code/blob/main/advanced/blackbody.glsl
@@ -38,7 +88,7 @@ vec3 plancks(in float t, in vec3 lambda) {
     const float k = 1.38064852e-5;  // Boltzmann's constant
 
     vec3 p1 = (2.0 * h * sqr(c)) / pow5(lambda);
-    vec3 p2 = fastExp(h * c / (lambda * k * t)) - vec3(1.0);
+    vec3 p2 = exp(h * c / (lambda * k * t)) - vec3(1.0);
     return p1 / p2;
 }
 
@@ -48,7 +98,7 @@ vec3 blackbody(in float t) {
 }
 
 float karisAverage(in vec3 color) {
-    return rcp(1.0 + 1e-3 * luminance(color));
+    return rcp(1.0 + luminance(color));
 }
 
 vec3 reinhard(in vec3 hdr) {
@@ -58,21 +108,7 @@ vec3 invReinhard(in vec3 sdr) {
     return sdr * rcp(1.0 - luminance(sdr));
 }
 
-// https://en.wikipedia.org/wiki/YCoCg
-vec3 sRGBToYCoCg(in vec3 rgb) {
-    return mat3(
-        0.25,  0.50, -0.25,
-        0.50,  0.00,  0.50,
-        0.25, -0.50, -0.25
-    ) * rgb;
-}
-vec3 YCoCgToSRGB(in vec3 YCoCg) {
-    return mat3(
-         1.0,  1.0,  1.0,
-         1.0,  0.0, -1.0,
-        -1.0,  1.0, -1.0
-    ) * YCoCg;
-}
+//================================================================================================//
 
 // Adapted from https://github.com/zubetto/BlackBodyRadiation
 // MIT License
@@ -82,18 +118,18 @@ vec3 YCoCgToSRGB(in vec3 YCoCg) {
     Approximation errors are not provided, so this function should not be used where computational accuracy is critical!
     Instead, the primary purpose of this function is to render a black body surface in real time, which can be used in CG shaders,
     therefore the function is written in HLSL.
-    
+
     The luminance and chromaticity of a black body radiation are computed independently of each other.
-    The alpha-component of returned value is effective radiance in W/(sr*m2), which 
+    The alpha-component of returned value is effective radiance in W/(sr*m2), which
     should be multiplied by 683.002 lm/W to get the corresponding luminance in cd/m2.
     The rgb-components of returned value are color components expressed in linear sRGB color space.
     Relative luminance of returned color is close to 1 for temperatures above about 1000 K.
     Note, that returned color can have negative components, which means that chromaticity of a black body
     is outside the sRGB gamut for a given temperature (g-component < 0 for temperatures below about 900 K and
     b-component < 0 for temperatures below about 1900 K).
-    To get final color of a black body radiation with luminance in cd/m2 
+    To get final color of a black body radiation with luminance in cd/m2
     the rgb-components should be multiplied by the alpha-component and by 683.002 lm/W.
-    
+
     sRGB is defined according to ITU-R BT.709:
                              x       y
         white point   = 0.3127, 0.3290
@@ -101,11 +137,11 @@ vec3 YCoCgToSRGB(in vec3 YCoCg) {
         green primary =   0.30,   0.60
         blue primary  =   0.15,	  0.06
     More details can be found here https://www.desmos.com/calculator/qaxw5zb0zc
-    
+
     T - temperature in degrees Kelvin;
     bComputeRadiance - if true, effective radiance is computed;
     bComputeChromaticity - if true, chromaticity is computed;
-    
+
     returns: vec4 ChromaRadiance = {chroma_r, chroma_g, chroma_b, effRadiance}
 */
 vec4 BlackBodyRadiation(in float T) {

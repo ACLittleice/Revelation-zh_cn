@@ -21,11 +21,6 @@ in ivec2 vaUV2;
 
 out vec2 texCoord;
 
-#ifdef RSM_ENABLED
-	out float skyLightmap;
-	flat out vec3 flatNormal;
-#endif
-
 // out vec3 viewPos;
 out vec3 vectorData; // Minecraf position in water, vertColor in other materials
 
@@ -60,7 +55,7 @@ uniform mat4 shadowProjection;
 
 //======// Function //============================================================================//
 
-#include "/lib/lighting/ShadowDistortion.glsl"
+#include "/lib/lighting/shadow/Common.glsl"
 
 //======// Main //================================================================================//
 void main() {
@@ -77,24 +72,12 @@ void main() {
 		}
 	#endif
 
-	#ifdef RSM_ENABLED
-		#ifdef IS_IRIS
-			skyLightmap = saturate((float(vaUV2.y) - 8.0) * rcp(232.0));
-		#else
-			skyLightmap = saturate(float(vaUV2.y) * r240);
-		#endif
-		flatNormal = normal;
-	#endif
-
 	texCoord = vaUV0;
 
 	vec3 viewPos = transMAD(modelViewMatrix, vaPosition + chunkOffset);
 
 	isWater = 0u;
 	if (int(mc_Entity.x) == 10003) {
-		// tbnMatrix[0] = mat3(shadowModelViewInverse) * normalize(normalMatrix * at_tangent.xyz);
-		// tbnMatrix[1] = cross(tbnMatrix[0], tbnMatrix[2]) * fastSign(at_tangent.w);
-
 		isWater = 1u;
 		vectorData = transMAD(shadowModelViewInverse, viewPos) + cameraPosition;
 	} else {

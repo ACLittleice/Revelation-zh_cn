@@ -6,7 +6,7 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-	Pass: Compute translucent specular lighting & water fog
+	Pass: Compute translucent lighting & water fog
 
 --------------------------------------------------------------------------------
 */
@@ -24,8 +24,8 @@ const vec2 workGroupsRender = vec2(1.0, 1.0);
 
 //======// Uniform //=============================================================================//
 
-layout (r11f_g11f_b10f) restrict uniform image2D colorimg0; // Scene data
-writeonly uniform image2D colorimg1; // Specular lighting output
+writeonly uniform image2D colorimg0; // Scene data
+writeonly uniform image2D colorimg3; // Lighting output
 
 #include "/lib/universal/Uniform.glsl"
 
@@ -44,87 +44,137 @@ writeonly uniform image2D colorimg1; // Specular lighting output
 #include "/lib/universal/Random.glsl"
 
 #include "/lib/atmosphere/Common.glsl"
-#ifdef CLOUD_SHADOWS
-	#include "/lib/atmosphere/clouds/Shadows.glsl"
-#endif
+#include "/lib/atmosphere/AtmosphericFog.glsl"
 
 #include "/lib/water/WaterFog.glsl"
 
 #include "/lib/lighting/Common.glsl"
-#include "/lib/lighting/Shadows.glsl"
+#include "/lib/lighting/shadow/Render.glsl"
 
-#include "/lib/surface/ScreenSpaceRaytracer.glsl"
+#include "/lib/surface/SSRT.glsl"
 
 vec4 CalculateSpecularReflections(in vec3 screenPos, in vec3 viewPos, in vec3 worldNormal, in vec3 worldDir, in float dither, in float skylight, in bool waterMask) {
 	float NdotV = abs(dot(worldNormal, worldDir));
 	vec3 rayDir = worldDir + worldNormal * NdotV * 2.0;
 
-	if (dot(worldNormal, rayDir) < EPS) return vec4(0.0);
+	if (dot(worldNormal, rayDir) < EPS) return vec4(0.0, 0.0, 0.0, 1.0);
 
 	vec3 reflection = vec3(0.0);
 	if (skylight > 1e-3 && (isEyeInWater == 0 || !waterMask)) {
-		vec2 skyViewCoord = FromSkyViewLutParams(rayDir) + vec2(0.0, 0.5);
-		vec3 skyRadiance = textureBicubic(skyViewTex, skyViewCoord).rgb;
+		vec3 skyRadiance = textureBicubic(skyMapTex, ProjectSky(rayDir)).rgb;
 
-		skylight = remap(0.3, 0.7, cube(skylight));
+		skylight = linearstep(0.3, 0.7, cube(skylight));
 		reflection = skyRadiance * skylight;
 	}
 
-	float ior = waterMask ? isEyeInWater == 1 ? 1.0 / WATER_REFRACT_IOR : WATER_REFRACT_IOR : GLASS_REFRACT_IOR;
+	float ior = waterMask ? isEyeInWater == 1 ? 1.0 / WATER_IOR : WATER_IOR : GLASS_IOR;
 	float fresnel = FresnelDielectricN(NdotV, ior);
-	uint raySteps = uint(RAYTRACE_SAMPLES * (fresnel * 0.5 + 0.5));
+	uint raySteps = uint(SSRT_MAX_SAMPLES * (fresnel * 0.5 + 0.5));
 
+	viewPos += mat3(gbufferModelView) * worldNormal * saturate(length(viewPos) * 3e-4);
 	if (ScreenSpaceRaytrace(viewPos, mat3(gbufferModelView) * rayDir, dither, raySteps, screenPos)) {
-		screenPos.xy *= viewPixelSize;
 		float edgeFade = screenPos.x * screenPos.y * oms(screenPos.x) * oms(screenPos.y);
 		edgeFade *= 1e2 + cube(saturate(1.0 - gbufferModelViewInverse[2].y)) * 4e3;
 		reflection += (texture(colortex4, screenPos.xy * 0.5).rgb - reflection) * saturate(edgeFade);
 	}
 
-	return satU16f(vec4(reflection * fresnel, fresnel));
+	return vec4(reflection * fresnel, 1.0 - fresnel);
 }
 
 //======// Main //================================================================================//
 void main() {
-    ivec2 screenTexel = ivec2(gl_GlobalInvocationID.xy);
-	float depth = loadDepth0(screenTexel);
-	vec3 screenPos = vec3(texelToUv(screenTexel), depth);
-	vec3 viewPos = ScreenToViewSpace(screenPos);
+    ivec2 texelPos = ivec2(gl_GlobalInvocationID.xy);
+	uvec2 materialPack = loadMaterialPack(texelPos).xy;
+
+	uint materialID = materialPack.y;
+	bool notParticle = materialID != 500u;
+
+	// Skip opaque fragments
+	if (clamp(materialID, 2u, 3u) != materialID && notParticle) return;
+
+	vec3 screenPos = vec3(texelToUv(texelPos), loadDepth0(texelPos));
 	#if defined DISTANT_HORIZONS
-		if (depth > 1.0 - EPS) {
-			depth = screenPos.z = loadDepth0DH(screenTexel);
-			viewPos = ScreenToViewSpaceDH(screenPos);
+		if (screenPos.z > 1.0 - EPS) {
+			screenPos.z = ViewToScreenDepth(ScreenToViewDepthDH(loadDepth0DH(texelPos)));
 		}
 	#endif
-	uvec4 gbufferData0 = loadGbufferData0(screenTexel);
 
-	// Skip sky and opaque fragments
-	if (depth > 1.0 - EPS || clamp(gbufferData0.y, 2u, 3u) != gbufferData0.y) return;
+	// Hand-depth correction
+	if (screenPos.z < 0.56) {
+		screenPos.z = screenPos.z * rcp(MC_HAND_DEPTH) + (0.5 - 0.5 / MC_HAND_DEPTH);
+	}
 
+	vec3 viewPos = ScreenToViewSpace(screenPos);
 	vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
+
 	float worldDistSquared = sdot(worldPos);
 	vec3 worldDir = worldPos * inversesqrt(worldDistSquared);
 	worldPos += gbufferModelViewInverse[3].xyz;
 
-	vec2 waterData = Unpack2x8(texelFetch(colortex12, screenTexel, 0).x);
+	vec2 waterData = texelFetch(colortex12, texelPos, 0).xy;
 	bool waterMask = waterData.x > 0.0;
 
-	// Water fog
-	if (waterMask && isEyeInWater == 0) {
-		mat2x3 waterFog = AnalyticWaterFog(waterData.y, waterData.x * 64.0, dot(worldLightVector, worldDir));
+	vec2 lightmap = Unpack2x8U(materialPack.x);
+	float dither = BlueNoise(texelPos, frameCounter + 4);
 
-		vec3 sceneOut = imageLoad(colorimg0, screenTexel).rgb;
-		imageStore(colorimg0, screenTexel, vec4(ApplyFog(sceneOut, waterFog), 1.0));
+	if (isEyeInWater == 0) {
+		vec3 sceneOut = loadSceneMain(texelPos);
+
+		// Front to back fog
+		#ifdef VOLUMETRIC_FOG
+			vec3 screenPosBack = vec3(screenPos.xy, loadDepth1(texelPos));
+			vec3 viewPosBack = ScreenToViewSpace(screenPosBack);
+			vec3 worldPosBack = transMAD(gbufferModelViewInverse, viewPosBack);
+			mat2x3 airFog = RaymarchAtmosphericFog(worldPos, worldPosBack, dither, screenPosBack.z > 1.0 - EPS, VF_MAX_SAMPLES >> 1);
+			sceneOut = ApplyFog(sceneOut, airFog);
+		#endif
+
+		// Process water
+		if (waterMask) {
+			mat2x3 waterFog = AnalyticWaterFog(lightmap.y, waterData.x * 255.0, dot(worldLightVector, worldDir));
+			sceneOut = ApplyFog(sceneOut, waterFog);
+
+			// Skybox reflection for occluded water
+			if (materialID == 2u) {
+				vec3 worldNormal = OctDecodeUnorm(Unpack2x8(waterData.y));
+
+				float NdotV = abs(dot(worldNormal, worldDir));
+				vec3 rayDir = worldDir + worldNormal * NdotV * 2.0;
+
+				vec2 skyViewCoord = OctEncodeUnorm(rayDir);
+				vec3 skyRadiance = textureBicubic(skyMapTex, skyViewCoord).rgb;
+
+				vec3 reflection = skyRadiance * linearstep(0.3, 0.7, cube(lightmap.y));
+				float fresnel = FresnelDielectricN(NdotV, WATER_IOR);
+
+				sceneOut = mix(sceneOut, reflection, fresnel);
+			}
+		}
+
+		imageStore(colorimg0, texelPos, vec4(sceneOut, 1.0));
 	}
 
 	//============================================================================================//
 
-	// Specular lighting
-	float skyLightmap = Unpack2x8UY(gbufferData0.x);
-	vec3 worldNormal = FetchWorldNormal(gbufferData0.w);
+	// Translucent lighting
+	vec4 lightingOut = vec4(0.0, 0.0, 0.0, 1.0);
 
-	float dither = SampleStbnVec1(screenTexel, frameCounter + 4);
-	vec4 specularOut = CalculateSpecularReflections(screenPos, viewPos, worldNormal, worldDir, dither, skyLightmap, waterMask);
+	vec3 flatNormal, worldNormal;
+	FetchNormalData(texelPos, flatNormal, worldNormal);
+
+	float NdotL = dot(worldNormal, worldLightVector);
+
+	if (notParticle) {
+		// Specular indirect
+		lightingOut = CalculateSpecularReflections(screenPos, viewPos, worldNormal, worldDir, dither, lightmap.y, waterMask);
+	} else {
+		// Skylight
+		lightingOut.rgb = global.skyIlluminance * cube(lightmap.y);
+
+		// Blocklight
+		vec3 blocklightColor = blackbody(float(BLOCKLIGHT_TEMPERATURE));
+		lightingOut.rgb += CalculateBlocklightFalloff(lightmap.x) * blocklightColor;
+	}
 
 	// Cloud shadows
 	#ifdef CLOUD_SHADOWS
@@ -135,52 +185,28 @@ void main() {
 	#endif
 
 	// Sunlight
-	vec3 sunlightMult = cloudShadow * saturate(skyLightmap * 1e6) * global.light.directIlluminance;
-	float NdotL = dot(worldNormal, worldLightVector);
-
-	// Direct specular lighting
+	vec3 sunlightMult = cloudShadow * saturate(lightmap.y * 1e6) * global.directIlluminance;
 	if (NdotL > 1e-3) {
-		float distortionFactor;
+		vec3 normalOffset = flatNormal * (approxSqrt(worldDistSquared) * 2e-3 + 2e-2) * (2.0 - saturate(NdotL));
+		float surfaceDepth;
+		vec3 shadow = CalculatePCSS(worldPos, normalOffset, dither, surfaceDepth);
 
-		vec3 flatNormal = FetchFlatNormal(gbufferData0);
-		vec3 normalOffset = flatNormal * (worldDistSquared * 1e-4 + 3e-2) * (2.0 - saturate(NdotL));
-		vec3 shadowScreenPos = WorldToShadowScreenSpace(worldPos + normalOffset, distortionFactor);
+		if (dot(shadow, vec3(1.0)) > EPS) {
+			shadow = saturate(shadow) * sunlightMult;
 
-		if (saturate(shadowScreenPos) == shadowScreenPos) {
-			float blockerSearch = BlockerSearch(shadowScreenPos, dither, 0.5 * distortionFactor);
-			shadowScreenPos.z -= (worldDistSquared * 1e-9 + 3e-6) * (1.0 + dither) / distortionFactor * shadowDistance;
-
-			vec3 shadow = PercentageCloserFilter(shadowScreenPos, worldPos, dither, 0.5 * blockerSearch * distortionFactor);
-
-			if (dot(shadow, vec3(1.0)) > EPS) {
+			if (notParticle) {
 				float NdotV = abs(dot(worldNormal, worldDir));
 				vec3 halfway = normalize(worldLightVector - worldDir);
-				float NdotH = dot(worldNormal, halfway);
 				float LdotH = dot(worldLightVector, halfway);
+				float NdotH = dot(worldNormal, halfway);
 
-				shadow *= sunlightMult;
-
-				float f0 = F0FromIOR(waterMask ? WATER_REFRACT_IOR : GLASS_REFRACT_IOR);
-				specularOut.rgb += shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, TRANSLUCENT_ROUGHNESS, vec3(f0));
+				float f0 = F0FromIOR(waterMask ? WATER_IOR : GLASS_IOR);
+				lightingOut.rgb += shadow * SpecularGGX(LdotH, NdotV, NdotL, NdotH, TRANSLUCENT_ROUGHNESS, vec3(f0));
+			} else {
+				lightingOut.rgb += shadow * NdotL * rPI;
 			}
 		}
 	}
 
-	// Skybox reflection for occluded water
-	if (waterMask && gbufferData0.y == 2u) {
-		worldNormal = OctDecodeUnorm(Unpack2x8(texelFetch(colortex12, screenTexel, 0).y));
-
-		float NdotV = abs(dot(worldNormal, worldDir));
-		vec3 rayDir = worldDir + worldNormal * NdotV * 2.0;
-
-		vec2 skyViewCoord = FromSkyViewLutParams(rayDir) + vec2(0.0, 0.5);
-		vec3 skyRadiance = textureBicubic(skyViewTex, skyViewCoord).rgb;
-
-		vec3 waterSpecular = skyRadiance * remap(0.3, 0.7, cube(waterData.y));
-		float fresnel = FresnelDielectricN(NdotV, WATER_REFRACT_IOR);
-
-		specularOut.rgb += waterSpecular * fresnel * oms(specularOut.a);
-	}
-
-	imageStore(colorimg1, screenTexel, specularOut);
+	imageStore(colorimg3, texelPos, lightingOut);
 }

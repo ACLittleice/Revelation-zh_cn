@@ -1,9 +1,9 @@
 const int noiseTextureResolution = 256;
 const float noiseTexturePixelSize = 1.0 / noiseTextureResolution;
 
-float Calculate3DNoise(in vec3 position) {
-    vec3 p = floor(position);
-	vec3 b = curve(position - p);
+float Pseudo3DNoise(in vec3 pos) {
+    vec3 p = floor(pos);
+	vec3 b = curve(pos - p);
 
 	vec2 uv = p.xy + b.xy + 97.0 * p.z;
     vec2 rg = texture(noisetex, (uv + 0.5) * noiseTexturePixelSize).xy;
@@ -13,23 +13,61 @@ float Calculate3DNoise(in vec3 position) {
 
 //================================================================================================//
 
-// Hash
-float hash1(vec2 p) {
-	vec3 p3  = fract(vec3(p.xyx) * 443.897);
-    p3 += dot(p3, p3.zyx + 19.19);
+// Hash without Sine
+// https://www.shadertoy.com/view/4djSRW
+float hash11(float p) {
+    p = fract(p * .1031);
+    p *= p + 33.33;
+    p *= p + p;
+    return fract(p);
+}
+
+float hash12(vec2 p) {
+    vec3 p3 = fract(p.xyx * .1031);
+    p3 += dot(p3, p3.yzx + 33.33);
     return fract((p3.x + p3.y) * p3.z);
 }
 
-float hash1(vec3 p3) {
-	p3  = fract(p3 * 443.897);
-    p3 += dot(p3, p3.zyx + 19.19);
+float hash13(vec3 p3) {
+    p3 = fract(p3 * .1031);
+    p3 += dot(p3, p3.zyx + 33.33);
     return fract((p3.x + p3.y) * p3.z);
 }
 
-vec2 hash2(vec3 p3) {
-	p3 = fract(p3 * vec3(443.897, 441.423, 437.195));
-	p3 += dot(p3, p3.yzx + 19.19);
-	return fract((p3.xx + p3.yz) * p3.zy);
+vec2 hash21(float p) {
+    vec3 p3 = fract(vec3(p) * vec3(.1031, .1030, .0973));
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.xx + p3.yz) * p3.zy);
+}
+
+vec2 hash22(vec2 p) {
+    vec3 p3 = fract(p.xyx * vec3(.1031, .1030, .0973));
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.xx + p3.yz) * p3.zy);
+}
+
+vec2 hash23(vec3 p3) {
+    p3 = fract(p3 * vec3(.1031, .1030, .0973));
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.xx + p3.yz) * p3.zy);
+}
+
+vec3 hash31(float p) {
+   vec3 p3 = fract(vec3(p) * vec3(.1031, .1030, .0973));
+    p3 += dot(p3, p3.yxz + 33.33);
+    return fract((p3.xxy + p3.yzz) * p3.zyx);
+}
+
+vec3 hash32(vec2 p) {
+    vec3 p3 = fract(p.xyx * vec3(.1031, .1030, .0973));
+    p3 += dot(p3, p3.yxz + 33.33);
+    return fract((p3.xxy + p3.yzz) * p3.zyx);
+}
+
+vec3 hash33(vec3 p3) {
+    p3 = fract(p3 * vec3(.1031, .1030, .0973));
+    p3 += dot(p3, p3.yxz + 33.33);
+    return fract((p3.xxy + p3.yzz) * p3.zyx);
 }
 
 //================================================================================================//
@@ -99,9 +137,9 @@ float BlueNoise(in ivec2 texel) {
 	return texelFetch(noisetex, texel & 255, 0).a;
 }
 
-float BlueNoiseTemporal(in ivec2 texel) {
+float BlueNoise(in ivec2 texel, in int frame) {
 	#ifdef TAA_ENABLED
-		return R1(frameCounter % 256, texelFetch(noisetex, texel & 255, 0).a);
+		return R1(frame, texelFetch(noisetex, texel & 255, 0).a);
 	#else
 		return texelFetch(noisetex, texel & 255, 0).a;
 	#endif
@@ -114,6 +152,10 @@ float SampleStbnVec1(in ivec2 texel, in int frame) {
 
 vec2 SampleStbnVec2(in ivec2 texel, in int frame) {
     return texelFetch(stbnVec2Tex, ivec3(texel, frame) & ivec3(127, 127, 63), 0).xy;
+}
+
+vec2 SampleStbnUnitvec2(in ivec2 texel, in int frame) {
+    return texelFetch(stbnUnitvec2Tex, ivec3(texel, frame) & ivec3(127, 127, 63), 0).xy;
 }
 
 //================================================================================================//
@@ -131,14 +173,6 @@ float bayer32(vec2 a)  { return bayer16(0.5 * a) * 0.25 + bayer2(a); }
 float bayer64(vec2 a)  { return bayer32(0.5 * a) * 0.25 + bayer2(a); }
 float bayer128(vec2 a) { return bayer64(0.5 * a) * 0.25 + bayer2(a); }
 
-float Bayer64Temporal(in vec2 coord) {
-	#ifdef TAA_ENABLED
-		return R1(frameCounter % 256, bayer64(coord));
-	#else
-		return bayer32(0.5 * coord) * 0.25 + bayer2(coord);
-	#endif
-}
-
 //================================================================================================//
 
 // Interleaved Gradient Noise
@@ -148,9 +182,9 @@ float InterleavedGradientNoise(in vec2 coord) {
 	return fract(52.9829189 * fract(0.06711056 * coord.x + 0.00583715 * coord.y));
 }
 
-float InterleavedGradientNoiseTemporal(in vec2 coord) {
+float InterleavedGradientNoise(in vec2 coord, in int frame) {
 	#ifdef TAA_ENABLED
-        coord += 5.588238 * float(frameCounter % 64);
+        coord += 5.588238 * float(frame % 64);
 	#endif
     return fract(52.9829189 * fract(0.06711056 * coord.x + 0.00583715 * coord.y));
 }

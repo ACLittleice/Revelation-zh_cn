@@ -6,7 +6,7 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-	Pass: Compute volumetric fog, reprojection
+	Pass: Compute and accumulate volumetric fog
 
 --------------------------------------------------------------------------------
 */
@@ -23,8 +23,6 @@
 out uvec4 packedFogData;
 
 //======// Uniform //=============================================================================//
-
-uniform usampler2D colortex11; // Volumetric Fog, linear depth
 
 uniform sampler2D shadowtex0;
 uniform sampler2D shadowtex1;
@@ -43,12 +41,11 @@ uniform sampler2D shadowcolor1;
 #include "/lib/universal/Fetch.glsl"
 #include "/lib/universal/Random.glsl"
 
+#include "/lib/lighting/shadow/Common.glsl"
+
 #include "/lib/atmosphere/Common.glsl"
-#include "/lib/atmosphere/clouds/Shadows.glsl"
-
-#include "/lib/lighting/ShadowDistortion.glsl"
-
 #include "/lib/atmosphere/AtmosphericFog.glsl"
+
 #include "/lib/water/WaterFog.glsl"
 
 mat2x3 UnpackFogData(in uvec3 data) {
@@ -60,33 +57,33 @@ mat2x3 UnpackFogData(in uvec3 data) {
 
 //======// Main //================================================================================//
 void main() {
-    ivec2 screenTexel = ivec2(gl_FragCoord.xy * 2.0);
+    ivec2 texelPos = ivec2(gl_FragCoord.xy * 2.0);
 
     vec2 screenCoord = gl_FragCoord.xy * viewPixelSize * 2.0;
-	vec3 screenPos = vec3(screenCoord, loadDepth0(screenTexel));
+	vec3 screenPos = vec3(screenCoord, loadDepth0(texelPos));
 
 	vec3 viewPos = ScreenToViewSpace(screenPos);
 	#if defined DISTANT_HORIZONS
 		if (screenPos.z > 1.0 - EPS) {
-			screenPos.z = loadDepth0DH(screenTexel);
+			screenPos.z = loadDepth0DH(texelPos);
 			viewPos = ScreenToViewSpaceDH(screenPos);
 		}
 	#endif
 
-	vec3 worldPos = mat3(gbufferModelViewInverse) * viewPos;
+	vec3 worldPos = transMAD(gbufferModelViewInverse, viewPos);
 
-	float dither = SampleStbnVec1(screenTexel, frameCounter + 2);
+	float dither = BlueNoise(texelPos, frameCounter);
 
 	mat2x3 volFogData = mat2x3(vec3(0.0), vec3(1.0));
 
 	#ifdef VOLUMETRIC_FOG
 		if (isEyeInWater == 0) {
-			volFogData = RaymarchAtmosphericFog(worldPos, dither);
+			volFogData = RaymarchAtmosphericFog(gbufferModelViewInverse[3].xyz, worldPos, dither, screenPos.z > 1.0 - EPS, VF_MAX_SAMPLES);
 		}
 	#endif
 	#ifdef UW_VOLUMETRIC_FOG
 		if (isEyeInWater == 1) {
-			volFogData = RaymarchWaterFog(worldPos, dither);
+			volFogData = RaymarchWaterFog(worldPos - gbufferModelViewInverse[3].xyz, dither);
 		}
 	#endif
 
@@ -94,10 +91,10 @@ void main() {
     vec2 prevCoord = Reproject(screenPos).xy;
 
     if (saturate(prevCoord) == prevCoord && !worldTimeChanged) {
-        uvec4 reprojectedData = texture(colortex11, prevCoord);
+        uvec4 reprojectedData = texelFetch(colortex11, uvToTexel(prevCoord) >> 1, 0);
 		mat2x3 reprojectedFog = UnpackFogData(reprojectedData.rgb);
 
-		float blendWeight = 0.8;
+		float blendWeight = 0.9;
 		blendWeight *= exp2(abs(uintBitsToFloat(reprojectedData.a) + viewPos.z) * 32.0 / viewPos.z);
 
         volFogData[0] = mix(volFogData[0], reprojectedFog[0], blendWeight);

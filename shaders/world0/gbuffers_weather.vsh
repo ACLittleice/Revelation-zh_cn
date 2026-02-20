@@ -1,4 +1,4 @@
-#version 450 core
+#version 460 core
 
 /*
 --------------------------------------------------------------------------------
@@ -43,8 +43,8 @@ void main() {
 
 	vec3 worldPos = transMAD(gbufferModelViewInverse, transMAD(modelViewMatrix, vaPosition));
 
-    float windAngle = dot(worldPos + cameraPosition, vec3(2.0)) + frameTimeCounter * 0.05;
+    float windAngle = dot(worldPos + cameraPosition, vec3(1.0)) + frameTimeCounter * 0.05;
 
-    worldPos.xz -= worldPos.y * 0.25 * (0.5 + vec2(cos(windAngle), sin(windAngle)));
+    worldPos.xz -= worldPos.y * 0.15 * (1.0 + vec2(cos(windAngle), sin(windAngle)));
 	gl_Position = diagonal4(projectionMatrix) * transMAD(gbufferModelView, worldPos).xyzz + projectionMatrix[3];
 }

@@ -24,11 +24,6 @@ layout (location = 1) out vec4 shadowcolor1Out;
 
 in vec2 texCoord;
 
-#ifdef RSM_ENABLED
-	in float skyLightmap;
-	flat in vec3 flatNormal;
-#endif
-
 // in vec3 viewPos;
 in vec3 vectorData; // Minecraft position in water, vertColor in other materials
 
@@ -44,32 +39,27 @@ uniform sampler2D tex;
 
 //======// Function //============================================================================//
 
+#include "/lib/universal/Random.glsl"
+
 #include "/lib/water/WaterWave.glsl"
 
 //======// Main //================================================================================//
 void main() {
 	if (isWater == 1u) {
-		vec3 waveNormal = CalculateWaterNormal(vectorData.xz - vectorData.y);
+		vec3 waveNormal = CalculateWaterNormal(vectorData.xz);
 		shadowcolor1Out.xy = OctEncodeUnorm(waveNormal.xzy);
 		shadowcolor1Out.w = 1.0;
 	} else {
 		vec4 albedo = texture(tex, texCoord);
 		if (albedo.a < 0.1) discard;
 
-        if (albedo.a > oms(r255)) {
+        if (albedo.a > oms(rcp255)) {
 			shadowcolor0Out = albedo.rgb * vectorData;
 		} else {
 			albedo.a = approxSqrt(approxSqrt(albedo.a));
 			shadowcolor0Out = mix(vec3(albedo.a), albedo.rgb * vectorData, albedo.a);
 		}
 
-		#ifdef RSM_ENABLED
-			shadowcolor1Out.xy = OctEncodeUnorm(flatNormal);
-		#endif
 		shadowcolor1Out.w = 0.0;
 	}
-
-	#ifdef RSM_ENABLED
-		shadowcolor1Out.z = skyLightmap;
-	#endif
 }

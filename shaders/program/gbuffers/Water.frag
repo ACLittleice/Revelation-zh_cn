@@ -6,19 +6,19 @@
 //======// Output //==============================================================================//
 
 /* RENDERTARGETS: 7,8,12 */
-layout (location = 0) out uvec4 gbufferOut0;
-layout (location = 1) out vec4 gbufferOut1;
+layout (location = 0) out uvec4 materialOut;
+layout (location = 1) out vec4 normalOut;
 layout (location = 2) out vec4 waterOut;
 
 //======// Uniform //=============================================================================//
 
 uniform sampler2D tex;
 
-#if defined NORMAL_MAPPING
+#if defined MC_NORMAL_MAP
 	uniform sampler2D normals;
 #endif
 
-#if defined SPECULAR_MAPPING && defined MC_SPECULAR_MAP
+#if defined MC_SPECULAR_MAP
     uniform sampler2D specular;
 #endif
 
@@ -30,7 +30,8 @@ uniform sampler2D tex;
 
 //======// Input //===============================================================================//
 
-flat in mat3 tbnMatrix;
+flat in uint normalPack;
+flat in uvec2 tangentPack;
 
 in vec4 vertColor;
 in vec2 texCoord;
@@ -55,8 +56,13 @@ in vec3 worldPos;
 
 //======// Main //================================================================================//
 void main() {
-	vec3 worldNormal;
-	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(tbnMatrix[2]));
+	normalOut.xy = unpackSnorm2x16(normalPack) * 0.5 + 0.5;
+
+	// Construct TBN matrix
+	vec3 tangent = OctDecodeSnorm(unpackSnorm2x16(tangentPack.x));
+	vec3 normal = OctDecodeUnorm(normalOut.xy);
+	vec3 bitangent = cross(tangent, normal) * uintBitsToFloat(tangentPack.y);
+	mat3 tbnMatrix = mat3(tangent, bitangent, normal);
 
 	if (materialID == 3u) { // water
 		ivec2 texel = ivec2(gl_FragCoord.xy);
@@ -65,51 +71,44 @@ void main() {
 		#ifdef PHYSICS_OCEAN
 			WavePixelData wave = physics_wavePixel(physics_localPosition.xz, physics_localWaviness, physics_iterationsNormal, physics_gameTime);
 
-			worldNormal = wave.normal;
+			vec3 worldNormal = wave.normal;
 		#else
 			vec3 minecraftPos = worldPos + cameraPosition;
-			vec2 tangentPos = ((minecraftPos * vec3(1.0, 0.15, 1.0)) * tbnMatrix).xy;
 			#ifdef WATER_PARALLAX
-				float dither = SampleStbnVec1(texel, frameCounter + 5);
-				worldNormal = CalculateWaterNormal(tangentPos, worldDir * tbnMatrix, dither);
+				vec3 worldNormal = CalculateWaterNormal(minecraftPos, worldDir * tbnMatrix);
 			#else
-				worldNormal = CalculateWaterNormal(tangentPos);
+				vec3 worldNormal = CalculateWaterNormal(minecraftPos);
 			#endif
 
 			worldNormal = tbnMatrix * worldNormal;
 		#endif
-
-		// Water normal clamp
-		worldNormal = normalize(worldNormal + tbnMatrix[2] * inversesqrt(4.0 * abs(dot(tbnMatrix[2], worldDir)) + 1e-2));
 
 		float depth1 = loadDepth1(texel);
 		vec3 viewPos1 = ScreenToViewSpace(vec3(gl_FragCoord.xy * viewPixelSize, depth1));
 		vec3 worldPos1 = transMAD(gbufferModelViewInverse, viewPos1);
 
 		vec2 encodedNormal = OctEncodeUnorm(worldNormal);
-		gbufferOut0.w = Packup2x8U(encodedNormal);
+		normalOut.zw = encodedNormal;
 
-		vec2 waterData = vec2(distance(worldPos, worldPos1) * rcp(64.0), lightmap.y);
-		waterOut = vec4(Packup2x8(waterData), Packup2x8(encodedNormal), 0.0, 1.0);
+		waterOut = vec4(distance(worldPos, worldPos1) * rcp255, Packup2x8(encodedNormal), 0.0, 1.0);
 	} else {
 		vec4 albedo = texture(tex, texCoord) * vertColor;
 
 		if (albedo.a < 0.1) { discard; return; }
 
-		#if defined NORMAL_MAPPING
-			worldNormal = texture(normals, texCoord).rgb;
-			DecodeNormalTex(worldNormal);
-
-			worldNormal = tbnMatrix * worldNormal;
-			gbufferOut0.w = Packup2x8U(OctEncodeUnorm(worldNormal));
+		#if defined MC_NORMAL_MAP
+			vec3 normalTex = texture(normals, texCoord).rgb;
+			DecodeNormalTex(normalTex);
+			normalOut.zw = OctEncodeUnorm(tbnMatrix * normalTex);
 		#else
-			gbufferOut0.w = gbufferOut0.z;
+			normalOut.zw = normalOut.xy;
 		#endif
 
-		gbufferOut1 = albedo;
+		materialOut.z = Packup2x8U(albedo.xy);
+		materialOut.w = Packup2x8U(albedo.zw);
 		waterOut = vec4(0.0);
 	}
 
-	gbufferOut0.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
-	gbufferOut0.y = materialID;
+	materialOut.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
+	materialOut.y = materialID;
 }

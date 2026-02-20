@@ -24,12 +24,11 @@ const vec2 workGroupsRender = vec2(0.5, 0.5);
 
 //======// Uniform //=============================================================================//
 
-layout (r11f_g11f_b10f) readonly uniform image2D colorimg4;
-
 #include "/lib/universal/Uniform.glsl"
 
 //======// SSBO //================================================================================//
 
+#define SSBO_DECLARED_TPYE restrict
 #include "/lib/universal/SSBO.glsl"
 
 //======// Shared Memory //=======================================================================//
@@ -49,15 +48,15 @@ uint histogramLumToBin(in float lum) {
 //======// Main //================================================================================//
 void main() {
 	uint index = gl_LocalInvocationIndex;
+	ivec2 texelPos = ivec2(gl_GlobalInvocationID.xy);
 
 	// Initialize
 	sharedHistogram[index] = 0u;
 	barrier();
 
-	if (all(lessThan(gl_GlobalInvocationID.xy, imageSize(colorimg4) >> 1u))) {
+	if (all(lessThan(texelPos, textureSize(colortex4, 0) >> 1u))) {
 		// Compute luminance
-		ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
-		float luminance = luminance(imageLoad(colorimg4, texel).rgb);
+		float luminance = luminance(texelFetch(colortex4, texelPos, 0).rgb);
 
 		// Update histogram
 		uint binIndex = histogramLumToBin(luminance);
@@ -67,6 +66,6 @@ void main() {
 
 	// Store histogram
 	if (index < HISTOGRAM_BIN_COUNT) {
-    	atomicAdd(global.exposure.histogram[index], sharedHistogram[index]);
+    	atomicAdd(exposure.histogram[index], sharedHistogram[index]);
 	}
 }

@@ -8,8 +8,8 @@
 //======// Output //==============================================================================//
 
 /* RENDERTARGETS: 7,8,12 */
-layout (location = 0) out uvec4 gbufferOut0;
-layout (location = 1) out vec4 gbufferOut1;
+layout (location = 0) out uvec4 materialOut;
+layout (location = 1) out vec4 normalOut;
 layout (location = 2) out vec4 waterOut;
 
 //======// Uniform //=============================================================================//
@@ -47,10 +47,15 @@ in vec3 worldPos;
 //======// Main //================================================================================//
 void main() {
 	ivec2 texel = ivec2(gl_FragCoord.xy);
-    if (loadDepth0(texel) < 1.0) { discard; return; }
+    float alpha = smoothstep(sqr(far - 32.0), sqr(far - 16.0), sdot(worldPos));
+	float dither = BlueNoise(texel, frameCounter);
 
-	vec3 worldNormal;
-	gbufferOut0.z = Packup2x8U(OctEncodeUnorm(flatNormal));
+    if (alpha < dither || loadDepth0(texel) < 1.0) {
+        discard;
+        return;
+    }
+
+	normalOut.xy = OctEncodeUnorm(flatNormal);
 
 	if (materialID == 3u) { // water
 		vec3 worldDir = normalize(worldPos - gbufferModelViewInverse[3].xyz);
@@ -58,40 +63,40 @@ void main() {
 		#ifdef PHYSICS_OCEAN
 			WavePixelData wave = physics_wavePixel(physics_localPosition.xz, physics_localWaviness, physics_iterationsNormal, physics_gameTime);
 
-			worldNormal = wave.normal;
+			vec3 worldNormal = wave.normal;
 		#else
-			mat3 tbnMatrix = ConstructTBN(flatNormal);
+			const mat3 tbnMatrix = mat3(
+				vec3(1.0, 0.0, 0.0),
+				vec3(0.0, 0.0, 1.0),
+				vec3(0.0, 1.0, 0.0)
+			);
 
 			vec3 minecraftPos = worldPos + cameraPosition;
-			vec2 tangentPos = ((minecraftPos * vec3(1.0, 0.15, 1.0)) * tbnMatrix).xy;
 			#ifdef WATER_PARALLAX
-				float dither = SampleStbnVec1(texel, frameCounter + 5);
-				worldNormal = CalculateWaterNormal(tangentPos, worldDir * tbnMatrix, dither);
+				vec3 worldNormal = CalculateWaterNormal(minecraftPos, worldDir * tbnMatrix);
 			#else
-				worldNormal = CalculateWaterNormal(tangentPos);
+				vec3 worldNormal = CalculateWaterNormal(minecraftPos);
 			#endif
 
 			worldNormal = tbnMatrix * worldNormal;
 		#endif
-
-		// Water normal clamp
-		worldNormal = normalize(worldNormal + flatNormal * inversesqrt(4.0 * abs(dot(flatNormal, worldDir)) + 1e-2));
 
 		float depth1 = loadDepth1DH(texel);
 		vec3 viewPos1 = ScreenToViewSpace(vec3(gl_FragCoord.xy * viewPixelSize, depth1));
 		vec3 worldPos1 = transMAD(gbufferModelViewInverse, viewPos1);
 
 		vec2 encodedNormal = OctEncodeUnorm(worldNormal);
-		gbufferOut0.w = Packup2x8U(encodedNormal);
+		normalOut.zw = encodedNormal;
 
-		vec2 waterData = vec2(distance(worldPos, worldPos1) * rcp(64.0), lightmap.y);
-		waterOut = vec4(Packup2x8(waterData), Packup2x8(encodedNormal), 0.0, 1.0);
+		waterOut = vec4(distance(worldPos, worldPos1) * rcp255, Packup2x8(encodedNormal), 0.0, 1.0);
 	} else {
-		gbufferOut1 = vertColor;
-		gbufferOut0.w = gbufferOut0.z;
+		normalOut.zw = normalOut.xy;
+
+		materialOut.z = Packup2x8U(vertColor.xy);
+		materialOut.w = Packup2x8U(vertColor.zw);
 		waterOut = vec4(0.0);
 	}
 
-	gbufferOut0.x = PackupDithered2x8U(lightmap, bayer4(gl_FragCoord.xy));
-	gbufferOut0.y = materialID;
+	materialOut.x = Packup2x8U(lightmap);
+	materialOut.y = materialID;
 }

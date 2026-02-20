@@ -1,0 +1,77 @@
+/*
+--------------------------------------------------------------------------------
+
+	Revelation Shaders
+
+	Copyright (C) 2024 HaringPro
+	Apache License 2.0
+
+--------------------------------------------------------------------------------
+*/
+
+#define PASS_SKY_MAP
+
+//======// Input //===============================================================================//
+
+layout (local_size_x = 16, local_size_y = 16) in;
+const ivec3 workGroups = ivec3(16, 16, 1);
+
+//======// Utility //=============================================================================//
+
+#include "/lib/Utility.glsl"
+
+//======// Uniform //=============================================================================//
+
+writeonly uniform image2D skyMapImg;
+
+#include "/lib/universal/Uniform.glsl"
+
+//======// SSBO //================================================================================//
+
+#include "/lib/universal/SSBO.glsl"
+
+//======// Function //============================================================================//
+
+#include "/lib/universal/Random.glsl"
+
+#include "/lib/atmosphere/Common.glsl"
+#include "/lib/atmosphere/Bruneton08.glsl"
+
+#include "/lib/atmosphere/clouds/Render.glsl"
+#include "/lib/atmosphere/AtmosphericFog.glsl"
+
+//======// Main //================================================================================//
+void main() {
+	ivec2 tid = ivec2(gl_GlobalInvocationID.xy);
+
+    // Checkerboard render
+	ivec2 offset = checkerboardOffset2x2[frameCounter & 3];
+	if ((tid & 1) == offset || worldTimeChanged) {
+		vec2 uv = (vec2(tid) + 0.5) * rcp(skyMapRes);
+
+		vec3 worldDir = UnprojectSky(uv);
+		vec3 skyRadiance = GetSkyRadiance(worldDir, worldSunVector) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
+		skyRadiance = desaturate(skyRadiance, wetness * 0.5); // Post-process
+
+		vec2 noise = SampleStbnVec2(tid, frameCounter);
+
+		#ifdef CLOUDS
+			vec4 cloudData = RenderClouds(worldDir, noise);
+			CompositeClouds(skyRadiance, cloudData, worldDir);
+		#endif
+
+		#ifdef VOLUMETRIC_FOG
+			if (isEyeInWater == 0) {
+				mat2x3 volFogData = RaymarchAtmosphericFog(vec3(0.0), worldDir * FLT_MAX, noise.x, true, VF_MAX_SAMPLES >> 1);
+				skyRadiance = ApplyFog(skyRadiance, volFogData);
+			}
+		#endif
+
+		// Accumulate
+		vec4 history = texelFetch(skyMapTex, tid, 0);
+		history.a *= float(!worldTimeChanged);
+
+		skyRadiance = mix(history.rgb, skyRadiance, rcp(++history.a));
+		imageStore(skyMapImg, tid, vec4(skyRadiance, min(history.a, 128.0)));
+	}
+}

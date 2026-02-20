@@ -6,7 +6,7 @@
 	Copyright (C) 2024 HaringPro
 	Apache License 2.0
 
-	Pass: Compute and store global data
+	Pass: Compute and store global SSBO
 
 --------------------------------------------------------------------------------
 */
@@ -22,40 +22,35 @@ const ivec3 workGroups = ivec3(1, 1, 1);
 
 //======// Uniform //=============================================================================//
 
-uniform sampler3D atmosCombinedLut;
-
-uniform int moonPhase;
-
-uniform float eyeAltitude;
-uniform float nightVision;
-uniform float wetness;
-uniform float viewWidth;
-
-uniform vec3 worldSunVector;
-uniform vec3 lightningShading;
+#include "/lib/universal/Uniform.glsl"
 
 //======// SSBO //================================================================================//
 
+#define SSBO_DECLARED_TPYE restrict
 #include "/lib/universal/SSBO.glsl"
 
 //======// Function //============================================================================//
 
 #include "/lib/atmosphere/Common.glsl"
-#include "/lib/atmosphere/PrecomputedAtmosphericScattering.glsl"
+#include "/lib/atmosphere/Bruneton08.glsl"
+#include "/lib/atmosphere/clouds/Common.glsl"
 
 //======// Main //================================================================================//
 void main() {
 	// Compute illuminance
 	vec3 camera = vec3(0.0, viewerHeight, 0.0);
 	vec3 sunIrradiance, moonIrradiance;
-	global.light.skyIlluminance = GetSunAndSkyIrradiance(camera, vec3(0.0, 1.0, 0.0), worldSunVector, sunIrradiance, moonIrradiance) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
-
-	// Fix the sunlight misalignment at sunrise and sunset
-	sunIrradiance *= 1.0 - curve(saturate(1.0 - worldSunVector.y * 32.0));
+	global.skyIlluminance = GetSunAndSkyIrradiance(camera, vec3(0.0, 1.0, 0.0), worldSunVector, sunIrradiance, moonIrradiance) * SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
 
 	// Irradiance to illuminance
-	global.light.directIlluminance = SUN_SPECTRAL_RADIANCE_TO_LUMINANCE * (sunIrradiance + moonIrradiance);
+	global.directIlluminance = SUN_SPECTRAL_RADIANCE_TO_LUMINANCE * (sunIrradiance + moonIrradiance);
 
-	// Lightning shading
-	global.light.skyIlluminance += lightningShading * 0.05;
+	// Avoid the misalignment at sunrise and sunset
+	global.directIlluminance *= smoothstep(0.0, 0.01, worldLightVector.y);
+
+	#ifdef CLOUD_SHADOWS
+		mat4 projMat = BuildOrthoMat(CLOUD_SHADOW_DISTANCE * 32.0, CLOUD_SHADOW_DISTANCE * 32.0, 0.0, cumulusTopRadius);
+		cloud.shadowViewProj = projMat * shadowModelView;
+		cloud.shadowViewProjInv = inverse(cloud.shadowViewProj);
+	#endif
 }

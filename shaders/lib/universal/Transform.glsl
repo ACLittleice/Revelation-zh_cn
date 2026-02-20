@@ -67,7 +67,7 @@ vec3 Reproject(in vec3 screenPos) {
 	vec3 position = ScreenToViewSpaceRaw(screenPos); // To view space
     position = transMAD(gbufferModelViewInverse, position); // To world space
 
-	position += (cameraPosition - previousCameraPosition) * step(0.56, screenPos.z); // To previous frame's world space
+	position += cameraMovement * step(0.56, screenPos.z); // To previous frame's world space
     position = transMAD(gbufferPreviousModelView, position); // To previous frame's view space
 	position = projMAD(gbufferPreviousProjection, position) * rcp(-position.z); // To previous frame's NDC space
 
@@ -124,7 +124,7 @@ float ViewToScreenDepth(in float depth) {
 		vec3 position = ScreenToViewSpaceRawDH(screenPos); // To view space
 		position = transMAD(gbufferModelViewInverse, position); // To world space
 
-		position += (cameraPosition - previousCameraPosition)/*  * step(0.56, screenPos.z) */; // To previous frame's world space
+		position += cameraMovement/*  * step(0.56, screenPos.z) */; // To previous frame's world space
 		position = transMAD(gbufferPreviousModelView, position); // To previous frame's view space
 		position = projMAD(dhPreviousProjection, position) * rcp(-position.z); // To previous frame's NDC space
 

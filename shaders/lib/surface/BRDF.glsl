@@ -5,47 +5,65 @@
 // https://www.pbr-book.org/3ed-2018/Reflection_Models/Microfacet_Models#\
 // https://media.disneyanimation.com/uploads/production/publication_asset/48/asset/s2012_pbs_disney_brdf_notes_v3.pdf
 // https://www.gamedevs.org/uploads/real-shading-in-unreal-engine-4.pdf
+// https://www.guerrilla-games.com/read/decima-engine-advances-in-lighting-and-aa
 
 //================================================================================================//
 
-vec3 SampleCosineHemisphere(in vec3 normal, in vec2 xy) {
+// PDF = NoL / PI
+vec3 SampleCosineHemisphere(in vec2 xy) {
+    float r = sqrt(xy.x);
+    float phi = TAU * xy.y;
+
+    float x = r * cos(phi);
+    float y = r * sin(phi);
+    float z = sqrt(1.0 - xy.x);
+
+    return vec3(x, y, z);
+}
+
+vec3 SampleCosineHemisphere(in vec3 vector, in vec2 xy) {
     float phi = TAU * xy.x;
-    float cosTheta = xy.y * 2.0 - 1.0;
-    float sinTheta = sqrt(saturate(1.0 - cosTheta * cosTheta));
-    vec3 hemisphere = vec3(cossin(phi) * sinTheta, cosTheta);
-
-	vec3 cosineVector = normalize(normal + hemisphere);
-	return cosineVector * fastSign(dot(cosineVector, normal));
-}
-
-// From https://github.com/Jessie-LC/open-source-utility-code/blob/main/simple/misc.glsl
-vec3 SampleConeVector(in vec3 vector, in vec2 xy, in float angle) {
-    xy.x *= TAU;
-    float cosAngle = cos(angle);
-    xy.y = xy.y * (1.0 - cosAngle) + cosAngle;
-    vec3 sphereCap = vec3(vec2(cos(xy.x), sin(xy.x)) * sqrt(1.0 - xy.y * xy.y), xy.y);
-    return rotate(sphereCap, vec3(0.0, 0.0, 1.0), vector);
-}
-
-// pdf = D * NoH / (4 * VoH)
-vec3 SampleGGX(in vec2 Xi, in float a, in vec3 N) {
-    // Spherical coordinates
-    float phi = TAU * Xi.x;
-    float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
+    float cosTheta = 1.0 - xy.y * 2.0;
     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
 
-    // Convert to hemisphere vector
-    vec3 H;
-    H.x = cos(phi) * sinTheta;
-    H.y = sin(phi) * sinTheta;
-    H.z = cosTheta;
+    vec3 hemisphere = vec3(cossin(phi) * sinTheta, cosTheta);
+	hemisphere = normalize(vector + hemisphere);
+	return signMul(hemisphere, dot(hemisphere, vector));
+}
 
-    // Convert tangent space normal to world space
-    vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-    vec3 tangent = normalize(cross(up, N));
-    vec3 bitangent = cross(N, tangent);
+vec3 SampleConeVector(in vec3 vector, in vec2 xy, in float angle) {
+    float phi = TAU * xy.x;
+    float cosTheta = mix(angle, 1.0, xy.y);
+    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
 
-    return tangent * H.x + bitangent * H.y + N * H.z;
+    vec3 sphereCap = vec3(cossin(phi) * sinTheta, cosTheta);
+    return BuildOrthonormalBasis(vector) * sphereCap;
+}
+
+// PDF = D * NoH / (4 * VoH)
+vec3 SampleGGX(in vec2 xy, in float alpha, in vec3 normal) {
+    float phi = TAU * xy.x;
+    float cosTheta = sqrt((1.0 - xy.y) / (1.0 + (alpha * alpha - 1.0) * xy.y));
+    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+
+    vec3 hemisphere = vec3(cossin(phi) * sinTheta, cosTheta);
+    return BuildOrthonormalBasis(normal) * hemisphere;
+}
+
+// Sampling Visible GGX Normals with Spherical Caps
+// https://arxiv.org/pdf/2306.05044
+vec3 SampleGGXVNDF(in vec3 viewDir, in float alpha, in vec2 xy) {
+    // Importance sampling bias
+    xy.y *= 1.0 - SPECULAR_IMPORTANCE_SAMPLING_BIAS;
+
+	viewDir = normalize(vec3(alpha * viewDir.xy, viewDir.z));
+
+    float phi = TAU * xy.x;
+    float cosTheta = 1.0 - viewDir.z * xy.y - xy.y;
+    float sinTheta = sqrt(saturate(1.0 - cosTheta * cosTheta));
+    viewDir += vec3(cossin(phi) * sinTheta, cosTheta);
+
+	return normalize(vec3(alpha * viewDir.xy, viewDir.z));
 }
 
 // From https://ggx-research.github.io/publication/2023/06/09/publication-ggx.html
@@ -56,7 +74,7 @@ vec3 SampleGGX(in vec2 Xi, in float a, in vec3 N) {
 // - it's (slightly) faster than the general version
 vec3 SampleGGXVNDF(in vec2 u, in vec3 wi, in float alpha, in vec3 n) {
     // Importance sampling bias
-    u.x = mix(u.x, 1.0, SPECULAR_IMPORTANCE_SAMPLING_BIAS);
+    u.y *= 1.0 - SPECULAR_IMPORTANCE_SAMPLING_BIAS;
 
     // decompose the vector in parallel and perpendicular components
     vec3 wi_z = n * dot(wi, n);
@@ -85,7 +103,7 @@ vec3 SampleGGXVNDF(in vec2 u, in vec3 wi, in float alpha, in vec3 n) {
     return wm;
 }
 
-//======// Fresnel //=============================================================================//
+//================================================================================================//
 
 // Schlick approximation
 float FresnelSchlick(in float cosTheta, in float f0) {
@@ -159,53 +177,26 @@ vec3 FresnelConductor(in float cosTheta, in vec3 n, in vec3 k) {
     return saturate(0.5 * (r1 + r2));
 }
 
-//======// Normal Distribution //=================================================================//
+//================================================================================================//
 
-float NDFBeckmann(in float NdotH, in float alpha2) {
-    float NdotH2 = NdotH * NdotH;
-    return maxEps(rcp(PI * alpha2 * NdotH2 * NdotH2) * fastExp((NdotH2 - 1.0) / (alpha2 * NdotH2)));
+float NDFBeckmann(in float NdotH2, in float alpha2) {
+    return maxEps(rcp(PI * alpha2 * NdotH2 * NdotH2) * exp((NdotH2 - 1.0) / (alpha2 * NdotH2)));
 }
 
 float NDFGaussian(in float NdotH, in float alpha2) {
 	float thetaH = fastAcos(NdotH);
-    return fastExp(-thetaH * thetaH / alpha2);
+    return exp(-thetaH * thetaH / alpha2);
 }
 
-float NDFGGX(in float NdotH, in float alpha) {
-    float NdotH2 = NdotH * NdotH;
-    float tanNdotH2 = oms(NdotH2) / NdotH2;
-    return rPI * sqr(alpha / (NdotH2 * (sqr(alpha) + tanNdotH2)));
+float NDFTrowbridgeReitz(in float NdotH2, in float alpha2) {
+	return alpha2 * rPI / sqr(1.0 + (alpha2 - 1.0) * NdotH2);
 }
 
-float NDFTrowbridgeReitz(in float NdotH, in float alpha2) {
-	return alpha2 * rPI / sqr(1.0 + (alpha2 - 1.0) * NdotH * NdotH);
-}
-
-//======// Geometric GGX //=======================================================================//
+//================================================================================================//
 
 // Smith-based
-// float lambda(in float cosTheta, in float alpha2) {
-//     return (sqrt(alpha2 + oms(alpha2) * cosTheta * cosTheta) / cosTheta - 1.0) * 0.5;
-// }
-
-// float G1SmithGGX(in float cosTheta, in float alpha2) {
-//     return rcp(1.0 + lambda(cosTheta, alpha2));
-// }
-
-// float G1SmithGGXInverse(in float cosTheta, in float alpha2) {
-//     return 1.0 + lambda(cosTheta, alpha2);
-// }
-
-// float G2SmithGGX(in float NdotL, in float NdotV, in float alpha2) {
-//     return rcp(1.0 + lambda(NdotL, alpha2) + lambda(NdotV, alpha2));
-// }
-
 float G1SmithGGX(in float cosTheta, in float alpha2) {
     return 2.0 * cosTheta * rcp(sqrt(alpha2 + oms(alpha2) * cosTheta * cosTheta) + cosTheta);
-}
-
-float G1SmithGGXInverse(in float cosTheta, in float alpha2) {
-    return (sqrt(alpha2 + oms(alpha2) * cosTheta * cosTheta) + cosTheta) * (0.5 / cosTheta);
 }
 
 float G2SmithGGX(in float NdotL, in float NdotV, in float alpha2) {
@@ -248,7 +239,7 @@ vec3 SpecularGGX(in float LdotH, in float NdotV, in float NdotL, in float NdotH,
     vec3 F = FresnelSchlick(LdotH, f0);
 
     // Distribution term
-	float D = NDFTrowbridgeReitz(NdotH, alpha2);
+	float D = NDFTrowbridgeReitz(NdotH * NdotH, alpha2);
 
     // Geometric term
     float G = G2SmithGGX(NdotL, NdotV, alpha2);
@@ -276,28 +267,70 @@ float DiffuseBurley(in float LdotH, in float NdotV, in float NdotL, in float rou
 	return NdotL * rPI * FresnelSchlick(NdotL, roughness, f90) * FresnelSchlick(NdotV, roughness, f90);
 }
 
-// From https://blog.selfshadow.com/publications/turquin/ms_comp_final.pdf
-vec3 TurquinBRDF(in float NdotV, in float NdotL, in float NdotH, in float VdotH, in float f0, in float metallic, in float roughness, in vec3 albedo) {
-    vec3 F0 = mix(vec3(f0), albedo, metallic);
-    float alpha2 = roughness * roughness;
+float GetNoHSquared(float radius, float NoL, float NoV, float VoL) {
+	float radiusCos = cos(radius);
+	float radiusTan = tan(radius);
+
+	// Early out if R falls within the disc​
+    float RoL = 2.0 * NoL * NoV - VoL;
+    if (RoL >= radiusCos) return 1.0;
+
+    float rOverLengthT = radiusCos * radiusTan * inversesqrt(1.0 - RoL * RoL);
+    float NoTr = rOverLengthT * (NoV - RoL * NoL);
+    float VoTr = rOverLengthT * (2.0 * NoV * NoV - 1.0 - RoL * VoL);
+
+	// Calculate dot(cross(N, L), V). This could already be calculated and available.​
+    float triple = sqrt(saturate(1.0 - NoL * NoL - NoV * NoV - VoL * VoL + 2.0 * NoL * NoV * VoL));
+
+	// Do one Newton iteration to improve the bent light Direction​
+    float NoBr = rOverLengthT * triple, VoBr = rOverLengthT * (2.0 * triple * NoV);
+    float NoLVTr = NoL * radiusCos + NoV + NoTr, VoLVTr = VoL * radiusCos + 1.0 + VoTr;
+    float p = NoBr * VoLVTr, q = NoLVTr * VoLVTr, s = VoBr * NoLVTr;
+    float xNum = q * (-0.5 * p + 0.25 * VoBr * NoLVTr);
+    float xDenom = p * p + s * (s - 2.0 * p) + NoLVTr * ((NoL * radiusCos + NoV) * VoLVTr * VoLVTr +
+                   q * (-0.5 * (VoLVTr + VoL * radiusCos) - 0.5));
+    float twoX1 = 2.0 * xNum / (xDenom * xDenom + xNum * xNum);
+    float sinTheta = twoX1 * xDenom;
+    float cosTheta = 1.0 - twoX1 * xNum;
+    NoTr = cosTheta * NoTr + sinTheta * NoBr;
+    VoTr = cosTheta * VoTr + sinTheta * VoBr;
+
+	// Calculate (N.H)^2 based on the bent light direction​
+    float newNol = NoL * radiusCos + NoTr;
+    float newVol = VoL * radiusCos + VoTr;
+    float NoH = NoV + newNol;
+    float HoH = 2.0 * newVol + 2.0;
+
+    return max0(NoH * NoH / HoH);
+}
+
+vec3 SphericalAreaGGX(in float LdotH, in float NdotV, in float NdotL, in float LdotV, in float alpha, in vec3 f0) {
+    const float radius = atmosphereModel.sun_angular_radius * SUN_RADIUS_MULT;
+
+    // alpha = max(alpha, 1e-2);
+    float alpha2 = alpha * alpha;
 
     // Fresnel term
-    vec3 F = FresnelSchlickMS(VdotH, F0, roughness);
+    vec3 F = FresnelSchlick(LdotH, f0);
 
     // Distribution term
-    float D = NDFTrowbridgeReitz(NdotH, alpha2);
+	float NdotH2 = GetNoHSquared(radius, NdotL, NdotV, LdotV);
+	float D = NDFTrowbridgeReitz(NdotH2, alpha2);
 
     // Geometric term
-    float G = G2SchlickGGX(NdotL, NdotV, alpha2);
+    float G = G2SmithGGX(NdotL, NdotV, alpha2);
 
-    // Diffuse contribution with energy compensation
-    vec3 kD = oms(F) * oms(metallic);
-    vec3 diffuse = kD * albedo * rPI;
+    // Both Karis’ approach and our approach are not truely energy conserving as their normalization is only approximate.
+    // We’re experimenting with different formulas for the normalization to try to improve its accuracy, of which this is one:
+    float alphaSquaredLdotH = alpha2 * (LdotH + 0.001);
+    float normalization = alphaSquaredLdotH / (alphaSquaredLdotH + 0.25 * radius * (3.0 * alpha + radius));
 
-    // Specular contribution
-    vec3 numerator = D * G * F;
-    float denominator = 4.0 * NdotV * NdotL;
-    vec3 specular = numerator / maxEps(denominator);
+	return F * D * G / (4.0 * NdotV) * normalization;
+}
 
-    return (diffuse + specular) * NdotL;
+float SpecularThroughputGGX(in float NdotV, in float NdotL, in float alpha) {
+    float alpha2 = alpha * alpha;
+	float G1 = G1SmithGGX(NdotV, alpha2);
+	float G2 = G2SmithGGX(NdotL, NdotV, alpha2);
+	return G2 / G1;
 }

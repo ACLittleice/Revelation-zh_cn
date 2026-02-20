@@ -9,7 +9,8 @@ in ivec2 vaUV2;
 
 //======// Output //==============================================================================//
 
-flat out mat3 tbnMatrix;
+flat out uint normalPack;
+flat out uvec2 tangentPack;
 
 out vec4 vertColor;
 out vec2 texCoord;
@@ -58,16 +59,22 @@ void main() {
 	#ifdef IS_IRIS
 	    lightmap = saturate((vec2(vaUV2) - 8.0) * rcp(232.0));
 	#else
-		lightmap = saturate(vec2(vaUV2) * r240);
+		lightmap = saturate(vec2(vaUV2) * rcp240);
 	#endif
+
+	// Nether portal
+	lightmap.x = float(mc_Entity.x == 11500.0);
 
 	vertColor = vaColor;
 
-    tbnMatrix[2] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
-	tbnMatrix[0] = mat3(gbufferModelViewInverse) * normalize(normalMatrix * at_tangent.xyz);
-	tbnMatrix[1] = cross(tbnMatrix[0], tbnMatrix[2]) * fastSign(at_tangent.w);
+	// Encode normal and tangent
+	vec3 normal = mat3(gbufferModelViewInverse) * normalize(normalMatrix * vaNormal);
+	normalPack = packSnorm2x16(OctEncodeSnorm(normal));
+	vec3 tangent = mat3(gbufferModelViewInverse) * normalize(normalMatrix * at_tangent.xyz);
+	tangentPack.x = packSnorm2x16(OctEncodeSnorm(tangent));
+	tangentPack.y = (floatBitsToUint(at_tangent.w) & 0x80000000u) | 0x3F800000u;
 
-	materialID = uint(max(mc_Entity.x - 1e4, 2.0));
+	materialID = mc_Entity.x == 10003.0 ? 3u : 2u;
 
 	#ifdef PHYSICS_OCEAN
 		// basic texture to determine how shallow/far away from the shore the water is

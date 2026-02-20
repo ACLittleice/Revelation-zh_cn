@@ -1,6 +1,6 @@
 //======// Constants //===========================================================================//
 
-const float min_ev = -9.5;
+const float min_ev = -7.5;
 const float max_ev = 5.5;
 const float middle_grey = 0.18;
 
@@ -40,8 +40,8 @@ const vec3 rotation = vec3(2.0, -1.0, -3.0);
 // All values used to derive this implementation are sourced from Troy’s initial AgX implementation/OCIO config file available here:
 //   https://github.com/sobotka/AgX
 
-// 0: Default, 1: Golden, 2: Punchy, 3: Custom
-#define AGX_LOOK 3 // [0 1 2 3]
+// 0: Default, 1: Golden, 2: Punchy
+#define AGX_LOOK 0 // [0 1 2]
 
 // Mean error^2: 3.6705141e-06
 vec3 agxDefaultContrastApprox_6th(vec3 x) {
@@ -106,7 +106,7 @@ vec3 agxEotf(vec3 val) {
     // sRGB IEC 61966-2-1 2.2 Exponent Reference EOTF Display
     // NOTE: We're linearizing the output here. Comment/adjust when
     // *not* using a sRGB render target
-    // val = pow(val, vec3(2.2));
+    val = pow(val, vec3(2.2));
 
     return val;
 }
@@ -133,8 +133,8 @@ vec3 agxLook(vec3 val) {
     #else
         // Custom
         const vec3 slope = vec3(1.0);
-        const vec3 power = vec3(1.25);
-        const float sat = 1.25;
+        const vec3 power = vec3(1.2);
+        const float sat = 1.2;
     #endif
 
     // ASC CDL
@@ -149,20 +149,6 @@ vec3 AgX_Minimal(in vec3 value) {
 }
 
 //======// AgX Full //============================================================================//
-
-// Matrices for rec 2020 <> rec 709 color space conversion
-// matrix provided in row-major order so it has been transposed
-// https://www.itu.int/pub/R-REP-BT.2407-2017
-const mat3 LINEAR_REC2020_TO_LINEAR_SRGB = mat3(
-	vec3(  1.660491, -0.124550, -0.018151 ),
-	vec3( -0.587641,  1.132900, -0.100579 ),
-	vec3( -0.072850, -0.008349,  1.118730 ));
-
-const mat3 LINEAR_SRGB_TO_LINEAR_REC2020 = mat3(
-	vec3( 0.627404, 0.069097, 0.016391 ),
-	vec3( 0.329283, 0.919540, 0.088013 ),
-	vec3( 0.043313, 0.011362, 0.895595 ));
-
 
 vec3 unproject(vec2 xy) {
     if (xy.y == 0.0) return vec3(0.0);
@@ -302,11 +288,5 @@ vec3 AgXConfigurable(in vec3 rgb) {
 }
 
 vec3 AgX_Full(in vec3 rgb) {
-    rgb = LINEAR_SRGB_TO_LINEAR_REC2020 * rgb;
-    rgb = AgXConfigurable(rgb);
-
-    rgb = sRGBtoLinear(rgb);
-    rgb = LINEAR_REC2020_TO_LINEAR_SRGB * rgb;
-
-    return linearToSRGB(rgb);
+    return sRGBToLinear(AgXConfigurable(rgb));
 }
